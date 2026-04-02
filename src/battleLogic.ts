@@ -1,0 +1,487 @@
+import type {
+  BattleState, Student, PlayerAttitude, Topic, Stance,
+  EnemyMood, HobbyTopic, CandidateId, BattleLog, Attribute
+} from './types';
+import { getCatchphrase } from './data';
+
+// 態度倍率（思想話題のバー効果に適用）
+const ATTITUDE_MULTIPLIER: Record<PlayerAttitude, number> = {
+  friendly: 0.7,
+  normal: 1.0,
+  strong: 1.2,
+};
+
+// 態度スタミナ消費
+const ATTITUDE_COST: Record<PlayerAttitude, number> = {
+  friendly: 3,
+  normal: 5,
+  strong: 8,
+};
+
+// 相手の態度倍率（プレイヤー効果）
+const MOOD_EFFECT_MULTIPLIER: Record<EnemyMood, number> = {
+  furious: 0.3,
+  upset: 0.6,
+  normal: 1.0,
+  favorable: 1.3,
+  devoted: 1.8,
+};
+
+// 相手の反撃倍率
+const MOOD_COUNTER_MULTIPLIER: Record<EnemyMood, number> = {
+  furious: 1.5,
+  upset: 1.2,
+  normal: 1.0,
+  favorable: 0.7,
+  devoted: 0.3,
+};
+
+const MOOD_ORDER: EnemyMood[] = ['furious', 'upset', 'normal', 'favorable', 'devoted'];
+
+function clamp(val: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, val));
+}
+
+function getMoodIndex(mood: EnemyMood): number {
+  return MOOD_ORDER.indexOf(mood);
+}
+
+function shiftMood(mood: EnemyMood, delta: number): EnemyMood {
+  const idx = clamp(getMoodIndex(mood) + delta, 0, 4);
+  return MOOD_ORDER[idx];
+}
+
+// 好感度からバー初期位置を計算（-100〜100 → -10〜+10）
+function affinityBarBonus(affinity: number): number {
+  return Math.round(affinity / 10);
+}
+
+export function initBattle(student: Student): BattleState {
+  const barBonus = affinityBarBonus(student.affinity);
+  return {
+    student,
+    round: 1,
+    maxRounds: 10,
+    barPosition: clamp(barBonus, -100, 100),
+    enemyMood: 'normal',
+    logs: [],
+    phase: 'select_attitude',
+    selectedAttitude: null,
+    selectedTopic: null,
+    result: null,
+  };
+}
+
+// 好かれ度から倍率を計算（-100〜100 → 0.5〜1.5）
+function affinityMultiplier(affinity: number): number {
+  return 1.0 + affinity / 200;
+}
+
+// 好き属性ボーナス（プレイヤーのlikedAttributesと相手のattributesの一致数）
+function likedAttributeMultiplier(playerLikedAttributes: Attribute[], studentAttributes: Attribute[]): number {
+  const matchCount = playerLikedAttributes.filter(a => studentAttributes.includes(a)).length;
+  return 1.0 + matchCount * 0.15;
+}
+
+// 候補者話題の効果を計算（バーに大きく影響）
+// 肯定: 自候補を推す → 相手のその候補への支持が低いほど効果が必要（基礎値で押す）
+//   支持50の候補を肯定 → 15 + 6.8 = 21.8（相手が元々好きなので刺さる）
+//   支持25の候補を肯定 → 15 - 3.2 = 11.8（相手が興味薄いので効果小）
+// 否定: 相手の候補を攻撃 → 相手の支持が高い候補ほど否定が刺さる
+//   支持50の候補を否定 → 15 + 6.8 = 21.8（核心を突く）
+//   支持25の候補を否定 → 15 - 3.2 = 11.8（どうでもいい候補なので効果小）
+function calcCandidateEffect(
+  topic: CandidateId,
+  stance: Stance,
+  student: Student
+): number {
+  const topicSupport = student.support[topic];
+  const diff = topicSupport - 33;
+  // 肯定も否定も、相手の支持度が高い候補ほど効果が大きい
+  // どちらもバーをプラス（成功方向）に動かす
+  return 15 + diff * 0.4;
+}
+
+// 趣味話題の効果を計算（主に機嫌変化、バーへの影響は小さい）
+function calcHobbyEffect(
+  topic: HobbyTopic,
+  stance: Stance,
+  student: Student,
+  moodDelta: { delta: number }
+): number {
+  const revealed = student.revealedHobbies.has(topic);
+  const pref = revealed ? student.hobbies[topic] : 'neutral';
+
+  if (pref === 'like') {
+    if (stance === 'positive') {
+      moodDelta.delta += 2;
+      return 3; // バーへの影響は小さい
+    } else {
+      moodDelta.delta -= 2;
+      return -3;
+    }
+  } else if (pref === 'dislike') {
+    if (stance === 'positive') {
+      moodDelta.delta -= 1;
+      return -1;
+    } else {
+      moodDelta.delta += 1;
+      return 1;
+    }
+  } else {
+    // 未知または普通
+    if (stance === 'positive') {
+      moodDelta.delta += 0;
+      return -1;
+    } else {
+      moodDelta.delta += 0;
+      return 1;
+    }
+  }
+}
+
+// プレイヤーステータス
+interface PlayerStats {
+  speech: number;   // 弁舌: 思想話題全般にボーナス
+  athletic: number; // 運動: 肯定時にボーナス
+  intel: number;    // 知性: 否定時にボーナス
+}
+
+// ステータスボーナス計算
+// speech: 思想話題の全般倍率（0→×1.0, 50→×1.25, 100→×1.5）
+// athletic: 肯定時の追加倍率（0→×1.0, 50→×1.15, 100→×1.3）
+// intel: 否定時の追加倍率（0→×1.0, 50→×1.15, 100→×1.3）
+function calcStatMultiplier(stats: PlayerStats, stance: Stance, isCandidateTopic: boolean): number {
+  let multiplier = 1.0;
+  if (isCandidateTopic) {
+    // 弁舌: 思想話題全般
+    multiplier *= 1.0 + stats.speech * 0.005;
+    // 運動/知性: 立場に応じた追加ボーナス
+    if (stance === 'positive') {
+      multiplier *= 1.0 + stats.athletic * 0.003;
+    } else {
+      multiplier *= 1.0 + stats.intel * 0.003;
+    }
+  }
+  return multiplier;
+}
+
+// プレイヤーターン解決
+export function resolvePlayerTurn(
+  battle: BattleState,
+  attitude: PlayerAttitude,
+  topic: Topic,
+  stance: Stance,
+  candidateId: CandidateId,
+  playerLikedAttributes: Attribute[],
+  playerStats: PlayerStats
+): { newBattle: BattleState; playerEffect: number; log: BattleLog } {
+  const student = battle.student;
+  const moodDelta = { delta: 0 };
+
+  // 基礎効果計算
+  let baseEffect: number;
+  const isCandidateTopic = ['conservative', 'progressive', 'sports'].includes(topic);
+
+  if (isCandidateTopic) {
+    const topicCandidate = topic as CandidateId;
+    baseEffect = calcCandidateEffect(topicCandidate, stance, student);
+    // 思想の話は機嫌が下がる（攻撃的な話題なので）
+    moodDelta.delta -= 1;
+    // 選んだ候補と話題候補が一致する場合はボーナス
+    if (topicCandidate === candidateId) {
+      baseEffect *= 1.1;
+    }
+  } else {
+    baseEffect = calcHobbyEffect(topic as HobbyTopic, stance, student, moodDelta);
+  }
+
+  // 態度倍率
+  baseEffect *= ATTITUDE_MULTIPLIER[attitude];
+
+  // 相手の態度倍率（プレイヤー効果に）
+  baseEffect *= MOOD_EFFECT_MULTIPLIER[battle.enemyMood];
+
+  // ステータスボーナス（弁舌/運動/知性）
+  baseEffect *= calcStatMultiplier(playerStats, stance, isCandidateTopic);
+
+  // 好き属性ボーナス
+  baseEffect *= likedAttributeMultiplier(playerLikedAttributes, student.attributes);
+
+  // 好かれ度補正
+  baseEffect *= affinityMultiplier(student.affinity);
+
+  const playerEffect = Math.round(baseEffect);
+
+  // 態度変化
+  const newMood = shiftMood(battle.enemyMood, moodDelta.delta);
+
+  const newBar = clamp(battle.barPosition + playerEffect, -100, 100);
+
+  const logText = buildPlayerLogText(attitude, topic, stance, playerEffect);
+
+  const newBattle: BattleState = {
+    ...battle,
+    barPosition: newBar,
+    enemyMood: newMood,
+    logs: [...battle.logs, { speaker: 'player', text: logText, effect: playerEffect }],
+    phase: 'resolving',
+    selectedAttitude: attitude,
+    selectedTopic: topic,
+  };
+
+  return { newBattle, playerEffect, log: { speaker: 'player', text: logText, effect: playerEffect } };
+}
+
+// 相手ターン解決
+export function resolveEnemyTurn(battle: BattleState): { newBattle: BattleState; enemyEffect: number } {
+  const student = battle.student;
+
+  // 相手の反撃
+  let baseCounter = 8 + student.stats.speech * 0.1;
+  baseCounter *= MOOD_COUNTER_MULTIPLIER[battle.enemyMood];
+
+  const enemyEffect = -Math.round(baseCounter);
+  const newBar = clamp(battle.barPosition + enemyEffect, -100, 100);
+
+  const catchphrase = getCatchphrase(student.personality, student.attributes);
+  const logText = `「${catchphrase}」（反論 ${Math.abs(enemyEffect)}）`;
+
+  const newBattle: BattleState = {
+    ...battle,
+    barPosition: newBar,
+    logs: [...battle.logs, { speaker: 'enemy', text: logText, effect: enemyEffect }],
+    round: battle.round + 1,
+    phase: 'select_attitude',
+    selectedAttitude: null,
+    selectedTopic: null,
+  };
+
+  return { newBattle, enemyEffect };
+}
+
+// バトル終了チェック
+export function checkBattleEnd(battle: BattleState): BattleState {
+  if (battle.barPosition >= 70) {
+    return { ...battle, phase: 'finished', result: 'win' };
+  }
+  if (battle.barPosition <= -70) {
+    return { ...battle, phase: 'finished', result: 'lose' };
+  }
+  if (battle.round > battle.maxRounds) {
+    // タイムアウト: バー位置に応じた結果
+    return { ...battle, phase: 'finished', result: 'timeout' };
+  }
+  return battle;
+}
+
+function buildPlayerLogText(
+  attitude: PlayerAttitude,
+  topic: Topic,
+  stance: Stance,
+  effect: number
+): string {
+  const attitudeLabel: Record<PlayerAttitude, string> = {
+    friendly: 'フレンドリーに',
+    normal: 'ふつうに',
+    strong: '強気で',
+  };
+  const topicLabels: Record<string, string> = {
+    conservative: '保守派の政策',
+    progressive: '革新派の政策',
+    sports: '体育派の政策',
+    love: '恋バナ',
+    game: 'ゲーム',
+    sns: 'SNS',
+    sports_hobby: 'スポーツ',
+    study: '勉強',
+    video: '動画',
+    music: '音楽',
+    reading: '読書',
+    fashion: 'ファッション',
+  };
+  const stanceLabel = stance === 'positive' ? '肯定' : '否定';
+  const sign = effect >= 0 ? '+' : '';
+  const topicLabel = topicLabels[topic] || topic;
+  return `${attitudeLabel[attitude]}「${topicLabel}」を${stanceLabel}（${sign}${effect}）`;
+}
+
+// スタミナ消費計算
+export function getAttitudeCost(attitude: PlayerAttitude): number {
+  return ATTITUDE_COST[attitude];
+}
+
+// バー位置からシフト量を計算（5〜20%）
+// 勝利時: +70→5%, +100→20%  失敗時: -70→5%, -100→20%
+function calcShiftPercent(barPosition: number): number {
+  const absBar = Math.abs(barPosition);
+  // 70→5, 100→20 の線形補間
+  const t = clamp((absBar - 70) / 30, 0, 1);
+  return 5 + t * 15;
+}
+
+// タイムアウト時のシフト量を計算（バー位置に比例、中央付近は小さい）
+// barPosition: -69〜+69 → シフト量 0〜10%
+function calcTimeoutShiftPercent(barPosition: number): number {
+  const absBar = Math.abs(barPosition);
+  // 0→0%, 69→10% の線形補間
+  const t = clamp(absBar / 69, 0, 1);
+  return t * 10;
+}
+
+// 説得成功: 相手の思想をプレイヤーの支持方向にシフト
+export function applyWinShift(
+  student: Student,
+  playerCandidate: CandidateId,
+  barPosition: number
+): { conservative: number; progressive: number; sports: number } {
+  const shiftPercent = calcShiftPercent(barPosition);
+  const support = { ...student.support };
+  const total = support.conservative + support.progressive + support.sports;
+  const shiftAmount = total * shiftPercent / 100;
+
+  // プレイヤーの支持する候補の軸を増やし、他の2軸から均等に引く
+  const others = (['conservative', 'progressive', 'sports'] as CandidateId[]).filter(k => k !== playerCandidate);
+  support[playerCandidate] += shiftAmount;
+  for (const key of others) {
+    support[key] -= shiftAmount / 2;
+  }
+
+  // 負にならないようクランプし、合計を100に正規化
+  for (const key of ['conservative', 'progressive', 'sports'] as CandidateId[]) {
+    support[key] = Math.max(0, support[key]);
+  }
+  const newTotal = support.conservative + support.progressive + support.sports;
+  if (newTotal > 0) {
+    for (const key of ['conservative', 'progressive', 'sports'] as CandidateId[]) {
+      support[key] = Math.round(support[key] / newTotal * 100);
+    }
+  }
+
+  return support;
+}
+
+// 説得失敗: プレイヤーの思想を相手の方向にシフト
+export function applyLoseShift(
+  playerSupport: { conservative: number; progressive: number; sports: number },
+  studentSupport: { conservative: number; progressive: number; sports: number },
+  barPosition: number
+): { newSupport: { conservative: number; progressive: number; sports: number }; shiftPercent: number } {
+  const shiftPercent = calcShiftPercent(barPosition);
+
+  // 相手の最大軸の方向にプレイヤーの思想をシフト
+  const maxKey = (['conservative', 'progressive', 'sports'] as CandidateId[])
+    .reduce((a, b) => studentSupport[a] >= studentSupport[b] ? a : b);
+
+  const support = { ...playerSupport };
+  const total = support.conservative + support.progressive + support.sports;
+  const shiftAmount = total * shiftPercent / 100;
+
+  const others = (['conservative', 'progressive', 'sports'] as CandidateId[]).filter(k => k !== maxKey);
+  support[maxKey] += shiftAmount;
+  for (const key of others) {
+    support[key] -= shiftAmount / 2;
+  }
+
+  for (const key of ['conservative', 'progressive', 'sports'] as CandidateId[]) {
+    support[key] = Math.max(0, support[key]);
+  }
+  const newTotal = support.conservative + support.progressive + support.sports;
+  if (newTotal > 0) {
+    for (const key of ['conservative', 'progressive', 'sports'] as CandidateId[]) {
+      support[key] = Math.round(support[key] / newTotal * 100);
+    }
+  }
+
+  return { newSupport: support, shiftPercent };
+}
+
+// タイムアウト時のシフト処理
+// barPosition > 0: 相手の思想をプレイヤー方向にシフト（弱い勝利）
+// barPosition < 0: プレイヤーの思想を相手方向にシフト（弱い敗北）
+// barPosition ≈ 0: ほぼ変化なし
+export function applyTimeoutShift(
+  student: Student,
+  playerCandidate: CandidateId,
+  playerSupport: { conservative: number; progressive: number; sports: number },
+  barPosition: number
+): {
+  studentSupport: { conservative: number; progressive: number; sports: number };
+  playerNewSupport: { conservative: number; progressive: number; sports: number };
+  shiftPercent: number;
+} {
+  const shiftPercent = calcTimeoutShiftPercent(barPosition);
+
+  if (barPosition > 0) {
+    // プレイヤー有利: 相手の思想をシフト
+    const support = { ...student.support };
+    const total = support.conservative + support.progressive + support.sports;
+    const shiftAmount = total * shiftPercent / 100;
+
+    const others = (['conservative', 'progressive', 'sports'] as CandidateId[]).filter(k => k !== playerCandidate);
+    support[playerCandidate] += shiftAmount;
+    for (const key of others) {
+      support[key] -= shiftAmount / 2;
+    }
+    for (const key of ['conservative', 'progressive', 'sports'] as CandidateId[]) {
+      support[key] = Math.max(0, support[key]);
+    }
+    const newTotal = support.conservative + support.progressive + support.sports;
+    if (newTotal > 0) {
+      for (const key of ['conservative', 'progressive', 'sports'] as CandidateId[]) {
+        support[key] = Math.round(support[key] / newTotal * 100);
+      }
+    }
+    return { studentSupport: support, playerNewSupport: { ...playerSupport }, shiftPercent };
+  } else if (barPosition < 0) {
+    // 相手有利: プレイヤーの思想をシフト
+    const maxKey = (['conservative', 'progressive', 'sports'] as CandidateId[])
+      .reduce((a, b) => student.support[a] >= student.support[b] ? a : b);
+
+    const support = { ...playerSupport };
+    const total = support.conservative + support.progressive + support.sports;
+    const shiftAmount = total * shiftPercent / 100;
+
+    const others = (['conservative', 'progressive', 'sports'] as CandidateId[]).filter(k => k !== maxKey);
+    support[maxKey] += shiftAmount;
+    for (const key of others) {
+      support[key] -= shiftAmount / 2;
+    }
+    for (const key of ['conservative', 'progressive', 'sports'] as CandidateId[]) {
+      support[key] = Math.max(0, support[key]);
+    }
+    const newTotal = support.conservative + support.progressive + support.sports;
+    if (newTotal > 0) {
+      for (const key of ['conservative', 'progressive', 'sports'] as CandidateId[]) {
+        support[key] = Math.round(support[key] / newTotal * 100);
+      }
+    }
+    return { studentSupport: { ...student.support }, playerNewSupport: support, shiftPercent };
+  } else {
+    // 引き分け: 変化なし
+    return { studentSupport: { ...student.support }, playerNewSupport: { ...playerSupport }, shiftPercent: 0 };
+  }
+}
+
+// プレイヤーの支持候補を判定（最大軸）
+export function getPlayerCandidate(
+  support: { conservative: number; progressive: number; sports: number }
+): CandidateId {
+  if (support.conservative >= support.progressive && support.conservative >= support.sports) return 'conservative';
+  if (support.progressive >= support.sports) return 'progressive';
+  return 'sports';
+}
+
+// 体力に応じたパス判定
+// stamina < 5: 100%パス（フレンドリーすら選べない）
+// stamina 5〜30: 体力が低いほどパスしやすい
+// stamina 30+: パスなし
+export function shouldPass(stamina: number): boolean {
+  if (stamina < 3) return true;
+  if (stamina >= 20) return false;
+  // 3→70%, 10→40%, 17→12%, 20→0%
+  const passChance = ((20 - stamina) / 17) * 0.7;
+  return Math.random() < passChance;
+}
+
+export { MOOD_ORDER };

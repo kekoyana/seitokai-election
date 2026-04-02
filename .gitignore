@@ -1,0 +1,8 @@
+node_modules/
+dist/
+.DS_Store
+.env.local
+ai-sprites-local/venv/
+ai-sprites-local/__pycache__/
+test-portraits/
+portraits/raw/

@@ -1,3 +1,5 @@
+import titleBg from '../../backgrounds/title.jpg';
+
 export interface TitleCallbacks {
   onStart: () => void;
 }
@@ -15,7 +17,7 @@ export class TitleScreen {
   private render(): void {
     this.container.style.cssText = `
       position: fixed; inset: 0;
-      background: linear-gradient(160deg, #E8F4FD 0%, #FFF9E6 50%, #F0FAF0 100%);
+      background: url('${titleBg}') center/cover no-repeat;
       display: flex; flex-direction: column;
       align-items: center; justify-content: center;
       font-family: 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif;
@@ -25,11 +27,12 @@ export class TitleScreen {
     this.container.innerHTML = `
       <div style="text-align:center; max-width:480px; width:100%;">
         <div style="
-          background: linear-gradient(135deg, #1B3A6B, #2E5FAC);
+          background: linear-gradient(135deg, rgba(27,58,107,0.9), rgba(46,95,172,0.9));
+          backdrop-filter: blur(8px);
           border-radius: 16px;
           padding: 32px 24px;
           margin-bottom: 24px;
-          box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+          box-shadow: 0 8px 32px rgba(0,0,0,0.3);
         ">
           <div style="font-size:2.8em; font-weight:bold; color:#fff; letter-spacing:0.1em; margin-bottom:8px; text-shadow:0 2px 8px rgba(0,0,0,0.3);">
             生徒会選挙
@@ -50,11 +53,12 @@ export class TitleScreen {
         </div>
 
         <div style="
-          background: rgba(255,255,255,0.8);
+          background: rgba(255,255,255,0.85);
+          backdrop-filter: blur(8px);
           border-radius: 12px;
           padding: 16px 20px;
           margin-bottom: 24px;
-          border: 1px solid #E0EAF5;
+          border: 1px solid rgba(255,255,255,0.5);
           text-align: left;
           font-size: 0.82em;
           color: #444;

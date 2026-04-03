@@ -1,5 +1,5 @@
 import type { Student, CandidateId } from '../types';
-import { ATTRIBUTE_LABELS, HOBBY_LABELS, CANDIDATES, FACTION_LABELS, getCatchphrase, renderInitialIcon } from '../data';
+import { ATTRIBUTE_LABELS, HOBBY_LABELS, CANDIDATES, CANDIDATE_INFO, FACTION_LABELS, getCatchphrase, renderInitialIcon } from '../data';
 
 const PERSONALITY_LABELS: Record<string, string> = {
   passionate: '熱血',
@@ -17,6 +17,7 @@ export class CharacterSelectScreen {
   private container: HTMLDivElement;
   private students: Student[];
   private callbacks: CharacterSelectCallbacks;
+  private activeTab: CandidateId = 'conservative';
 
   constructor(students: Student[], callbacks: CharacterSelectCallbacks) {
     this.students = students;
@@ -25,34 +26,104 @@ export class CharacterSelectScreen {
     this.render();
   }
 
+  private getSupportFaction(s: Student): CandidateId {
+    return (['conservative', 'progressive', 'sports'] as CandidateId[])
+      .reduce((a, b) => s.support[a] >= s.support[b] ? a : b);
+  }
+
   private render(): void {
     this.container.style.cssText = `
       position:fixed; inset:0;
       background:linear-gradient(160deg, #E8F4FD 0%, #FFF9E6 100%);
       display:flex; flex-direction:column;
-      align-items:center; justify-content:flex-start;
       font-family:'Hiragino Kaku Gothic ProN','Meiryo',sans-serif;
-      overflow-y:auto; padding:24px 16px; box-sizing:border-box;
+      overflow:hidden; box-sizing:border-box;
     `;
 
-    const cardsHtml = this.students.map(s => this.renderCard(s)).join('');
+    const activeInfo = CANDIDATE_INFO.find(c => c.id === this.activeTab)!;
+    const activeCandidate = CANDIDATES.find(c => c.id === this.activeTab);
+
+    // タブ
+    const tabsHtml = CANDIDATE_INFO.map(info => {
+      const active = info.id === this.activeTab;
+      const count = this.students.filter(s => this.getSupportFaction(s) === info.id).length;
+      return `<button class="faction-tab" data-faction="${info.id}" style="
+        flex:1;
+        background:${active ? info.color : 'transparent'};
+        color:${active ? '#fff' : info.color};
+        border:none;
+        border-bottom:3px solid ${active ? info.color : 'transparent'};
+        padding:10px 8px 8px;
+        cursor:pointer;
+        font-family:inherit;
+        font-size:0.85em;
+        font-weight:${active ? 'bold' : 'normal'};
+        transition:all 0.15s;
+        border-radius:${active ? '8px 8px 0 0' : '0'};
+      ">${FACTION_LABELS[info.id]}派 <span style="font-size:0.8em; opacity:0.7;">(${count})</span></button>`;
+    }).join('');
+
+    // 派閥説明
+    const descHtml = `
+      <div style="
+        background:${activeInfo.color}10;
+        border-left:4px solid ${activeInfo.color};
+        border-radius:0 8px 8px 0;
+        padding:10px 14px;
+        margin:0 16px 12px;
+      ">
+        <div style="font-weight:bold; color:${activeInfo.color}; font-size:0.9em; margin-bottom:4px;">
+          ${activeInfo.platform}
+        </div>
+        <div style="font-size:0.8em; color:#666; line-height:1.6;">
+          ${activeInfo.description}
+        </div>
+        ${activeCandidate ? `
+          <div style="font-size:0.78em; color:#888; margin-top:6px;">
+            候補者: <span style="font-weight:bold; color:${activeInfo.color};">${activeCandidate.name}</span>
+          </div>
+        ` : ''}
+      </div>
+    `;
+
+    // カード
+    const factionStudents = this.students.filter(s => this.getSupportFaction(s) === this.activeTab);
+    const cardsHtml = factionStudents.map(s => this.renderCard(s)).join('');
 
     this.container.innerHTML = `
-      <div style="max-width:560px; width:100%;">
-        <h1 style="
-          font-size:1.3em; color:#333; text-align:center;
-          margin-bottom:4px;
-        ">キャラクター選択</h1>
-        <p style="
-          font-size:0.85em; color:#888; text-align:center;
-          margin-bottom:20px;
-        ">あなたの分身となる生徒を選んでください</p>
+      <div style="
+        text-align:center; padding:20px 16px 0;
+        flex-shrink:0;
+      ">
+        <h1 style="font-size:1.3em; color:#333; margin:0 0 4px;">キャラクター選択</h1>
+        <p style="font-size:0.85em; color:#888; margin:0 0 16px;">あなたの分身となる生徒を選んでください</p>
+      </div>
+      <div style="
+        display:flex; gap:0;
+        padding:0 16px;
+        flex-shrink:0;
+        border-bottom:1px solid #e0e8f0;
+      ">${tabsHtml}</div>
+      <div style="flex:1; overflow-y:auto; padding:12px 16px;">
+        ${descHtml}
         <div style="display:flex; flex-direction:column; gap:12px;">
           ${cardsHtml}
         </div>
       </div>
     `;
 
+    // タブイベント
+    this.container.querySelectorAll<HTMLButtonElement>('.faction-tab').forEach(btn => {
+      btn.addEventListener('pointerup', () => {
+        const faction = btn.dataset['faction'] as CandidateId;
+        if (faction && faction !== this.activeTab) {
+          this.activeTab = faction;
+          this.render();
+        }
+      });
+    });
+
+    // カード選択イベント
     this.container.querySelectorAll<HTMLButtonElement>('[data-student-id]').forEach(btn => {
       btn.addEventListener('pointerup', () => {
         const id = btn.dataset['studentId'];
@@ -85,9 +156,7 @@ export class CharacterSelectScreen {
       </div>
     `;
 
-    // 支持候補
-    const supportCandidateId = (['conservative', 'progressive', 'sports'] as CandidateId[])
-      .reduce((a, b) => s.support[a] >= s.support[b] ? a : b);
+    const supportCandidateId = this.activeTab;
     const supportCandidate = CANDIDATES.find(c => c.id === supportCandidateId);
 
     return `
@@ -112,12 +181,6 @@ export class CharacterSelectScreen {
           <div style="flex:1;">
             <div style="display:flex; align-items:center; gap:6px;">
               <span style="font-size:1em; font-weight:bold; color:#333;">${s.name}</span>
-              <span style="
-                font-size:0.7em; padding:1px 8px; border-radius:8px;
-                background:${supportCandidate?.color ?? '#888'}22;
-                color:${supportCandidate?.color ?? '#888'};
-                border:1px solid ${supportCandidate?.color ?? '#888'}44;
-              ">${FACTION_LABELS[supportCandidateId] ?? ''}派</span>
             </div>
             <div style="font-size:0.8em; color:#888;">
               ${s.className}　${PERSONALITY_LABELS[s.personality] ?? s.personality}

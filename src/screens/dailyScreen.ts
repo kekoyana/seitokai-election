@@ -29,7 +29,12 @@ export class DailyScreen {
   private callbacks: DailyCallbacks;
   private showStudentInfo: Student | null = null;
   private showPlayerInfo: boolean = false;
-  private showOrgPanel: boolean = false;
+  // 情報パネル: タブ + ドリルダウン（組織詳細 or 生徒一覧→生徒詳細）
+  private infoPanel: {
+    tab: 'class' | 'club';
+    orgId?: string;       // 選択中の組織ID
+    studentId?: string;   // 選択中の生徒ID（組織内の生徒詳細）
+  } | null = null;
 
   constructor(state: GameState, callbacks: DailyCallbacks) {
     this.state = state;
@@ -139,8 +144,8 @@ export class DailyScreen {
       mainHtml = this.renderPlayerInfo(pc);
     } else if (this.showStudentInfo) {
       mainHtml = this.renderStudentInfo(this.showStudentInfo);
-    } else if (this.showOrgPanel) {
-      mainHtml = this.renderOrgPanel();
+    } else if (this.infoPanel) {
+      mainHtml = this.renderInfoPanel();
     } else if (inCorridor) {
       mainHtml = this.renderCorridorView();
     } else {
@@ -274,15 +279,15 @@ export class DailyScreen {
             <div style="font-weight:bold;">← 廊下へ</div>
             <div style="font-size:0.75em; opacity:0.85;">フロア移動</div>
           </button>
-          <button id="org-btn" style="
+          <button id="info-btn" style="
             padding:10px 12px;
             background:#8E6BAD;
             color:#fff; border:none; border-radius:10px;
             font-size:0.85em; cursor:pointer;
             text-align:left; font-family:inherit;
           ">
-            <div style="font-weight:bold;">組織</div>
-            <div style="font-size:0.75em; opacity:0.85;">支持状況</div>
+            <div style="font-weight:bold;">情報</div>
+            <div style="font-size:0.75em; opacity:0.85;">クラス・部活</div>
           </button>
           <button id="next-day-btn-always" style="
             padding:10px 12px;
@@ -389,81 +394,116 @@ export class DailyScreen {
     `;
   }
 
-  private renderOrgPanel(): string {
+  private renderInfoPanel(): string {
+    if (!this.infoPanel) return '';
+    const { tab, orgId, studentId } = this.infoPanel;
+
+    // 生徒詳細（組織内からのドリルダウン）
+    if (orgId && studentId) {
+      const student = this.state.students.find(s => s.id === studentId);
+      if (student) return this.renderInfoStudentDetail(student, orgId);
+    }
+
+    // 組織詳細 or 生徒一覧
+    if (orgId) {
+      const org = ORGANIZATIONS.find(o => o.id === orgId);
+      if (org) return this.renderInfoOrgDetail(org);
+    }
+
+    // 組織一覧（タブ）
+    return this.renderInfoOrgList(tab);
+  }
+
+  private renderInfoHeader(title: string, backAction?: string): string {
+    return `
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          ${backAction ? `<button data-info-action="${backAction}" style="
+            background:none; border:none; color:#4A90D9;
+            font-size:1em; cursor:pointer; padding:0 4px; font-family:inherit;
+          ">←</button>` : ''}
+          <h3 style="font-size:0.95em; color:#333; margin:0;">${title}</h3>
+        </div>
+        <button data-info-action="close" style="
+          background:#ddd; border:none; border-radius:50%;
+          width:28px; height:28px; cursor:pointer; font-size:1em;
+        ">×</button>
+      </div>
+    `;
+  }
+
+  private renderInfoTabs(activeTab: 'class' | 'club'): string {
+    const tabStyle = (active: boolean) => `
+      padding:8px 16px; border:none; border-radius:8px 8px 0 0;
+      font-size:0.85em; font-weight:bold; cursor:pointer;
+      font-family:inherit;
+      background:${active ? '#fff' : '#e0e4e8'};
+      color:${active ? '#333' : '#888'};
+      border-bottom:${active ? '2px solid #4A90D9' : '2px solid transparent'};
+    `;
+    return `
+      <div style="display:flex; gap:2px; margin-bottom:12px;">
+        <button data-info-tab="class" style="${tabStyle(activeTab === 'class')}">クラス</button>
+        <button data-info-tab="club" style="${tabStyle(activeTab === 'club')}">部活</button>
+      </div>
+    `;
+  }
+
+  private renderInfoOrgList(tab: 'class' | 'club'): string {
     const candidateColor = this.getCandidateColor();
+    const orgs = tab === 'class'
+      ? ORGANIZATIONS.filter(o => o.id.startsWith('class'))
+      : ORGANIZATIONS.filter(o => o.id.startsWith('club_'));
 
-    const renderOrgGroup = (label: string, orgs: typeof ORGANIZATIONS) => {
-      if (orgs.length === 0) return '';
-      const rows = orgs.map(org => {
-        const vote = getOrganizationVote(org, this.state.students);
-        const voteCandidate = CANDIDATES.find(c => c.id === vote);
-        const isAlly = vote === this.state.candidate;
-        const leader = this.state.students.find(s => s.id === org.leaderId);
-        const typeLabel = ORGANIZATION_TYPE_LABELS[org.type] ?? org.type;
+    const allyCount = orgs.filter(org =>
+      getOrganizationVote(org, this.state.students) === this.state.candidate
+    ).length;
 
-        // 代表の思想数値
-        const sup = leader?.support;
-        const supText = sup ? `保${sup.conservative}/革${sup.progressive}/体${sup.sports}` : '';
+    const orgRows = orgs.map(org => {
+      const vote = getOrganizationVote(org, this.state.students);
+      const voteCandidate = CANDIDATES.find(c => c.id === vote);
+      const isAlly = vote === this.state.candidate;
+      const leader = this.state.students.find(s => s.id === org.leaderId);
+      const typeLabel = ORGANIZATION_TYPE_LABELS[org.type] ?? org.type;
 
-        return `
-          <div style="
-            display:flex; align-items:center; gap:8px;
-            padding:8px; border-radius:8px;
-            background:${isAlly ? 'rgba(39,174,96,0.06)' : 'rgba(255,255,255,0.5)'};
-            border:1px solid ${isAlly ? 'rgba(39,174,96,0.2)' : '#e8f0f8'};
-            margin-bottom:4px;
-          ">
-            ${leader ? (leader.portrait
-              ? `<img src="${leader.portrait}" alt="${leader.name}" style="
-                  width:36px; height:36px; border-radius:50%;
-                  object-fit:cover; object-position:top;
-                  border:2px solid ${voteCandidate?.color ?? '#ddd'};
-                  flex-shrink:0;
-                "/>`
-              : renderInitialIcon(leader.name, leader.personality, 36, voteCandidate?.color ?? '#ddd')
-            ) : ''}
-            <div style="flex:1; min-width:0;">
-              <div style="display:flex; align-items:center; gap:6px;">
-                <span style="font-size:0.88em; font-weight:bold; color:#333;">${org.name}</span>
-                <span style="
-                  font-size:0.65em; background:#f0f0f5; color:#888;
-                  border-radius:4px; padding:1px 5px;
-                ">${typeLabel}</span>
-              </div>
-              <div style="font-size:0.72em; color:#888;">
-                代表: ${leader?.name ?? '不明'}
-                <span style="margin-left:6px; color:#aaa;">${supText}</span>
-              </div>
+      return `
+        <button data-info-org="${org.id}" style="
+          display:flex; align-items:center; gap:8px; width:100%;
+          padding:8px; border-radius:8px;
+          background:${isAlly ? 'rgba(39,174,96,0.06)' : 'rgba(255,255,255,0.5)'};
+          border:1px solid ${isAlly ? 'rgba(39,174,96,0.2)' : '#e8f0f8'};
+          margin-bottom:4px; cursor:pointer;
+          text-align:left; font-family:inherit;
+        ">
+          ${leader ? (leader.portrait
+            ? `<img src="${leader.portrait}" alt="${leader.name}" style="
+                width:36px; height:36px; border-radius:50%;
+                object-fit:cover; object-position:top;
+                border:2px solid ${voteCandidate?.color ?? '#ddd'};
+                flex-shrink:0;
+              "/>`
+            : renderInitialIcon(leader.name, leader.personality, 36, voteCandidate?.color ?? '#ddd')
+          ) : ''}
+          <div style="flex:1; min-width:0;">
+            <div style="display:flex; align-items:center; gap:6px;">
+              <span style="font-size:0.88em; font-weight:bold; color:#333;">${org.name}</span>
+              <span style="font-size:0.65em; background:#f0f0f5; color:#888; border-radius:4px; padding:1px 5px;">${typeLabel}</span>
             </div>
-            <div style="
+            <div style="font-size:0.72em; color:#888;">代表: ${leader?.name ?? '不明'}</div>
+          </div>
+          <div style="display:flex; align-items:center; gap:4px; flex-shrink:0;">
+            <span style="
               font-size:0.75em; padding:2px 8px; border-radius:8px;
               background:${(voteCandidate?.color ?? '#888')}15;
               color:${voteCandidate?.color ?? '#888'};
               border:1px solid ${(voteCandidate?.color ?? '#888')}33;
               font-weight:${isAlly ? 'bold' : 'normal'};
-              flex-shrink:0;
-            ">${FACTION_LABELS[vote] ?? ''}派${isAlly ? ' ✓' : ''}</div>
+            ">${FACTION_LABELS[vote] ?? ''}派${isAlly ? ' ✓' : ''}</span>
+            <span style="color:#bbb; font-size:0.8em;">›</span>
           </div>
-        `;
-      }).join('');
-
-      return `
-        <div style="margin-bottom:12px;">
-          <div style="font-size:0.78em; color:#888; margin-bottom:4px; font-weight:bold;">${label}</div>
-          ${rows}
-        </div>
+        </button>
       `;
-    };
-
-    // 集計
-    const allyCount = ORGANIZATIONS.filter(org =>
-      getOrganizationVote(org, this.state.students) === this.state.candidate
-    ).length;
-
-    const year1 = ORGANIZATIONS.filter(o => o.id.startsWith('class1'));
-    const year2 = ORGANIZATIONS.filter(o => o.id.startsWith('class2'));
-    const year3 = ORGANIZATIONS.filter(o => o.id.startsWith('class3'));
-    const clubs = ORGANIZATIONS.filter(o => o.id.startsWith('club_'));
+    }).join('');
 
     return `
       <div style="
@@ -471,26 +511,196 @@ export class DailyScreen {
         border-radius:14px; padding:14px;
         border:1px solid #e0eaf5;
       ">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-          <h3 style="font-size:0.95em; color:#333;">組織の支持状況</h3>
-          <button id="close-org-btn" style="
-            background:#ddd; border:none; border-radius:50%;
-            width:28px; height:28px; cursor:pointer; font-size:1em;
-          ">×</button>
-        </div>
+        ${this.renderInfoHeader('情報')}
+        ${this.renderInfoTabs(tab)}
 
         <div style="
           background:${candidateColor}10; border:1px solid ${candidateColor}30;
-          border-radius:8px; padding:8px 12px; margin-bottom:12px;
-          font-size:0.82em; color:#555; text-align:center;
+          border-radius:8px; padding:6px 12px; margin-bottom:12px;
+          font-size:0.8em; color:#555; text-align:center;
         ">
-          味方の組織: <strong style="color:${candidateColor}; font-size:1.1em;">${allyCount}</strong> / ${ORGANIZATIONS.length}組
+          味方: <strong style="color:${candidateColor};">${allyCount}</strong> / ${orgs.length}${tab === 'class' ? '組' : '部'}
         </div>
 
-        ${renderOrgGroup('1年', year1)}
-        ${renderOrgGroup('2年', year2)}
-        ${renderOrgGroup('3年', year3)}
-        ${renderOrgGroup('部活', clubs)}
+        ${orgRows}
+      </div>
+    `;
+  }
+
+  private renderInfoOrgDetail(org: typeof ORGANIZATIONS[number]): string {
+    const vote = getOrganizationVote(org, this.state.students);
+    const voteCandidate = CANDIDATES.find(c => c.id === vote);
+    const isAlly = vote === this.state.candidate;
+    const typeLabel = ORGANIZATION_TYPE_LABELS[org.type] ?? org.type;
+    const candidateColor = this.getCandidateColor();
+
+    // 組織の全メンバーID
+    const allMemberIds = [org.leaderId, ...org.subLeaderIds, ...org.memberIds];
+    const members = allMemberIds.map(id => {
+      const s = this.state.students.find(st => st.id === id);
+      return s ? { student: s, role: id === org.leaderId ? '代表' : org.subLeaderIds.includes(id) ? '副代表' : 'メンバー' } : null;
+    }).filter((m): m is { student: Student; role: string } => m !== null);
+
+    // 組織タイプの説明
+    const typeDesc: Record<string, string> = {
+      dictatorship: '代表の意向が強く反映される',
+      council: '代表と副代表が合議で決める',
+      delegation: '副代表に権限が委ねられている',
+      majority: 'メンバー全員の多数決で決まる',
+    };
+
+    const memberRows = members.map(({ student: s, role }) => {
+      const sup = s.support;
+      const maxKey = (['conservative', 'progressive', 'sports'] as const)
+        .reduce((a, b) => sup[a] >= sup[b] ? a : b);
+      const sc = CANDIDATES.find(c => c.id === maxKey);
+      const roleColor = role === '代表' ? '#E74C3C' : role === '副代表' ? '#E07820' : '#888';
+
+      return `
+        <button data-info-student="${s.id}" style="
+          display:flex; align-items:center; gap:8px; width:100%;
+          padding:6px 8px; border-radius:8px;
+          background:rgba(255,255,255,0.5);
+          border:1px solid #e8f0f8;
+          margin-bottom:3px; cursor:pointer;
+          text-align:left; font-family:inherit;
+        ">
+          ${s.portrait
+            ? `<img src="${s.portrait}" alt="${s.name}" style="
+                width:32px; height:32px; border-radius:50%;
+                object-fit:cover; object-position:top;
+                border:2px solid ${sc?.color ?? '#ddd'}; flex-shrink:0;
+              "/>`
+            : renderInitialIcon(s.name, s.personality, 32, sc?.color ?? '#ddd')
+          }
+          <div style="flex:1; min-width:0;">
+            <div style="display:flex; align-items:center; gap:4px;">
+              <span style="font-size:0.85em; font-weight:bold; color:#333;">${s.name}</span>
+              <span style="font-size:0.6em; color:${roleColor}; font-weight:bold;">${role}</span>
+            </div>
+            <div style="font-size:0.68em; color:#888;">${s.className}</div>
+          </div>
+          <div style="display:flex; align-items:center; gap:4px; flex-shrink:0;">
+            <span style="
+              font-size:0.7em; padding:1px 6px; border-radius:6px;
+              background:${(sc?.color ?? '#888')}15; color:${sc?.color ?? '#888'};
+              border:1px solid ${(sc?.color ?? '#888')}30;
+            ">${FACTION_LABELS[maxKey] ?? ''}</span>
+            <span style="color:#bbb; font-size:0.8em;">›</span>
+          </div>
+        </button>
+      `;
+    }).join('');
+
+    const backTab = org.id.startsWith('club_') ? 'club' : 'class';
+
+    return `
+      <div style="
+        background:rgba(255,255,255,0.9);
+        border-radius:14px; padding:14px;
+        border:1px solid #e0eaf5;
+      ">
+        ${this.renderInfoHeader(org.name, 'back-to-list')}
+
+        <!-- 組織情報 -->
+        <div style="
+          background:rgba(240,245,255,0.8); border-radius:8px;
+          padding:10px; margin-bottom:12px;
+        ">
+          <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+            <span style="font-size:0.75em; background:#f0f0f5; color:#888; border-radius:4px; padding:2px 6px;">${typeLabel}</span>
+            <span style="
+              font-size:0.78em; padding:2px 8px; border-radius:8px;
+              background:${(voteCandidate?.color ?? '#888')}15;
+              color:${voteCandidate?.color ?? '#888'};
+              border:1px solid ${(voteCandidate?.color ?? '#888')}33;
+              font-weight:bold;
+            ">${FACTION_LABELS[vote] ?? ''}派${isAlly ? ' ✓' : ''}</span>
+          </div>
+          <div style="font-size:0.72em; color:#888;">${typeDesc[org.type] ?? ''}</div>
+        </div>
+
+        <!-- メンバー一覧 -->
+        <div style="font-size:0.78em; color:#888; margin-bottom:6px; font-weight:bold;">
+          メンバー（${members.length}名）
+        </div>
+        ${memberRows}
+      </div>
+    `;
+  }
+
+  private renderInfoStudentDetail(s: Student, fromOrgId: string): string {
+    const PERS_LABELS: Record<string, string> = {
+      passionate: '熱血', cautious: '慎重', stubborn: '頑固', flexible: '柔軟', cunning: '狡猾',
+    };
+    const supportCandidate = CANDIDATES.find(c =>
+      c.id === Object.entries(s.support).sort((a, b) => b[1] - a[1])[0][0]
+    );
+    const attrsHtml = s.attributes.map(a =>
+      `<span style="background:#e8f0fa; color:#3a5080; border-radius:12px; padding:2px 8px; font-size:0.75em;">${ATTRIBUTE_LABELS[a] ?? a}</span>`
+    ).join(' ');
+
+    const hobbiesHtml = Object.entries(s.hobbies)
+      .filter(([, pref]) => pref !== 'neutral')
+      .map(([hobby, pref]) => {
+        const revealed = s.revealedHobbies.has(hobby as import('../types').HobbyTopic);
+        if (!revealed && s.talkCount === 0) return '';
+        const color = pref === 'like' ? '#27AE60' : '#C0392B';
+        const icon = pref === 'like' ? '♥' : '✗';
+        return revealed
+          ? `<span style="font-size:0.78em; color:${color};">${icon}${HOBBY_LABELS[hobby] ?? hobby}</span>`
+          : `<span style="font-size:0.78em; color:#ccc;">？</span>`;
+      }).filter(Boolean).join(' ');
+
+    return `
+      <div style="
+        background:rgba(255,255,255,0.9);
+        border-radius:14px; padding:14px;
+        border:1px solid #e0eaf5;
+      ">
+        ${this.renderInfoHeader(s.name, 'back-to-org')}
+
+        <div style="display:flex; align-items:center; gap:12px; margin-bottom:14px;">
+          ${s.portrait
+            ? `<img src="${s.portrait}" alt="${s.name}" style="
+                width:56px; height:56px; border-radius:50%;
+                object-fit:cover; object-position:top;
+                border:3px solid ${supportCandidate?.color ?? '#d0e0f0'};
+              "/>`
+            : renderInitialIcon(s.name, s.personality, 56, supportCandidate?.color ?? '#d0e0f0')
+          }
+          <div>
+            <div style="font-size:0.8em; color:#888;">${s.className}　${PERS_LABELS[s.personality] ?? s.personality}</div>
+            <div style="font-size:0.78em; color:#888;">「${getCatchphrase(s.personality, s.attributes)}」</div>
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px; margin-bottom:12px;">
+          <div style="background:rgba(240,245,255,0.8); border-radius:8px; padding:6px; font-size:0.78em;">
+            <div style="color:#888;">好感度</div>
+            <div style="font-weight:bold; color:${s.affinity >= 0 ? '#27AE60' : '#C0392B'};">${s.affinity > 0 ? '+' : ''}${s.affinity}</div>
+          </div>
+          <div style="background:rgba(240,245,255,0.8); border-radius:8px; padding:6px; font-size:0.78em;">
+            <div style="color:#888;">会話</div>
+            <div style="font-weight:bold;">${s.talkCount}回</div>
+          </div>
+          <div style="background:rgba(240,245,255,0.8); border-radius:8px; padding:6px; font-size:0.78em;">
+            <div style="color:#888;">支持</div>
+            <div style="font-weight:bold; color:${supportCandidate?.color ?? '#333'};">${FACTION_LABELS[supportCandidate?.id ?? ''] ?? '?'}派</div>
+          </div>
+        </div>
+
+        <div style="margin-bottom:8px;">
+          <div style="font-size:0.78em; color:#888; margin-bottom:4px;">属性</div>
+          <div style="display:flex; flex-wrap:wrap; gap:4px;">${attrsHtml}</div>
+        </div>
+
+        ${hobbiesHtml ? `
+          <div>
+            <div style="font-size:0.78em; color:#888; margin-bottom:4px;">趣味</div>
+            <div style="display:flex; flex-wrap:wrap; gap:6px;">${hobbiesHtml}</div>
+          </div>
+        ` : ''}
       </div>
     `;
   }
@@ -646,15 +856,15 @@ export class DailyScreen {
         border:1px solid #e0eaf5;
       ">
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
-          <button id="org-btn" style="
+          <button id="info-btn" style="
             padding:10px 12px;
             background:#8E6BAD;
             color:#fff; border:none; border-radius:10px;
             font-size:0.85em; cursor:pointer;
             text-align:left; font-family:inherit;
           ">
-            <div style="font-weight:bold;">組織</div>
-            <div style="font-size:0.75em; opacity:0.85;">支持状況</div>
+            <div style="font-weight:bold;">情報</div>
+            <div style="font-size:0.75em; opacity:0.85;">クラス・部活</div>
           </button>
           <button id="next-day-btn-always" style="
             padding:10px 12px;
@@ -1124,21 +1334,56 @@ export class DailyScreen {
       this.render();
     });
 
-    // 組織ボタン
-    this.container.querySelectorAll<HTMLButtonElement>('#org-btn').forEach(btn => {
+    // 情報ボタン
+    this.container.querySelectorAll<HTMLButtonElement>('#info-btn').forEach(btn => {
       btn.addEventListener('pointerup', () => {
-        this.showOrgPanel = true;
+        this.infoPanel = { tab: 'class' };
         this.showStudentInfo = null;
         this.showPlayerInfo = false;
         this.render();
       });
     });
 
-    // 組織パネルを閉じる
-    const closeOrgBtn = this.container.querySelector<HTMLButtonElement>('#close-org-btn');
-    closeOrgBtn?.addEventListener('pointerup', () => {
-      this.showOrgPanel = false;
-      this.render();
+    // 情報パネル: タブ切替
+    this.container.querySelectorAll<HTMLButtonElement>('[data-info-tab]').forEach(btn => {
+      btn.addEventListener('pointerup', () => {
+        const tab = btn.dataset['infoTab'] as 'class' | 'club';
+        this.infoPanel = { tab };
+        this.render();
+      });
+    });
+
+    // 情報パネル: 組織選択
+    this.container.querySelectorAll<HTMLButtonElement>('[data-info-org]').forEach(btn => {
+      btn.addEventListener('pointerup', () => {
+        if (!this.infoPanel) return;
+        this.infoPanel = { ...this.infoPanel, orgId: btn.dataset['infoOrg'] };
+        this.render();
+      });
+    });
+
+    // 情報パネル: 生徒選択
+    this.container.querySelectorAll<HTMLButtonElement>('[data-info-student]').forEach(btn => {
+      btn.addEventListener('pointerup', () => {
+        if (!this.infoPanel) return;
+        this.infoPanel = { ...this.infoPanel, studentId: btn.dataset['infoStudent'] };
+        this.render();
+      });
+    });
+
+    // 情報パネル: アクション（戻る・閉じる）
+    this.container.querySelectorAll<HTMLButtonElement>('[data-info-action]').forEach(btn => {
+      btn.addEventListener('pointerup', () => {
+        const action = btn.dataset['infoAction'];
+        if (action === 'close') {
+          this.infoPanel = null;
+        } else if (action === 'back-to-list' && this.infoPanel) {
+          this.infoPanel = { tab: this.infoPanel.tab };
+        } else if (action === 'back-to-org' && this.infoPanel) {
+          this.infoPanel = { tab: this.infoPanel.tab, orgId: this.infoPanel.orgId };
+        }
+        this.render();
+      });
     });
 
     // 廊下に出る

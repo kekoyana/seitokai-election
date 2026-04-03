@@ -3,10 +3,11 @@ import {
   LOCATIONS, CANDIDATES, FACTION_LABELS, getStudentLocation, getCandidateLocation,
   HOBBY_LABELS, ATTRIBUTE_LABELS, TIME_LABELS, getCatchphrase, renderInitialIcon,
   isCorridorLocation, getFloorFromLocation, FLOOR_ROOMS, FLOOR_ADJACENCY,
-  FLOOR_LABELS, MOVE_COST, getFloorMoveCost,
+  FLOOR_LABELS, MOVE_COST, getFloorMoveCost, renderSupportBar,
 } from '../data';
 import { ORGANIZATIONS, ORGANIZATION_TYPE_LABELS } from '../data/organizations';
 import { getOrganizationVote } from '../logic/organizationLogic';
+import { bgm } from '../bgm';
 
 /** Day番号(1〜30)を「9/1」形式の日付文字列に変換（9月1日スタート） */
 function dayToDate(day: number): string {
@@ -109,9 +110,15 @@ export class DailyScreen {
             </div>
           </div>
         </div>
-        <div style="display:flex; gap:12px; font-size:0.85em; align-items:center;">
+        <div style="display:flex; gap:10px; font-size:0.85em; align-items:center;">
           <span><strong>${dayToDate(this.state.day)}</strong></span>
           <span>⚡<strong>${this.state.stamina}</strong></span>
+          <button id="bgm-toggle" style="
+            background:none; border:1px solid rgba(255,255,255,0.4);
+            border-radius:4px; padding:2px 6px;
+            color:#fff; font-size:0.85em; cursor:pointer;
+            opacity:0.8; font-family:inherit;
+          ">${bgm.enabled ? '🔊' : '🔇'}</button>
         </div>
       </div>
     `;
@@ -675,7 +682,7 @@ export class DailyScreen {
           </div>
         </div>
 
-        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px; margin-bottom:12px;">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:8px;">
           <div style="background:rgba(240,245,255,0.8); border-radius:8px; padding:6px; font-size:0.78em;">
             <div style="color:#888;">好感度</div>
             <div style="font-weight:bold; color:${s.affinity >= 0 ? '#27AE60' : '#C0392B'};">${s.affinity > 0 ? '+' : ''}${s.affinity}</div>
@@ -684,10 +691,10 @@ export class DailyScreen {
             <div style="color:#888;">会話</div>
             <div style="font-weight:bold;">${s.talkCount}回</div>
           </div>
-          <div style="background:rgba(240,245,255,0.8); border-radius:8px; padding:6px; font-size:0.78em;">
-            <div style="color:#888;">支持</div>
-            <div style="font-weight:bold; color:${supportCandidate?.color ?? '#333'};">${FACTION_LABELS[supportCandidate?.id ?? ''] ?? '?'}派</div>
-          </div>
+        </div>
+        <div style="background:rgba(240,245,255,0.8); border-radius:8px; padding:6px; margin-bottom:12px; font-size:0.78em;">
+          <div style="color:#888; margin-bottom:3px;">思想</div>
+          ${renderSupportBar(s.support, 12)}
         </div>
 
         <div style="margin-bottom:8px;">
@@ -1177,10 +1184,10 @@ export class DailyScreen {
           ">×</button>
         </div>
 
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:12px;">
-          <div style="background:rgba(240,245,255,0.8); border-radius:8px; padding:8px; font-size:0.8em;">
+        <div style="margin-bottom:12px;">
+          <div style="background:rgba(240,245,255,0.8); border-radius:8px; padding:8px; font-size:0.8em; margin-bottom:6px;">
             <div style="color:#888; margin-bottom:4px;">思想</div>
-            <div>保守 <strong>${ps.conservative}</strong> / 革新 <strong>${ps.progressive}</strong> / 体育 <strong>${ps.sports}</strong></div>
+            ${renderSupportBar(ps)}
           </div>
           <div style="background:rgba(240,245,255,0.8); border-radius:8px; padding:8px; font-size:0.8em;">
             <div style="color:#888; margin-bottom:4px;">スタミナ</div>
@@ -1319,6 +1326,13 @@ export class DailyScreen {
   }
 
   private attachEvents(): void {
+    // BGMトグル
+    const bgmBtn = this.container.querySelector<HTMLButtonElement>('#bgm-toggle');
+    bgmBtn?.addEventListener('pointerup', () => {
+      bgm.toggle();
+      bgmBtn.textContent = bgm.enabled ? '🔊' : '🔇';
+    });
+
     // プレイヤーアイコン
     const playerIcon = this.container.querySelector<HTMLElement>('#player-icon');
     playerIcon?.addEventListener('pointerup', () => {

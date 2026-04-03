@@ -1,5 +1,5 @@
 import type { GameState, Student, Attribute, CandidateId } from '../types';
-import { CANDIDATES, CANDIDATE_INFO, FACTION_LABELS, HAIRSTYLE_LABELS, HOBBY_LABELS, ATTRIBUTE_LABELS, getCatchphrase, getCandidateInfo, renderInitialIcon } from '../data';
+import { CANDIDATES, CANDIDATE_INFO, FACTION_LABELS, HAIRSTYLE_LABELS, HOBBY_LABELS, ATTRIBUTE_LABELS, getCatchphrase, getCandidateInfo, renderInitialIcon, renderSupportBar } from '../data';
 import { ORGANIZATIONS, ORGANIZATION_TYPE_LABELS } from '../data/organizations';
 import { getOrganizationVote } from '../logic/organizationLogic';
 
@@ -80,12 +80,9 @@ export class DebugScreen {
           <span style="color:#f88; font-weight:bold; font-size:0.9em;">DEBUG</span>
           <span style="color:#aaa; font-size:0.8em; margin-left:8px;">生徒一覧</span>
         </div>
-        <div style="display:flex; gap:16px; align-items:center; font-size:0.8em;">
+        <div style="display:flex; gap:12px; align-items:center; font-size:0.8em;">
           <span>${dayToDate(this.state.day)}</span>
-          <span style="color:${playerCandidate?.color ?? '#fff'};">
-            支持: ${playerCandidate?.name ?? '未選択'}
-            (保${this.state.playerSupport.conservative}/革${this.state.playerSupport.progressive}/体${this.state.playerSupport.sports})
-          </span>
+          <div style="width:120px;">${renderSupportBar(this.state.playerSupport, 12, true)}</div>
           <button id="debug-close" style="
             background:#c44; color:#fff; border:none; border-radius:6px;
             padding:4px 12px; cursor:pointer; font-family:inherit; font-size:0.85em;
@@ -194,18 +191,20 @@ export class DebugScreen {
           </div>
         </div>
 
-        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px; margin-bottom:8px; font-size:0.75em;">
-          <div style="background:rgba(255,255,255,0.05); border-radius:6px; padding:4px 6px;">
-            <div style="color:#888;">思想</div>
-            <div>保<strong>${ps.conservative}</strong> 革<strong>${ps.progressive}</strong> 体<strong>${ps.sports}</strong></div>
+        <div style="margin-bottom:6px; font-size:0.75em;">
+          <div style="background:rgba(255,255,255,0.05); border-radius:6px; padding:4px 6px; margin-bottom:4px;">
+            <div style="color:#888; margin-bottom:2px;">思想</div>
+            ${renderSupportBar(ps, 12)}
           </div>
-          <div style="background:rgba(255,255,255,0.05); border-radius:6px; padding:4px 6px;">
-            <div style="color:#888;">能力</div>
-            <div>弁${pc.stats.speech} 運${pc.stats.athletic} 知${pc.stats.intel}</div>
-          </div>
-          <div style="background:rgba(255,255,255,0.05); border-radius:6px; padding:4px 6px;">
-            <div style="color:#888;">スタミナ</div>
-            <div>${this.state.stamina}/100</div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+            <div style="background:rgba(255,255,255,0.05); border-radius:6px; padding:4px 6px;">
+              <div style="color:#888;">能力</div>
+              <div>弁${pc.stats.speech} 運${pc.stats.athletic} 知${pc.stats.intel}</div>
+            </div>
+            <div style="background:rgba(255,255,255,0.05); border-radius:6px; padding:4px 6px;">
+              <div style="color:#888;">スタミナ</div>
+              <div>${this.state.stamina}/100</div>
+            </div>
           </div>
         </div>
 
@@ -322,11 +321,12 @@ export class DebugScreen {
           </div>
         </div>
 
-        <div style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:6px; margin-bottom:8px; font-size:0.75em;">
-          <div style="background:rgba(255,255,255,0.05); border-radius:6px; padding:4px 6px;">
-            <div style="color:#888;">思想</div>
-            <div>保<strong>${s.support.conservative}</strong> 革<strong>${s.support.progressive}</strong> 体<strong>${s.support.sports}</strong></div>
+        <div style="margin-bottom:4px; font-size:0.75em;">
+          <div style="background:rgba(255,255,255,0.05); border-radius:6px; padding:4px 6px; margin-bottom:4px;">
+            ${renderSupportBar(s.support, 10)}
           </div>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px; margin-bottom:8px; font-size:0.75em;">
           <div style="background:rgba(255,255,255,0.05); border-radius:6px; padding:4px 6px;">
             <div style="color:#888;">能力</div>
             <div>弁${s.stats.speech} 運${s.stats.athletic} 知${s.stats.intel}</div>

@@ -18,6 +18,7 @@ import { DailyScreen } from './screens/dailyScreen';
 import { BattleScreen } from './screens/battleScreen';
 import { EndingScreen } from './screens/endingScreen';
 import { DebugScreen } from './screens/debugScreen';
+import { bgm, BGM_TRACKS } from './bgm';
 
 function createInitialState(): GameState {
   return {
@@ -160,6 +161,7 @@ export class Game {
 
   private showDaily(): void {
     this.clearScreens();
+    bgm.play(BGM_TRACKS.schoolDaytime);
     this.state = { ...this.state, screen: 'daily' };
     this.dailyScreen = new DailyScreen(this.state, {
       onEnterRoom: (locationId: LocationId) => this.handleEnterRoom(locationId),
@@ -300,6 +302,7 @@ export class Game {
 
   private showBattle(): void {
     this.clearScreens();
+    bgm.play(BGM_TRACKS.settoku);
     if (!this.state.battle) return;
 
     this.battleScreenInst = new BattleScreen(this.state, {

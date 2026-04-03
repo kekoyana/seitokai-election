@@ -1,5 +1,5 @@
 import type { GameState, CandidateId } from '../types';
-import { CANDIDATES, FACTION_LABELS } from '../data';
+import { CANDIDATES, FACTION_LABELS, renderSupportBar } from '../data';
 import { ORGANIZATIONS } from '../data/organizations';
 import { getOrganizationVote } from '../logic/organizationLogic';
 
@@ -93,8 +93,8 @@ export class EndingScreen {
               <span style="color:${originalCandidate?.color ?? '#fff'};">${FACTION_LABELS[this.state.candidate ?? ''] ?? ''}</span>派
               → <span style="color:${newCandidate?.color ?? '#fff'};">${FACTION_LABELS[newTop] ?? ''}</span>派に変化
             </div>
-            <div style="font-size:0.8em; opacity:0.7; margin-top:8px;">
-              保守:${playerSupport.conservative} / 革新:${playerSupport.progressive} / 体育:${playerSupport.sports}
+            <div style="margin-top:8px; opacity:0.9;">
+              ${renderSupportBar(playerSupport, 14)}
             </div>
           </div>
         </div>

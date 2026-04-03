@@ -1238,6 +1238,38 @@ export const PERSONALITY_ICON_COLORS: Record<string, string> = {
   cunning: '#9B59B6',
 };
 
+// 思想の100%横積み上げバーグラフ
+export function renderSupportBar(
+  support: { conservative: number; progressive: number; sports: number },
+  height = 14,
+  showLabel = true,
+): string {
+  const total = support.conservative + support.progressive + support.sports;
+  if (total === 0) return '';
+  const cPct = Math.round(support.conservative / total * 100);
+  const pPct = Math.round(support.progressive / total * 100);
+  const sPct = 100 - cPct - pPct;
+  const cColor = CANDIDATE_INFO[0].color;
+  const pColor = CANDIDATE_INFO[1].color;
+  const sColor = CANDIDATE_INFO[2].color;
+  const fontSize = Math.max(9, Math.round(height * 0.65));
+  const seg = (pct: number, color: string, label: string, radius: string) =>
+    pct > 0 ? `<div style="
+      width:${pct}%; height:${height}px;
+      background:${color};
+      display:flex; align-items:center; justify-content:center;
+      font-size:${fontSize}px; color:#fff; font-weight:bold;
+      white-space:nowrap; overflow:hidden;
+      ${radius}
+    ">${showLabel && pct >= 12 ? `${label}${pct}` : ''}</div>` : '';
+
+  return `<div style="display:flex; width:100%; border-radius:4px; overflow:hidden; box-shadow:inset 0 1px 2px rgba(0,0,0,0.1);">
+    ${seg(cPct, cColor, '保', 'border-radius:4px 0 0 4px;')}
+    ${seg(pPct, pColor, '革', '')}
+    ${seg(sPct, sColor, '体', 'border-radius:0 4px 4px 0;')}
+  </div>`;
+}
+
 // イニシャルアイコンHTMLを生成するユーティリティ
 export function renderInitialIcon(
   name: string,

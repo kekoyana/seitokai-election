@@ -546,44 +546,67 @@ export class DailyScreen {
     `;
   }
 
-  // 断面図ナビ
-  private renderCrossSectionNav(currentFloor: Floor): string {
-    const floors: { id: Floor; label: string }[] = [
-      { id: '3f', label: '3F' },
-      { id: '2f', label: '2F' },
-      { id: '1f', label: '1F' },
-      { id: 'ground', label: 'G' },
-    ];
-    return floors.map(f => {
-      const isCurrent = f.id === currentFloor;
-      const isAdjacent = FLOOR_ADJACENCY[currentFloor].includes(f.id);
-      const cost = isAdjacent ? getFloorMoveCost(currentFloor, f.id) : 0;
-      const canAfford = this.state.stamina >= cost;
-      if (isCurrent) {
-        return `<div style="
-          background:#4A90D9; color:#fff;
-          border-radius:4px; padding:5px 0;
-          font-size:0.7em; font-weight:bold; text-align:center;
-          box-shadow:0 2px 6px rgba(74,144,217,0.4);
-        ">◉${f.label}</div>`;
-      }
-      if (isAdjacent) {
-        return `<button data-change-floor="${f.id}" style="
-          background:${canAfford ? '#e8eef4' : '#eee'}; color:${canAfford ? '#555' : '#aaa'};
-          border:1px solid ${canAfford ? '#b0c0d0' : '#ddd'};
-          border-radius:4px; padding:5px 0; width:100%;
-          font-size:0.65em; text-align:center;
-          cursor:${canAfford ? 'pointer' : 'not-allowed'};
-          font-family:inherit;
-        ">${f.label}<br>⚡${cost}</button>`;
-      }
-      return `<div style="
-        background:#f0f0f0; color:#ccc;
-        border-radius:4px; padding:5px 0;
-        font-size:0.7em; text-align:center;
-        border:1px solid #e8e8e8;
-      ">${f.label}</div>`;
-    }).join('');
+  // 階段ボタン（マップ内に配置）
+  private renderStairsBtn(targetFloor: Floor, currentFloor: Floor, direction: 'up' | 'down'): string {
+    const cost = getFloorMoveCost(currentFloor, targetFloor);
+    const canAfford = this.state.stamina >= cost;
+    const pattern = direction === 'up'
+      ? 'repeating-linear-gradient(0deg, #707878 0px, #707878 3px, #889090 3px, #889090 6px)'
+      : 'repeating-linear-gradient(180deg, #707878 0px, #707878 3px, #889090 3px, #889090 6px)';
+    return `
+      <button data-change-floor="${targetFloor}" style="
+        padding:4px 8px;
+        background:${canAfford ? pattern : '#bbb'};
+        color:#fff; border:2px solid #606868; border-radius:3px;
+        font-size:0.65em; font-weight:bold;
+        cursor:${canAfford ? 'pointer' : 'not-allowed'};
+        font-family:inherit; text-align:center;
+        text-shadow:0 1px 2px rgba(0,0,0,0.5);
+        box-shadow:inset 0 0 4px rgba(0,0,0,0.2), 0 1px 3px rgba(0,0,0,0.2);
+      ">
+        ${direction === 'up' ? '▲' : '▼'}${FLOOR_LABELS[targetFloor]}<br>⚡${cost}
+      </button>
+    `;
+  }
+
+  // 校舎への入口ボタン（グラウンドから）
+  private renderBuildingEntrance(currentFloor: Floor): string {
+    const cost = getFloorMoveCost(currentFloor, '1f');
+    const canAfford = this.state.stamina >= cost;
+    return `
+      <button data-change-floor="1f" style="
+        padding:6px 0; width:100%;
+        background:${canAfford ? 'linear-gradient(180deg, #8090a0 0%, #6a7a8a 100%)' : '#bbb'};
+        color:#fff; border:3px solid #506070; border-radius:4px;
+        font-size:0.72em; font-weight:bold;
+        cursor:${canAfford ? 'pointer' : 'not-allowed'};
+        font-family:inherit; text-align:center;
+        text-shadow:0 1px 2px rgba(0,0,0,0.4);
+        box-shadow:0 2px 6px rgba(0,0,0,0.2);
+      ">
+        <div>🏫 校舎</div>
+        <div style="font-size:0.85em; opacity:0.9;">⚡${cost}</div>
+      </button>
+    `;
+  }
+
+  // グラウンドへの出口ボタン（1Fから）
+  private renderGroundExit(currentFloor: Floor): string {
+    const cost = getFloorMoveCost(currentFloor, 'ground');
+    const canAfford = this.state.stamina >= cost;
+    return `
+      <button data-change-floor="ground" style="
+        padding:4px 8px;
+        background:${canAfford ? 'linear-gradient(180deg, #6a9050 0%, #4a7030 100%)' : '#bbb'};
+        color:#fff; border:2px solid #3a5828; border-radius:4px;
+        font-size:0.65em; font-weight:bold;
+        cursor:${canAfford ? 'pointer' : 'not-allowed'};
+        font-family:inherit; text-align:center;
+        text-shadow:0 1px 2px rgba(0,0,0,0.4);
+      ">
+        🌳外へ ⚡${cost}
+      </button>
+    `;
   }
 
   private renderCorridorView(): string {
@@ -614,20 +637,7 @@ export class DailyScreen {
         border-radius:14px; padding:10px; margin-bottom:12px;
         border:1px solid #e0eaf5;
       ">
-        <div style="display:flex; gap:8px;">
-          <!-- 断面図ナビ -->
-          <div style="
-            width:36px; flex-shrink:0;
-            display:flex; flex-direction:column; gap:3px;
-          ">
-            <div style="font-size:0.55em; color:#999; text-align:center; margin-bottom:1px;">階</div>
-            ${this.renderCrossSectionNav(currentFloor)}
-          </div>
-          <!-- マップ -->
-          <div style="flex:1; min-width:0;">
-            ${this.renderFloorPlan(currentFloor, canEnter)}
-          </div>
-        </div>
+        ${this.renderFloorPlan(currentFloor, canEnter)}
       </div>
 
       <div style="
@@ -716,12 +726,15 @@ export class DailyScreen {
   private renderFloor3Plan(canEnter: boolean): string {
     const r = this.roomStyle;
     const content = `
-      <!-- 教室 -->
-      <div style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:0; border-bottom:1px solid #a0a8b0;">
+      <!-- 教室 + 階段下 -->
+      <div style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr auto; gap:0; border-bottom:1px solid #a0a8b0;">
         <div style="border-right:1px solid #a0a8b0; padding:3px;">${this.renderRoomBtn('class3a', canEnter, r)}</div>
         <div style="border-right:1px solid #a0a8b0; padding:3px;">${this.renderRoomBtn('class3b', canEnter, r)}</div>
         <div style="border-right:1px solid #a0a8b0; padding:3px;">${this.renderRoomBtn('class3c', canEnter, r)}</div>
-        <div style="padding:3px;">${this.renderRoomBtn('class3d', canEnter, r)}</div>
+        <div style="border-right:1px solid #a0a8b0; padding:3px;">${this.renderRoomBtn('class3d', canEnter, r)}</div>
+        <div style="padding:3px; display:flex; align-items:stretch; width:48px;">
+          ${this.renderStairsBtn('2f', '3f', 'down')}
+        </div>
       </div>
       ${this.renderCorridor()}
     `;
@@ -732,19 +745,25 @@ export class DailyScreen {
     const r = this.roomStyle;
     const s = this.specialRoomStyle;
     const content = `
-      <!-- 教室 -->
-      <div style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:0; border-bottom:1px solid #a0a8b0;">
+      <!-- 教室 + 階段上 -->
+      <div style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr auto; gap:0; border-bottom:1px solid #a0a8b0;">
         <div style="border-right:1px solid #a0a8b0; padding:3px;">${this.renderRoomBtn('class2a', canEnter, r)}</div>
         <div style="border-right:1px solid #a0a8b0; padding:3px;">${this.renderRoomBtn('class2b', canEnter, r)}</div>
         <div style="border-right:1px solid #a0a8b0; padding:3px;">${this.renderRoomBtn('class2c', canEnter, r)}</div>
-        <div style="padding:3px;">${this.renderRoomBtn('class2d', canEnter, r)}</div>
+        <div style="border-right:1px solid #a0a8b0; padding:3px;">${this.renderRoomBtn('class2d', canEnter, r)}</div>
+        <div style="padding:3px; display:flex; align-items:stretch; width:48px;">
+          ${this.renderStairsBtn('3f', '2f', 'up')}
+        </div>
       </div>
       ${this.renderCorridor()}
-      <!-- 特別教室 -->
-      <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:0; border-top:1px solid #a0a8b0;">
+      <!-- 特別教室 + 階段下 -->
+      <div style="display:grid; grid-template-columns:1fr 1fr 1fr auto; gap:0; border-top:1px solid #a0a8b0;">
         <div style="padding:3px; border-right:1px solid #a0a8b0;">${this.renderRoomBtn('music_room', canEnter, s)}</div>
         <div style="padding:3px; border-right:1px solid #a0a8b0;">${this.renderRoomBtn('art_room', canEnter, s)}</div>
-        <div style="padding:3px; background:#eaeff4;"></div>
+        <div style="padding:3px; background:#eaeff4; border-right:1px solid #a0a8b0;"></div>
+        <div style="padding:3px; display:flex; align-items:stretch; width:48px;">
+          ${this.renderStairsBtn('1f', '2f', 'down')}
+        </div>
       </div>
     `;
     return this.renderBuildingWrap('🏫 2階', content);
@@ -754,19 +773,25 @@ export class DailyScreen {
     const r = this.roomStyle;
     const f = this.facilityStyle;
     const content = `
-      <!-- 教室 -->
-      <div style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:0; border-bottom:1px solid #a0a8b0;">
+      <!-- 教室 + 階段上 -->
+      <div style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr auto; gap:0; border-bottom:1px solid #a0a8b0;">
         <div style="border-right:1px solid #a0a8b0; padding:3px;">${this.renderRoomBtn('class1a', canEnter, r)}</div>
         <div style="border-right:1px solid #a0a8b0; padding:3px;">${this.renderRoomBtn('class1b', canEnter, r)}</div>
         <div style="border-right:1px solid #a0a8b0; padding:3px;">${this.renderRoomBtn('class1c', canEnter, r)}</div>
-        <div style="padding:3px;">${this.renderRoomBtn('class1d', canEnter, r)}</div>
+        <div style="border-right:1px solid #a0a8b0; padding:3px;">${this.renderRoomBtn('class1d', canEnter, r)}</div>
+        <div style="padding:3px; display:flex; align-items:stretch; width:48px;">
+          ${this.renderStairsBtn('2f', '1f', 'up')}
+        </div>
       </div>
       ${this.renderCorridor()}
-      <!-- 共用施設 -->
-      <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:0; border-top:1px solid #a0a8b0;">
+      <!-- 共用施設 + 外への出口 -->
+      <div style="display:grid; grid-template-columns:1fr 1fr 1fr auto; gap:0; border-top:1px solid #a0a8b0;">
         <div style="border-right:1px solid #a0a8b0; padding:3px;">${this.renderRoomBtn('cafeteria', canEnter, f)}</div>
         <div style="border-right:1px solid #a0a8b0; padding:3px;">${this.renderRoomBtn('library', canEnter, f)}</div>
-        <div style="padding:3px;">${this.renderRoomBtn('courtyard', canEnter, f)}</div>
+        <div style="border-right:1px solid #a0a8b0; padding:3px;">${this.renderRoomBtn('courtyard', canEnter, f)}</div>
+        <div style="padding:3px; display:flex; align-items:stretch; width:48px;">
+          ${this.renderGroundExit('1f')}
+        </div>
       </div>
     `;
     return this.renderBuildingWrap('🏫 1階', content);
@@ -775,7 +800,6 @@ export class DailyScreen {
   private renderGroundPlan(canEnter: boolean): string {
     const fieldStyle = { bg: '#c8e0a8', border: '#6a9848' };
     const courtStyle = { bg: '#e8d8b0', border: '#b0944a' };
-    // 木の装飾
     const tree = `<div style="
       width:14px; height:14px; border-radius:50%;
       background:radial-gradient(circle at 40% 40%, #6abf50, #3a8030);
@@ -796,26 +820,26 @@ export class DailyScreen {
         box-shadow:0 2px 8px rgba(0,0,0,0.1);
         position:relative;
       ">
-        <!-- 上の木々 -->
+        <!-- 校舎（上部に配置） -->
+        <div style="margin-bottom:8px;">
+          ${this.renderBuildingEntrance('ground')}
+        </div>
+
         ${treeRow(8)}
 
         <div style="display:flex; gap:6px; margin:8px 0;">
-          <!-- 左の木々 -->
           <div style="display:flex; flex-direction:column; gap:4px; justify-content:center;">
             ${tree}${tree}${tree}
           </div>
 
-          <!-- メインフィールド -->
           <div style="flex:1; display:flex; flex-direction:column; gap:6px;">
-            <!-- 陸上トラック（楕円の中にサッカー場） -->
+            <!-- 陸上トラック -->
             <div style="
               background:#98c878;
               border:3px solid #e8d0a0;
               border-radius:40px;
               padding:8px;
-              position:relative;
             ">
-              <!-- トラックライン（内側） -->
               <div style="
                 border:2px dashed rgba(255,255,255,0.5);
                 border-radius:30px;
@@ -827,7 +851,7 @@ export class DailyScreen {
               </div>
             </div>
 
-            <!-- 下段：野球・テニス -->
+            <!-- 野球・テニス -->
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
               <div style="
                 background:#98c070;
@@ -840,20 +864,17 @@ export class DailyScreen {
                 background:#d0c8a0;
                 border:2px solid #b0a070;
                 border-radius:4px; padding:4px;
-                display:grid; grid-template-columns:1fr; gap:2px;
               ">
                 ${this.renderRoomBtn('tennis_court', canEnter, courtStyle)}
               </div>
             </div>
           </div>
 
-          <!-- 右の木々 -->
           <div style="display:flex; flex-direction:column; gap:4px; justify-content:center;">
             ${tree}${tree}${tree}
           </div>
         </div>
 
-        <!-- 下の木々 -->
         ${treeRow(8)}
       </div>
       <div style="font-size:0.58em; color:#aaa; text-align:center; margin-top:4px;">

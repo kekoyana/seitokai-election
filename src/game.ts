@@ -1,8 +1,11 @@
 import type {
-  GameState, Student, CandidateId, LocationId,
+  GameState, Student, CandidateId, LocationId, Floor,
   PlayerAttitude, Topic, Stance, HobbyTopic
 } from './types';
-import { STUDENTS } from './data';
+import {
+  STUDENTS, getFloorFromLocation, isCorridorLocation, getCorridorForFloor,
+  FLOOR_ADJACENCY, MOVE_COST, getFloorMoveCost
+} from './data';
 import { ORGANIZATIONS } from './data/organizations';
 import {
   initBattle, resolvePlayerTurn, resolveEnemyTurn,
@@ -122,11 +125,18 @@ export class Game {
         const candidateId = (['conservative', 'progressive', 'sports'] as CandidateId[])
           .reduce((a, b) => selected.support[a] >= selected.support[b] ? a : b);
         // 選んだ生徒をプレイヤーに（studentsには全員残す＝組織の代表計算に必要）
+        const classMap: Record<string, LocationId> = {
+          '1-A': 'class1a', '1-B': 'class1b', '1-C': 'class1c', '1-D': 'class1d',
+          '2-A': 'class2a', '2-B': 'class2b', '2-C': 'class2c', '2-D': 'class2d',
+          '3-A': 'class3a', '3-B': 'class3b', '3-C': 'class3c', '3-D': 'class3d',
+        };
+        const startLocation = classMap[selected.className] ?? 'class1b';
         this.state = {
           ...createInitialState(),
           screen: 'daily',
           candidate: candidateId,
           students: allStudents,
+          currentLocation: startLocation,
           playerCharacter: {
             id: selected.id,
             name: selected.name,
@@ -152,7 +162,9 @@ export class Game {
     this.clearScreens();
     this.state = { ...this.state, screen: 'daily' };
     this.dailyScreen = new DailyScreen(this.state, {
-      onMove: (locationId: LocationId) => this.handleMove(locationId),
+      onEnterRoom: (locationId: LocationId) => this.handleEnterRoom(locationId),
+      onExitRoom: () => this.handleExitRoom(),
+      onChangeFloor: (floor: Floor) => this.handleChangeFloor(floor),
       onTalk: (student: Student) => this.handleTalk(student),
       onPersuade: (student: Student) => this.handlePersuade(student),
       onNextDay: () => this.handleNextDay(),
@@ -160,10 +172,34 @@ export class Game {
     this.dailyScreen.mount(this.root);
   }
 
-  private handleMove(locationId: LocationId): void {
+  private handleEnterRoom(locationId: LocationId): void {
+    if (this.state.stamina < MOVE_COST.ENTER_ROOM) return;
     this.state = {
       ...this.state,
       currentLocation: locationId,
+      stamina: this.state.stamina - MOVE_COST.ENTER_ROOM,
+    };
+    this.dailyScreen?.update(this.state);
+  }
+
+  private handleExitRoom(): void {
+    const currentFloor = getFloorFromLocation(this.state.currentLocation);
+    this.state = {
+      ...this.state,
+      currentLocation: getCorridorForFloor(currentFloor),
+    };
+    this.dailyScreen?.update(this.state);
+  }
+
+  private handleChangeFloor(targetFloor: Floor): void {
+    const currentFloor = getFloorFromLocation(this.state.currentLocation);
+    if (!FLOOR_ADJACENCY[currentFloor].includes(targetFloor)) return;
+    const cost = getFloorMoveCost(currentFloor, targetFloor);
+    if (this.state.stamina < cost) return;
+    this.state = {
+      ...this.state,
+      currentLocation: getCorridorForFloor(targetFloor),
+      stamina: this.state.stamina - cost,
     };
     this.dailyScreen?.update(this.state);
   }
@@ -236,18 +272,27 @@ export class Game {
   }
 
 
+  private getPlayerClassLocation(): LocationId {
+    const className = this.state.playerCharacter?.className ?? '1-B';
+    const map: Record<string, LocationId> = {
+      '1-A': 'class1a', '1-B': 'class1b', '1-C': 'class1c', '1-D': 'class1d',
+      '2-A': 'class2a', '2-B': 'class2b', '2-C': 'class2c', '2-D': 'class2d',
+      '3-A': 'class3a', '3-B': 'class3b', '3-C': 'class3c', '3-D': 'class3d',
+    };
+    return map[className] ?? 'class1b';
+  }
+
   private handleNextDay(): void {
     if (this.state.day >= 30) {
       this.showEnding();
       return;
     }
-    // 翌日初期化
     const newDay = this.state.day + 1;
     this.state = {
       ...this.state,
       day: newDay,
       stamina: 100,
-      currentLocation: 'class1b',
+      currentLocation: this.getPlayerClassLocation(),
       timeSlot: 'morning',
     };
     this.showDaily();

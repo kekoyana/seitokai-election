@@ -3,6 +3,11 @@ import { CANDIDATES, CANDIDATE_INFO, FACTION_LABELS, HAIRSTYLE_LABELS, HOBBY_LAB
 import { ORGANIZATIONS, ORGANIZATION_TYPE_LABELS } from '../data/organizations';
 import { getOrganizationVote } from '../logic/organizationLogic';
 
+function dayToDate(day: number): string {
+  const d = new Date(2025, 8, day);
+  return `${d.getMonth() + 1}/${d.getDate()}`;
+}
+
 const CLUB_LABELS: Record<string, string> = {
   soccer: 'サッカー部',
   track: '陸上部',
@@ -76,7 +81,7 @@ export class DebugScreen {
           <span style="color:#aaa; font-size:0.8em; margin-left:8px;">生徒一覧</span>
         </div>
         <div style="display:flex; gap:16px; align-items:center; font-size:0.8em;">
-          <span>Day ${this.state.day}/30</span>
+          <span>${dayToDate(this.state.day)}</span>
           <span style="color:${playerCandidate?.color ?? '#fff'};">
             支持: ${playerCandidate?.name ?? '未選択'}
             (保${this.state.playerSupport.conservative}/革${this.state.playerSupport.progressive}/体${this.state.playerSupport.sports})

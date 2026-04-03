@@ -1,10 +1,23 @@
-import type { GameState, Student, LocationId, ActionType, CandidateId } from '../types';
-import { LOCATIONS, CANDIDATES, FACTION_LABELS, getStudentLocation, getCandidateLocation, HOBBY_LABELS, ATTRIBUTE_LABELS, TIME_LABELS, getCatchphrase, renderInitialIcon } from '../data';
+import type { GameState, Student, LocationId, ActionType, CandidateId, Floor } from '../types';
+import {
+  LOCATIONS, CANDIDATES, FACTION_LABELS, getStudentLocation, getCandidateLocation,
+  HOBBY_LABELS, ATTRIBUTE_LABELS, TIME_LABELS, getCatchphrase, renderInitialIcon,
+  isCorridorLocation, getFloorFromLocation, FLOOR_ROOMS, FLOOR_ADJACENCY,
+  FLOOR_LABELS, MOVE_COST, getFloorMoveCost,
+} from '../data';
 import { ORGANIZATIONS, ORGANIZATION_TYPE_LABELS } from '../data/organizations';
 import { getOrganizationVote } from '../logic/organizationLogic';
 
+/** Day番号(1〜30)を「9/1」形式の日付文字列に変換（9月1日スタート） */
+function dayToDate(day: number): string {
+  const d = new Date(2025, 8, day); // month=8 → 9月
+  return `${d.getMonth() + 1}/${d.getDate()}`;
+}
+
 export interface DailyCallbacks {
-  onMove: (locationId: LocationId) => void;
+  onEnterRoom: (locationId: LocationId) => void;
+  onExitRoom: () => void;
+  onChangeFloor: (targetFloor: Floor) => void;
   onTalk: (student: Student) => void;
   onPersuade: (student: Student) => void;
   onNextDay: () => void;
@@ -14,7 +27,6 @@ export class DailyScreen {
   private container: HTMLDivElement;
   private state: GameState;
   private callbacks: DailyCallbacks;
-  private showMovePanel: boolean = false;
   private showStudentInfo: Student | null = null;
   private showPlayerInfo: boolean = false;
   private showOrgPanel: boolean = false;
@@ -35,6 +47,7 @@ export class DailyScreen {
     const playerId = this.state.playerCharacter?.id;
     return this.state.students.filter(s =>
       s.id !== playerId &&
+      s.candidateId === null &&
       getStudentLocation(s.id, this.state.timeSlot, this.state.day) === this.state.currentLocation
     );
   }
@@ -92,7 +105,7 @@ export class DailyScreen {
           </div>
         </div>
         <div style="display:flex; gap:12px; font-size:0.85em; align-items:center;">
-          <span><span style="opacity:0.75;">Day</span> <strong>${this.state.day}/30</strong></span>
+          <span><strong>${dayToDate(this.state.day)}</strong></span>
           <span>⚡<strong>${this.state.stamina}</strong></span>
         </div>
       </div>
@@ -114,12 +127,13 @@ export class DailyScreen {
         flex-shrink:0;
       ">
         <span>支持者: <strong style="color:${candidateColor}">${supporterCount}</strong>名</span>
-        <span>場所: <strong>${currentLocation?.name ?? ''}</strong></span>
+        <span>場所: <strong>${FLOOR_LABELS[getFloorFromLocation(this.state.currentLocation)]} ${isCorridorLocation(this.state.currentLocation) ? '廊下' : currentLocation?.name ?? ''}</strong></span>
       </div>
     `;
 
     // メインコンテンツ
     let mainHtml = '';
+    const inCorridor = isCorridorLocation(this.state.currentLocation);
 
     if (this.showPlayerInfo && pc) {
       mainHtml = this.renderPlayerInfo(pc);
@@ -127,8 +141,8 @@ export class DailyScreen {
       mainHtml = this.renderStudentInfo(this.showStudentInfo);
     } else if (this.showOrgPanel) {
       mainHtml = this.renderOrgPanel();
-    } else if (this.showMovePanel) {
-      mainHtml = this.renderMovePanel();
+    } else if (inCorridor) {
+      mainHtml = this.renderCorridorView();
     } else {
       mainHtml = this.renderMainPanel(studentsHere, isOutOfStamina);
     }
@@ -143,7 +157,16 @@ export class DailyScreen {
   }
 
   private renderCandidateCard(c: typeof CANDIDATES[number]): string {
-    const isPlayer = c.id === this.state.candidate;
+    const isPlayerCandidate = c.id === this.state.candidate;
+    // state.studentsから候補者の生徒データを取得（会話・好感度の状態を持つ）
+    const studentData = this.state.students.find(s => s.candidateId === c.id);
+    const talkCost = 5;
+    const canTalk = this.state.stamina >= talkCost;
+    const affinityColor = studentData && studentData.affinity >= 20 ? '#27AE60'
+      : studentData && studentData.affinity <= -20 ? '#C0392B' : '#888';
+    const affinityLabel = studentData && studentData.affinity >= 20 ? '好意的'
+      : studentData && studentData.affinity <= -20 ? '不快' : '普通';
+
     return `
       <div style="
         display:flex; align-items:center; gap:10px;
@@ -162,20 +185,39 @@ export class DailyScreen {
           : renderInitialIcon(c.name, c.personality, 48, c.color)
         }
         <div style="flex:1; min-width:0;">
-          <div style="display:flex; align-items:center; gap:6px;">
+          <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
             <span style="font-size:0.9em; font-weight:bold; color:#333;">${c.name}</span>
             <span style="
               font-size:0.65em; padding:1px 6px; border-radius:6px;
               background:${c.color}20; color:${c.color};
               border:1px solid ${c.color}40;
-            ">候補者</span>
-            ${isPlayer ? `<span style="
+            ">${FACTION_LABELS[c.id] ?? ''}派候補</span>
+            ${isPlayerCandidate ? `<span style="
               font-size:0.65em; padding:1px 6px; border-radius:6px;
               background:#27AE6020; color:#27AE60;
             ">支持中</span>` : ''}
           </div>
           <div style="font-size:0.75em; color:#888;">${c.className}　${c.platform}</div>
+          ${studentData ? `<div style="font-size:0.72em; color:${affinityColor};">好感度: ${affinityLabel}</div>` : ''}
         </div>
+        ${studentData ? `
+          <div style="display:flex; flex-direction:column; gap:4px; flex-shrink:0;">
+            <button data-action-talk="${studentData.id}" style="
+              padding:5px 10px;
+              background:${canTalk ? '#4A90D9' : '#ccc'};
+              color:#fff; border:none; border-radius:8px;
+              font-size:0.78em; cursor:${canTalk ? 'pointer' : 'not-allowed'};
+              font-family:inherit;
+            ">会話(⚡${talkCost})</button>
+            <button data-action-info="${studentData.id}" style="
+              padding:5px 10px;
+              background:#8E9BAD;
+              color:#fff; border:none; border-radius:8px;
+              font-size:0.78em; cursor:pointer;
+              font-family:inherit;
+            ">情報</button>
+          </div>
+        ` : ''}
       </div>
     `;
   }
@@ -222,7 +264,16 @@ export class DailyScreen {
         border:1px solid #e0eaf5;
       ">
         <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px;">
-          ${this.renderActionButton('move', '移動', '別の場所へ', '0', '#4A90D9', false)}
+          <button id="exit-room-btn" style="
+            padding:10px 12px;
+            background:#4A90D9;
+            color:#fff; border:none; border-radius:10px;
+            font-size:0.85em; cursor:pointer;
+            text-align:left; font-family:inherit;
+          ">
+            <div style="font-weight:bold;">← 廊下へ</div>
+            <div style="font-size:0.75em; opacity:0.85;">フロア移動</div>
+          </button>
           <button id="org-btn" style="
             padding:10px 12px;
             background:#8E6BAD;
@@ -241,7 +292,7 @@ export class DailyScreen {
             text-align:left; font-family:inherit;
           ">
             <div style="font-weight:bold;">翌日へ</div>
-            <div style="font-size:0.75em; opacity:0.85;">Day ${this.state.day}/30</div>
+            <div style="font-size:0.75em; opacity:0.85;">${dayToDate(this.state.day)}</div>
           </button>
         </div>
       </div>
@@ -444,54 +495,291 @@ export class DailyScreen {
     `;
   }
 
-  private renderMovePanel(): string {
-    const groups: { label: string; ids: string[] }[] = [
-      { label: '1年教室', ids: ['class1a', 'class1b', 'class1c', 'class1d'] },
-      { label: '2年教室', ids: ['class2a', 'class2b', 'class2c', 'class2d'] },
-      { label: '3年教室', ids: ['class3a', 'class3b', 'class3c', 'class3d'] },
-      { label: '部活', ids: ['track_field', 'soccer_field', 'baseball_field', 'tennis_court', 'music_room', 'art_room'] },
-      { label: '共用', ids: ['courtyard', 'library', 'cafeteria'] },
-    ];
+  private countStudentsAtLocation(locId: LocationId): number {
+    const playerId = this.state.playerCharacter?.id;
+    // 一般生徒（候補者除く）
+    const studentCount = this.state.students.filter(s =>
+      s.id !== playerId &&
+      s.candidateId === null &&
+      getStudentLocation(s.id, this.state.timeSlot, this.state.day) === locId
+    ).length;
+    // 候補者は専用の位置関数で判定
+    const candidateCount = CANDIDATES.filter(c =>
+      getCandidateLocation(c.id, this.state.timeSlot, this.state.day) === locId
+    ).length;
+    return studentCount + candidateCount;
+  }
 
-    const groupHtml = groups.map(g => {
-      const locs = LOCATIONS.filter(l => (g.ids as string[]).includes(l.id));
-      const btns = locs.map(loc => {
-        const isCurrent = loc.id === this.state.currentLocation;
-        return `
-          <button data-move-to="${loc.id}" style="
-            padding:8px 10px;
-            background:${isCurrent ? '#e0eaf5' : '#fff'};
-            border:2px solid ${isCurrent ? '#4A90D9' : '#ddd'};
-            border-radius:8px;
-            font-size:0.78em; cursor:pointer; text-align:left;
-            font-family:inherit; color:#333;
-          ">
-            ${loc.name}${isCurrent ? ' ★' : ''}
-          </button>
-        `;
-      }).join('');
-      return `
-        <div style="margin-bottom:10px;">
-          <div style="font-size:0.75em; color:#888; margin-bottom:4px;">${g.label}</div>
-          <div style="display:grid; grid-template-columns:1fr 1fr; gap:4px;">${btns}</div>
-        </div>
-      `;
-    }).join('');
+  private renderRoomBtn(roomId: LocationId, canEnter: boolean): string {
+    const loc = LOCATIONS.find(l => l.id === roomId);
+    const count = this.countStudentsAtLocation(roomId);
+    const hasStudents = count > 0;
+    const shortName = (loc?.name ?? roomId).replace('教室 ', '');
+    return `
+      <button data-enter-room="${roomId}" style="
+        padding:6px 4px;
+        background:${hasStudents ? 'rgba(74,144,217,0.08)' : '#fff'};
+        border:2px solid ${hasStudents ? '#4A90D9' : '#d0d8e0'};
+        border-radius:8px;
+        cursor:${canEnter ? 'pointer' : 'not-allowed'};
+        text-align:center; font-family:inherit;
+        opacity:${canEnter ? '1' : '0.5'};
+        min-width:0;
+      ">
+        <div style="font-weight:bold; font-size:0.8em; color:#333; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${shortName}</div>
+        ${hasStudents
+          ? `<div style="font-size:0.7em; color:#4A90D9;">👤${count}</div>`
+          : `<div style="font-size:0.7em; color:#bbb;">-</div>`
+        }
+      </button>
+    `;
+  }
+
+  private renderFloorNav(targetFloor: Floor, currentFloor: Floor): string {
+    const cost = getFloorMoveCost(currentFloor, targetFloor);
+    const canAfford = this.state.stamina >= cost;
+    const isUp = targetFloor === '3f' || (targetFloor === '2f' && currentFloor === '1f');
+    const isOutside = targetFloor === 'ground';
+    const isInside = currentFloor === 'ground' && targetFloor === '1f';
+    const icon = isOutside ? '🚪' : isInside ? '🏫' : isUp ? '△' : '▽';
+    const label = isOutside ? '外へ' : isInside ? '校舎へ' : `${FLOOR_LABELS[targetFloor]}へ`;
+    return `
+      <button data-change-floor="${targetFloor}" style="
+        padding:8px 6px;
+        background:${canAfford ? '#5B8C3E' : '#bbb'};
+        color:#fff; border:none; border-radius:8px;
+        font-size:0.75em;
+        cursor:${canAfford ? 'pointer' : 'not-allowed'};
+        font-family:inherit; text-align:center;
+        min-width:56px;
+      ">
+        <div style="font-weight:bold;">${icon}</div>
+        <div>${label}</div>
+        <div style="opacity:0.8;">⚡${cost}</div>
+      </button>
+    `;
+  }
+
+  private renderCorridorView(): string {
+    const currentFloor = getFloorFromLocation(this.state.currentLocation);
+    const adjacentFloors = FLOOR_ADJACENCY[currentFloor];
+    const isOutOfStamina = this.state.stamina <= 0;
+    const canEnter = this.state.stamina >= MOVE_COST.ENTER_ROOM;
+
+    // フロアごとのマップレイアウト
+    const floorMapHtml = this.renderFloorMap(currentFloor, canEnter, adjacentFloors);
+
+    const endDayHtml = isOutOfStamina ? `
+      <div style="
+        background:rgba(255,255,255,0.9);
+        border-radius:12px; padding:16px;
+        margin-top:12px; text-align:center;
+        border:2px solid #F0A030;
+      ">
+        <p style="color:#888; font-size:0.85em; margin-bottom:12px;">体力が尽きました</p>
+        <button id="next-day-btn" style="
+          padding:12px 32px;
+          background:linear-gradient(135deg,#F0A030,#D08010);
+          color:#fff; border:none; border-radius:50px;
+          font-size:1em; font-weight:bold; cursor:pointer; font-family:inherit;
+        ">翌日へ →</button>
+      </div>
+    ` : '';
 
     return `
       <div style="
-        background:rgba(255,255,255,0.9);
-        border-radius:14px; padding:14px;
+        background:rgba(255,255,255,0.85);
+        border-radius:14px; padding:14px; margin-bottom:12px;
         border:1px solid #e0eaf5;
       ">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-          <h3 style="font-size:0.95em; color:#333;">どこへ移動する？</h3>
-          <button id="close-move-btn" style="
-            background:#ddd; border:none; border-radius:50%;
-            width:28px; height:28px; cursor:pointer; font-size:1em;
-          ">×</button>
+        ${floorMapHtml}
+        <div style="font-size:0.68em; color:#999; text-align:center; margin-top:6px;">
+          部屋に入る ⚡${MOVE_COST.ENTER_ROOM}
         </div>
-        ${groupHtml}
+      </div>
+
+      <div style="
+        background:rgba(255,255,255,0.85);
+        border-radius:14px; padding:12px 14px; margin-bottom:12px;
+        border:1px solid #e0eaf5;
+      ">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+          <button id="org-btn" style="
+            padding:10px 12px;
+            background:#8E6BAD;
+            color:#fff; border:none; border-radius:10px;
+            font-size:0.85em; cursor:pointer;
+            text-align:left; font-family:inherit;
+          ">
+            <div style="font-weight:bold;">組織</div>
+            <div style="font-size:0.75em; opacity:0.85;">支持状況</div>
+          </button>
+          <button id="next-day-btn-always" style="
+            padding:10px 12px;
+            background:linear-gradient(135deg,#F0A030,#D08010);
+            color:#fff; border:none; border-radius:10px;
+            font-size:0.85em; cursor:pointer;
+            text-align:left; font-family:inherit;
+          ">
+            <div style="font-weight:bold;">翌日へ</div>
+            <div style="font-size:0.75em; opacity:0.85;">${dayToDate(this.state.day)}</div>
+          </button>
+        </div>
+      </div>
+
+      ${endDayHtml}
+    `;
+  }
+
+  private renderFloorMap(floor: Floor, canEnter: boolean, adjacentFloors: Floor[]): string {
+    const upFloor = adjacentFloors.find(f => f === '3f' || (f === '2f' && floor === '1f'));
+    const downFloor = adjacentFloors.find(f => f === '1f' || (f === '2f' && floor === '3f'));
+    const outsideFloor = adjacentFloors.find(f => f === 'ground');
+    const insideFloor = floor === 'ground' ? adjacentFloors.find(f => f === '1f') : null;
+
+    // 階段ナビ（左：上階、右：下階）
+    const stairsUp = upFloor ? this.renderFloorNav(upFloor, floor) : '<div></div>';
+    const stairsDown = downFloor ? this.renderFloorNav(downFloor, floor) : '<div></div>';
+    const outsideNav = outsideFloor ? this.renderFloorNav(outsideFloor, floor) : '';
+    const insideNav = insideFloor ? this.renderFloorNav(insideFloor, floor) : '';
+
+    switch (floor) {
+      case '3f': return this.renderFloor3Map(canEnter, stairsDown);
+      case '2f': return this.renderFloor2Map(canEnter, stairsUp, stairsDown);
+      case '1f': return this.renderFloor1Map(canEnter, stairsUp, outsideNav);
+      case 'ground': return this.renderGroundMap(canEnter, insideNav);
+      default: return '';
+    }
+  }
+
+  private renderFloor3Map(canEnter: boolean, stairsDown: string): string {
+    return `
+      <div style="font-size:0.9em; font-weight:bold; color:#555; margin-bottom:8px; text-align:center;">
+        🏫 3階
+      </div>
+      <div style="
+        background:#f0f4f8; border-radius:10px; padding:10px;
+        border:1px dashed #c0c8d0; position:relative;
+      ">
+        <!-- 廊下ライン -->
+        <div style="
+          background:#d8dce0; height:6px; border-radius:3px;
+          margin:0 8px 10px 8px;
+        "></div>
+        <!-- 教室 -->
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:6px; margin-bottom:10px;">
+          ${this.renderRoomBtn('class3a', canEnter)}
+          ${this.renderRoomBtn('class3b', canEnter)}
+          ${this.renderRoomBtn('class3c', canEnter)}
+          ${this.renderRoomBtn('class3d', canEnter)}
+        </div>
+        <!-- 階段 -->
+        <div style="display:flex; justify-content:flex-end;">
+          ${stairsDown}
+        </div>
+      </div>
+    `;
+  }
+
+  private renderFloor2Map(canEnter: boolean, stairsUp: string, stairsDown: string): string {
+    return `
+      <div style="font-size:0.9em; font-weight:bold; color:#555; margin-bottom:8px; text-align:center;">
+        🏫 2階
+      </div>
+      <div style="
+        background:#f0f4f8; border-radius:10px; padding:10px;
+        border:1px dashed #c0c8d0;
+      ">
+        <!-- 階段（上） -->
+        <div style="display:flex; justify-content:flex-end; margin-bottom:6px;">
+          ${stairsUp}
+        </div>
+        <!-- 廊下ライン -->
+        <div style="
+          background:#d8dce0; height:6px; border-radius:3px;
+          margin:0 8px 10px 8px;
+        "></div>
+        <!-- 教室 -->
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:6px; margin-bottom:8px;">
+          ${this.renderRoomBtn('class2a', canEnter)}
+          ${this.renderRoomBtn('class2b', canEnter)}
+          ${this.renderRoomBtn('class2c', canEnter)}
+          ${this.renderRoomBtn('class2d', canEnter)}
+        </div>
+        <!-- 特別教室 -->
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:6px; margin-bottom:10px;">
+          <div></div>
+          ${this.renderRoomBtn('music_room', canEnter)}
+          ${this.renderRoomBtn('art_room', canEnter)}
+          <div></div>
+        </div>
+        <!-- 階段（下） -->
+        <div style="display:flex; justify-content:flex-end;">
+          ${stairsDown}
+        </div>
+      </div>
+    `;
+  }
+
+  private renderFloor1Map(canEnter: boolean, stairsUp: string, outsideNav: string): string {
+    return `
+      <div style="font-size:0.9em; font-weight:bold; color:#555; margin-bottom:8px; text-align:center;">
+        🏫 1階
+      </div>
+      <div style="
+        background:#f0f4f8; border-radius:10px; padding:10px;
+        border:1px dashed #c0c8d0;
+      ">
+        <!-- 階段（上） -->
+        <div style="display:flex; justify-content:flex-end; margin-bottom:6px;">
+          ${stairsUp}
+        </div>
+        <!-- 廊下ライン -->
+        <div style="
+          background:#d8dce0; height:6px; border-radius:3px;
+          margin:0 8px 10px 8px;
+        "></div>
+        <!-- 教室 -->
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:6px; margin-bottom:8px;">
+          ${this.renderRoomBtn('class1a', canEnter)}
+          ${this.renderRoomBtn('class1b', canEnter)}
+          ${this.renderRoomBtn('class1c', canEnter)}
+          ${this.renderRoomBtn('class1d', canEnter)}
+        </div>
+        <!-- 共用施設 -->
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px; margin-bottom:10px;">
+          ${this.renderRoomBtn('cafeteria', canEnter)}
+          ${this.renderRoomBtn('library', canEnter)}
+          ${this.renderRoomBtn('courtyard', canEnter)}
+        </div>
+        <!-- 外へ -->
+        <div style="display:flex; justify-content:center;">
+          ${outsideNav}
+        </div>
+      </div>
+    `;
+  }
+
+  private renderGroundMap(canEnter: boolean, insideNav: string): string {
+    return `
+      <div style="font-size:0.9em; font-weight:bold; color:#555; margin-bottom:8px; text-align:center;">
+        🌳 グラウンド
+      </div>
+      <div style="
+        background:#e8f0e0; border-radius:10px; padding:10px;
+        border:1px dashed #a0b090;
+      ">
+        <!-- 校舎に戻る -->
+        <div style="display:flex; justify-content:center; margin-bottom:10px;">
+          ${insideNav}
+        </div>
+        <!-- グラウンド施設 -->
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+          ${this.renderRoomBtn('track_field', canEnter)}
+          ${this.renderRoomBtn('soccer_field', canEnter)}
+          ${this.renderRoomBtn('baseball_field', canEnter)}
+          ${this.renderRoomBtn('tennis_court', canEnter)}
+        </div>
       </div>
     `;
   }
@@ -727,7 +1015,6 @@ export class DailyScreen {
     playerIcon?.addEventListener('pointerup', () => {
       this.showPlayerInfo = true;
       this.showStudentInfo = null;
-      this.showMovePanel = false;
       this.render();
     });
 
@@ -739,13 +1026,13 @@ export class DailyScreen {
     });
 
     // 組織ボタン
-    const orgBtn = this.container.querySelector<HTMLButtonElement>('#org-btn');
-    orgBtn?.addEventListener('pointerup', () => {
-      this.showOrgPanel = true;
-      this.showStudentInfo = null;
-      this.showMovePanel = false;
-      this.showPlayerInfo = false;
-      this.render();
+    this.container.querySelectorAll<HTMLButtonElement>('#org-btn').forEach(btn => {
+      btn.addEventListener('pointerup', () => {
+        this.showOrgPanel = true;
+        this.showStudentInfo = null;
+        this.showPlayerInfo = false;
+        this.render();
+      });
     });
 
     // 組織パネルを閉じる
@@ -755,30 +1042,26 @@ export class DailyScreen {
       this.render();
     });
 
-    // 移動ボタン
-    const moveBtn = this.container.querySelector<HTMLButtonElement>('[data-action="move"]');
-    moveBtn?.addEventListener('pointerup', () => {
-      this.showMovePanel = true;
-      this.showStudentInfo = null;
-      this.showPlayerInfo = false;
-      this.showOrgPanel = false;
-      this.render();
+    // 廊下に出る
+    const exitRoomBtn = this.container.querySelector<HTMLButtonElement>('#exit-room-btn');
+    exitRoomBtn?.addEventListener('pointerup', () => {
+      this.callbacks.onExitRoom();
     });
 
-    // 移動先選択
-    this.container.querySelectorAll<HTMLButtonElement>('[data-move-to]').forEach(btn => {
+    // 部屋に入る
+    this.container.querySelectorAll<HTMLButtonElement>('[data-enter-room]').forEach(btn => {
       btn.addEventListener('pointerup', () => {
-        const locId = btn.dataset['moveTo'] as LocationId;
-        this.showMovePanel = false;
-        this.callbacks.onMove(locId);
+        const locId = btn.dataset['enterRoom'] as LocationId;
+        this.callbacks.onEnterRoom(locId);
       });
     });
 
-    // 移動パネルを閉じる
-    const closeMoveBtn = this.container.querySelector<HTMLButtonElement>('#close-move-btn');
-    closeMoveBtn?.addEventListener('pointerup', () => {
-      this.showMovePanel = false;
-      this.render();
+    // フロア移動
+    this.container.querySelectorAll<HTMLButtonElement>('[data-change-floor]').forEach(btn => {
+      btn.addEventListener('pointerup', () => {
+        const floor = btn.dataset['changeFloor'] as Floor;
+        this.callbacks.onChangeFloor(floor);
+      });
     });
 
 
@@ -810,7 +1093,6 @@ export class DailyScreen {
         const studentId = btn.dataset['actionInfo'];
         const student = this.state.students.find(s => s.id === studentId) ?? null;
         this.showStudentInfo = student;
-        this.showMovePanel = false;
         this.render();
       });
     });

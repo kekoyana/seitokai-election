@@ -17,7 +17,11 @@ export type LocationId =
   | 'class3a' | 'class3b' | 'class3c' | 'class3d'
   | 'track_field' | 'soccer_field' | 'baseball_field' | 'tennis_court'
   | 'music_room' | 'art_room'
-  | 'courtyard' | 'library' | 'cafeteria';
+  | 'courtyard' | 'library' | 'cafeteria'
+  | 'corridor_1f' | 'corridor_2f' | 'corridor_3f' | 'corridor_ground';
+
+// フロア
+export type Floor = '1f' | '2f' | '3f' | 'ground';
 
 export interface Location {
   id: LocationId;
@@ -37,7 +41,7 @@ export type TopicType = 'candidate' | 'hobby';
 export type CandidateTopic = 'conservative' | 'progressive' | 'sports';
 
 // 趣味話題
-export type HobbyTopic = 'love' | 'game' | 'sns' | 'sports' | 'study' | 'video' | 'music' | 'reading' | 'fashion';
+export type HobbyTopic = 'love' | 'game' | 'sns' | 'sports' | 'study' | 'video' | 'music' | 'reading' | 'fashion' | 'fortune';
 
 export type Topic = CandidateTopic | HobbyTopic;
 

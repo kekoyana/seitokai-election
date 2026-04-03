@@ -15,6 +15,54 @@ function dayToDate(day: number): string {
   return `${d.getMonth() + 1}/${d.getDate()}`;
 }
 
+const CLUB_LABELS: Record<string, string> = {
+  soccer: 'サッカー部', track: '陸上部', tennis: 'テニス部',
+  art: '美術部', baseball: '野球部', brass: '吹奏楽部',
+};
+
+/** 生徒のクラス・部活での肩書きを取得 */
+function getStudentTitles(studentId: string): string[] {
+  const titles: string[] = [];
+  for (const org of ORGANIZATIONS) {
+    const isClass = org.id.startsWith('class');
+    const orgLabel = isClass ? org.name : org.name;
+    if (org.leaderId === studentId) {
+      titles.push(`${orgLabel} 代表`);
+    } else if (org.subLeaderIds.includes(studentId)) {
+      titles.push(`${orgLabel} 副代表`);
+    }
+  }
+  return titles;
+}
+
+/** 肩書きバッジHTML */
+function renderTitleBadges(studentId: string): string {
+  const titles = getStudentTitles(studentId);
+  if (titles.length === 0) return '';
+  return titles.map(t => {
+    const isLeader = t.includes('代表') && !t.includes('副');
+    const color = isLeader ? '#C0392B' : '#E07820';
+    return `<span style="
+      font-size:0.62em; padding:1px 5px; border-radius:4px;
+      background:${color}18; color:${color};
+      border:1px solid ${color}30;
+      white-space:nowrap;
+    ">${t}</span>`;
+  }).join(' ');
+}
+
+/** 部活名バッジHTML */
+function renderClubBadge(clubId: string | null): string {
+  if (!clubId) return '';
+  const name = CLUB_LABELS[clubId] ?? clubId;
+  return `<span style="
+    font-size:0.65em; padding:1px 5px; border-radius:4px;
+    background:rgba(78,130,180,0.1); color:#4E82B4;
+    border:1px solid rgba(78,130,180,0.2);
+    white-space:nowrap;
+  ">${name}</span>`;
+}
+
 export interface DailyCallbacks {
   onEnterRoom: (locationId: LocationId) => void;
   onExitRoom: () => void;
@@ -209,7 +257,11 @@ export class DailyScreen {
               background:#27AE6020; color:#27AE60;
             ">支持中</span>` : ''}
           </div>
-          <div style="font-size:0.75em; color:#888;">${c.className}　${c.platform}</div>
+          <div style="display:flex; align-items:center; gap:4px; flex-wrap:wrap;">
+            <span style="font-size:0.75em; color:#888;">${c.className}</span>
+            ${studentData ? renderClubBadge(studentData.clubId) : ''}
+          </div>
+          <div style="font-size:0.72em; color:#888;">${c.platform}</div>
           ${studentData ? `<div style="font-size:0.72em; color:${affinityColor};">好感度: ${affinityLabel}</div>` : ''}
         </div>
         ${studentData ? `
@@ -360,8 +412,14 @@ export class DailyScreen {
           : renderInitialIcon(s.name, s.personality, 48, '#d0e0f0')
         }
         <div style="flex:1; min-width:0;">
-          <div style="font-size:0.9em; font-weight:bold; color:#333;">${s.name}</div>
-          <div style="font-size:0.75em; color:#888;">${s.className}</div>
+          <div style="display:flex; align-items:center; gap:4px; flex-wrap:wrap;">
+            <span style="font-size:0.9em; font-weight:bold; color:#333;">${s.name}</span>
+            ${renderTitleBadges(s.id)}
+          </div>
+          <div style="display:flex; align-items:center; gap:4px; flex-wrap:wrap; margin-top:1px;">
+            <span style="font-size:0.75em; color:#888;">${s.className}</span>
+            ${renderClubBadge(s.clubId)}
+          </div>
           <div style="font-size:0.72em; color:${affinityColor};">好感度: ${affinityLabel}</div>
           ${(() => {
             const maxKey = (['conservative', 'progressive', 'sports'] as const)
@@ -637,79 +695,7 @@ export class DailyScreen {
   }
 
   private renderInfoStudentDetail(s: Student, fromOrgId: string): string {
-    const PERS_LABELS: Record<string, string> = {
-      passionate: '熱血', cautious: '慎重', stubborn: '頑固', flexible: '柔軟', cunning: '狡猾',
-    };
-    const supportCandidate = CANDIDATES.find(c =>
-      c.id === Object.entries(s.support).sort((a, b) => b[1] - a[1])[0][0]
-    );
-    const attrsHtml = s.attributes.map(a =>
-      `<span style="background:#e8f0fa; color:#3a5080; border-radius:12px; padding:2px 8px; font-size:0.75em;">${ATTRIBUTE_LABELS[a] ?? a}</span>`
-    ).join(' ');
-
-    const hobbiesHtml = Object.entries(s.hobbies)
-      .filter(([, pref]) => pref !== 'neutral')
-      .map(([hobby, pref]) => {
-        const revealed = s.revealedHobbies.has(hobby as import('../types').HobbyTopic);
-        if (!revealed && s.talkCount === 0) return '';
-        const color = pref === 'like' ? '#27AE60' : '#C0392B';
-        const icon = pref === 'like' ? '♥' : '✗';
-        return revealed
-          ? `<span style="font-size:0.78em; color:${color};">${icon}${HOBBY_LABELS[hobby] ?? hobby}</span>`
-          : `<span style="font-size:0.78em; color:#ccc;">？</span>`;
-      }).filter(Boolean).join(' ');
-
-    return `
-      <div style="
-        background:rgba(255,255,255,0.9);
-        border-radius:14px; padding:14px;
-        border:1px solid #e0eaf5;
-      ">
-        ${this.renderInfoHeader(s.name, 'back-to-org')}
-
-        <div style="display:flex; align-items:center; gap:12px; margin-bottom:14px;">
-          ${s.portrait
-            ? `<img src="${s.portrait}" alt="${s.name}" style="
-                width:56px; height:56px; border-radius:50%;
-                object-fit:cover; object-position:top;
-                border:3px solid ${supportCandidate?.color ?? '#d0e0f0'};
-              "/>`
-            : renderInitialIcon(s.name, s.personality, 56, supportCandidate?.color ?? '#d0e0f0')
-          }
-          <div>
-            <div style="font-size:0.8em; color:#888;">${s.className}　${PERS_LABELS[s.personality] ?? s.personality}</div>
-            <div style="font-size:0.78em; color:#888;">「${getCatchphrase(s.personality, s.attributes)}」</div>
-          </div>
-        </div>
-
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:8px;">
-          <div style="background:rgba(240,245,255,0.8); border-radius:8px; padding:6px; font-size:0.78em;">
-            <div style="color:#888;">好感度</div>
-            <div style="font-weight:bold; color:${s.affinity >= 0 ? '#27AE60' : '#C0392B'};">${s.affinity > 0 ? '+' : ''}${s.affinity}</div>
-          </div>
-          <div style="background:rgba(240,245,255,0.8); border-radius:8px; padding:6px; font-size:0.78em;">
-            <div style="color:#888;">会話</div>
-            <div style="font-weight:bold;">${s.talkCount}回</div>
-          </div>
-        </div>
-        <div style="background:rgba(240,245,255,0.8); border-radius:8px; padding:6px; margin-bottom:12px; font-size:0.78em;">
-          <div style="color:#888; margin-bottom:3px;">思想</div>
-          ${renderSupportBar(s.support, 12)}
-        </div>
-
-        <div style="margin-bottom:8px;">
-          <div style="font-size:0.78em; color:#888; margin-bottom:4px;">属性</div>
-          <div style="display:flex; flex-wrap:wrap; gap:4px;">${attrsHtml}</div>
-        </div>
-
-        ${hobbiesHtml ? `
-          <div>
-            <div style="font-size:0.78em; color:#888; margin-bottom:4px;">趣味</div>
-            <div style="display:flex; flex-wrap:wrap; gap:6px;">${hobbiesHtml}</div>
-          </div>
-        ` : ''}
-      </div>
-    `;
+    return this.renderStudentDetailCard(s, 'back-to-org');
   }
 
   private countStudentsAtLocation(locId: LocationId): number {
@@ -1226,11 +1212,23 @@ export class DailyScreen {
   }
 
   private renderStudentInfo(s: Student): string {
-    const hobbies = Object.entries(s.hobbies) as [string, string][];
-    const revealedHobbies = s.revealedHobbies;
+    return this.renderStudentDetailCard(s, 'close');
+  }
 
-    const hobbiesHtml = hobbies.map(([hobby, pref]) => {
-      const isRevealed = revealedHobbies.has(hobby as never);
+  /** 生徒詳細カード（情報パネル・部屋内情報ボタン共通） */
+  private renderStudentDetailCard(s: Student, backAction: string): string {
+    const PERS_LABELS: Record<string, string> = {
+      passionate: '熱血', cautious: '慎重', stubborn: '頑固', flexible: '柔軟', cunning: '狡猾',
+    };
+    const supportCandidate = CANDIDATES.find(c =>
+      c.id === Object.entries(s.support).sort((a, b) => b[1] - a[1])[0][0]
+    );
+    const attrsHtml = s.attributes.map(a =>
+      `<span style="background:#e8f0fa; color:#3a5080; border-radius:12px; padding:2px 8px; font-size:0.75em;">${ATTRIBUTE_LABELS[a] ?? a}</span>`
+    ).join(' ');
+
+    const hobbiesHtml = Object.entries(s.hobbies).map(([hobby, pref]) => {
+      const isRevealed = s.revealedHobbies.has(hobby as import('../types').HobbyTopic);
       const prefColor = pref === 'like' ? '#27AE60' : pref === 'dislike' ? '#C0392B' : '#888';
       const prefLabel = pref === 'like' ? '好き' : pref === 'dislike' ? '嫌い' : '普通';
       return `
@@ -1249,16 +1247,58 @@ export class DailyScreen {
       `;
     }).join('');
 
-    const attrsHtml = s.attributes.map(a =>
-      `<span style="
-        background:#e8f0fa; color:#3a5080;
-        border-radius:12px; padding:2px 8px; font-size:0.75em;
-      ">${ATTRIBUTE_LABELS[a] ?? a}</span>`
-    ).join(' ');
-
-    const supportCandidate = CANDIDATES.find(c =>
-      c.id === Object.entries(s.support).sort((a, b) => b[1] - a[1])[0][0]
-    );
+    // backAction: 'close' → 閉じるボタン(×), 'back-to-org' → 情報パネル内の戻る(←)
+    const headerHtml = backAction === 'close'
+      ? `<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+          <div style="display:flex; align-items:center; gap:12px;">
+            ${s.portrait
+              ? `<img src="${s.portrait}" alt="${s.name}" style="
+                  width:56px; height:56px; border-radius:50%;
+                  object-fit:cover; object-position:top;
+                  border:3px solid ${supportCandidate?.color ?? '#d0e0f0'};
+                "/>`
+              : renderInitialIcon(s.name, s.personality, 56, supportCandidate?.color ?? '#d0e0f0')
+            }
+            <div>
+              <div style="font-size:1.1em; font-weight:bold; color:#333;">${s.name}</div>
+              <div style="display:flex; align-items:center; gap:4px; flex-wrap:wrap;">
+                <span style="font-size:0.8em; color:#888;">${s.className}</span>
+                ${renderClubBadge(s.clubId)}
+                <span style="font-size:0.75em; color:#999;">${PERS_LABELS[s.personality] ?? s.personality}</span>
+              </div>
+              <div style="display:flex; gap:4px; flex-wrap:wrap; margin-top:2px;">
+                ${renderTitleBadges(s.id)}
+              </div>
+              <div style="font-size:0.78em; color:#888; margin-top:2px;">「${getCatchphrase(s.personality, s.attributes)}」</div>
+            </div>
+          </div>
+          <button id="close-info-btn" style="
+            background:#ddd; border:none; border-radius:50%;
+            width:28px; height:28px; cursor:pointer; font-size:1em;
+          ">×</button>
+        </div>`
+      : `${this.renderInfoHeader(s.name, backAction)}
+        <div style="display:flex; align-items:center; gap:12px; margin-bottom:14px;">
+          ${s.portrait
+            ? `<img src="${s.portrait}" alt="${s.name}" style="
+                width:56px; height:56px; border-radius:50%;
+                object-fit:cover; object-position:top;
+                border:3px solid ${supportCandidate?.color ?? '#d0e0f0'};
+              "/>`
+            : renderInitialIcon(s.name, s.personality, 56, supportCandidate?.color ?? '#d0e0f0')
+          }
+          <div>
+            <div style="display:flex; align-items:center; gap:4px; flex-wrap:wrap;">
+              <span style="font-size:0.8em; color:#888;">${s.className}</span>
+              ${renderClubBadge(s.clubId)}
+              <span style="font-size:0.75em; color:#999;">${PERS_LABELS[s.personality] ?? s.personality}</span>
+            </div>
+            <div style="display:flex; gap:4px; flex-wrap:wrap; margin-top:2px;">
+              ${renderTitleBadges(s.id)}
+            </div>
+            <div style="font-size:0.78em; color:#888; margin-top:2px;">「${getCatchphrase(s.personality, s.attributes)}」</div>
+          </div>
+        </div>`;
 
     return `
       <div style="
@@ -1266,51 +1306,23 @@ export class DailyScreen {
         border-radius:14px; padding:14px;
         border:1px solid #e0eaf5;
       ">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
-          <div style="display:flex; align-items:center; gap:12px;">
-            ${s.portrait
-              ? `<img src="${s.portrait}" alt="${s.name}" style="
-                  width:60px; height:60px; border-radius:50%;
-                  object-fit:cover; object-position:top;
-                  border:3px solid #d0e0f0;
-                "/>`
-              : renderInitialIcon(s.name, s.personality, 60, '#d0e0f0')
-            }
-            <div>
-              <div style="font-size:1.1em; font-weight:bold; color:#333;">${s.name}</div>
-              <div style="font-size:0.8em; color:#888;">${s.className}</div>
-              <div style="font-size:0.78em; color:#888;">「${getCatchphrase(s.personality, s.attributes)}」</div>
-            </div>
-          </div>
-          <button id="close-info-btn" style="
-            background:#ddd; border:none; border-radius:50%;
-            width:28px; height:28px; cursor:pointer; font-size:1em;
-          ">×</button>
-        </div>
+        ${headerHtml}
 
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:12px;">
-          <div style="background:rgba(240,245,255,0.8); border-radius:8px; padding:8px; font-size:0.8em;">
-            <div style="color:#888; margin-bottom:4px;">好感度</div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:8px;">
+          <div style="background:rgba(240,245,255,0.8); border-radius:8px; padding:6px; font-size:0.78em;">
+            <div style="color:#888;">好感度</div>
             <div style="font-weight:bold; color:${s.affinity >= 0 ? '#27AE60' : '#C0392B'};">${s.affinity > 0 ? '+' : ''}${s.affinity}</div>
           </div>
-          <div style="background:rgba(240,245,255,0.8); border-radius:8px; padding:8px; font-size:0.8em;">
-            <div style="color:#888; margin-bottom:4px;">会話回数</div>
-            <div style="font-weight:bold; color:#333;">${s.talkCount}回</div>
+          <div style="background:rgba(240,245,255,0.8); border-radius:8px; padding:6px; font-size:0.78em;">
+            <div style="color:#888;">会話</div>
+            <div style="font-weight:bold;">${s.talkCount}回</div>
           </div>
         </div>
 
-        ${s.talkCount > 0 ? `
-          <div style="margin-bottom:12px;">
-            <div style="font-size:0.8em; color:#888; margin-bottom:6px;">支持傾向 <span style="opacity:0.6;">(会話で判明)</span></div>
-            <div style="font-size:0.82em; color:#555;">
-              支持候補: <strong style="color:${supportCandidate?.color ?? '#333'};">${supportCandidate?.name ?? '不明'}</strong>
-            </div>
-          </div>
-        ` : `
-          <div style="margin-bottom:12px; font-size:0.82em; color:#aaa; text-align:center;">
-            会話するとプロフィールが判明します
-          </div>
-        `}
+        <div style="background:rgba(240,245,255,0.8); border-radius:8px; padding:6px; margin-bottom:12px; font-size:0.78em;">
+          <div style="color:#888; margin-bottom:3px;">思想</div>
+          ${renderSupportBar(s.support, 12)}
+        </div>
 
         <div style="margin-bottom:12px;">
           <div style="font-size:0.8em; color:#888; margin-bottom:6px;">属性</div>

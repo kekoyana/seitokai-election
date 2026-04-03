@@ -33,6 +33,7 @@ export class DebugScreen {
   private container: HTMLDivElement;
   private state: GameState;
   private callbacks: DebugCallbacks;
+  private activeTab: 'player' | 'students' | 'organizations' = 'player';
 
   constructor(state: GameState, callbacks: DebugCallbacks) {
     this.state = state;
@@ -57,9 +58,6 @@ export class DebugScreen {
   }
 
   private render(): void {
-    const playerCandidate = CANDIDATES.find(c => c.id === this.state.candidate);
-    const playerAttrs = this.state.playerAttributes;
-
     this.container.style.cssText = `
       position:fixed; inset:0;
       background:linear-gradient(160deg, #2a2a3a 0%, #1a1a2a 100%);
@@ -68,58 +66,93 @@ export class DebugScreen {
       color:#e0e0e0; overflow:hidden;
     `;
 
+    type TabKey = 'player' | 'students' | 'organizations';
+    const tabs: { key: TabKey; label: string }[] = [
+      { key: 'player', label: 'プレイヤー' },
+      { key: 'students', label: '生徒一覧' },
+      { key: 'organizations', label: '組織一覧' },
+    ];
+
+    const tabsHtml = tabs.map(t => {
+      const active = t.key === this.activeTab;
+      return `<button class="debug-tab" data-tab="${t.key}" style="
+        background:${active ? 'rgba(255,100,100,0.25)' : 'transparent'};
+        color:${active ? '#f88' : '#888'};
+        border:none; border-bottom:2px solid ${active ? '#f88' : 'transparent'};
+        padding:6px 14px; cursor:pointer;
+        font-family:inherit; font-size:0.82em; font-weight:${active ? 'bold' : 'normal'};
+        transition: all 0.15s;
+      ">${t.label}</button>`;
+    }).join('');
+
     const headerHtml = `
       <div style="
         background:rgba(255,100,100,0.15);
         border-bottom:2px solid #c44;
-        padding:10px 16px;
-        display:flex; justify-content:space-between; align-items:center;
+        padding:8px 16px 0;
         flex-shrink:0;
       ">
-        <div>
-          <span style="color:#f88; font-weight:bold; font-size:0.9em;">DEBUG</span>
-          <span style="color:#aaa; font-size:0.8em; margin-left:8px;">生徒一覧</span>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+          <div>
+            <span style="color:#f88; font-weight:bold; font-size:0.9em;">DEBUG</span>
+          </div>
+          <div style="display:flex; gap:12px; align-items:center; font-size:0.8em;">
+            <span>${dayToDate(this.state.day)}</span>
+            <div style="width:120px;">${renderSupportBar(this.state.playerSupport, 12, true)}</div>
+            <button id="debug-close" style="
+              background:#c44; color:#fff; border:none; border-radius:6px;
+              padding:4px 12px; cursor:pointer; font-family:inherit; font-size:0.85em;
+            ">閉じる</button>
+          </div>
         </div>
-        <div style="display:flex; gap:12px; align-items:center; font-size:0.8em;">
-          <span>${dayToDate(this.state.day)}</span>
-          <div style="width:120px;">${renderSupportBar(this.state.playerSupport, 12, true)}</div>
-          <button id="debug-close" style="
-            background:#c44; color:#fff; border:none; border-radius:6px;
-            padding:4px 12px; cursor:pointer; font-family:inherit; font-size:0.85em;
-          ">閉じる</button>
-        </div>
+        <div style="display:flex; gap:0;">${tabsHtml}</div>
       </div>
     `;
 
-    const pc = this.state.playerCharacter;
-    const playerCardHtml = pc ? this.renderPlayerCard(pc) : '';
-
-    // 全生徒（プレイヤーは別カードで表示するので除外）
-    const playerId = this.state.playerCharacter?.id;
-    const allStudents = this.state.students.filter(s => s.id !== playerId);
-    const studentsHtml = allStudents.map(s => this.renderStudentRow(s)).join('');
-    const orgHtml = this.renderOrganizations();
-
-    this.container.innerHTML = headerHtml + `
-      <div style="flex:1; overflow-y:auto; padding:12px 16px;">
-        ${playerCardHtml}
+    let contentHtml = '';
+    if (this.activeTab === 'player') {
+      const pc = this.state.playerCharacter;
+      contentHtml = pc ? this.renderPlayerCard(pc) : '<div style="color:#888; padding:20px;">プレイヤー未選択</div>';
+    } else if (this.activeTab === 'students') {
+      const playerId = this.state.playerCharacter?.id;
+      const allStudents = this.state.students.filter(s => s.id !== playerId);
+      contentHtml = `
         <div style="
-          font-size:0.8em; color:#888; margin:12px 0 8px;
+          font-size:0.8em; color:#888; margin-bottom:8px;
           border-bottom:1px solid rgba(255,255,255,0.1);
           padding-bottom:6px;
         ">生徒一覧（${allStudents.length}名）</div>
-        ${studentsHtml}
+        ${allStudents.map(s => this.renderStudentRow(s)).join('')}
+      `;
+    } else {
+      contentHtml = `
         <div style="
-          font-size:0.8em; color:#f88; margin:16px 0 8px;
+          font-size:0.8em; color:#f88; margin-bottom:8px;
           border-bottom:1px solid rgba(255,100,100,0.2);
           padding-bottom:6px;
         ">組織一覧（${ORGANIZATIONS.length}組）</div>
-        ${orgHtml}
+        ${this.renderOrganizations()}
+      `;
+    }
+
+    this.container.innerHTML = headerHtml + `
+      <div style="flex:1; overflow-y:auto; padding:12px 16px;">
+        ${contentHtml}
       </div>
     `;
 
     this.container.querySelector('#debug-close')?.addEventListener('pointerup', () => {
       this.callbacks.onClose();
+    });
+
+    this.container.querySelectorAll('.debug-tab').forEach(btn => {
+      btn.addEventListener('pointerup', () => {
+        const tab = (btn as HTMLElement).dataset.tab as typeof this.activeTab;
+        if (tab && tab !== this.activeTab) {
+          this.activeTab = tab;
+          this.render();
+        }
+      });
     });
   }
 

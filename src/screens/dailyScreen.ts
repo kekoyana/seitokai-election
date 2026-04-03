@@ -32,7 +32,9 @@ export class DailyScreen {
   }
 
   private getStudentsAtLocation(): Student[] {
+    const playerId = this.state.playerCharacter?.id;
     return this.state.students.filter(s =>
+      s.id !== playerId &&
       getStudentLocation(s.id, this.state.timeSlot, this.state.day) === this.state.currentLocation
     );
   }

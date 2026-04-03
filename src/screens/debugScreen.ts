@@ -92,8 +92,9 @@ export class DebugScreen {
     const pc = this.state.playerCharacter;
     const playerCardHtml = pc ? this.renderPlayerCard(pc) : '';
 
-    // 全生徒（プレイヤー除外済みのstate.students = 説得対象 + 候補者）
-    const allStudents = this.state.students;
+    // 全生徒（プレイヤーは別カードで表示するので除外）
+    const playerId = this.state.playerCharacter?.id;
+    const allStudents = this.state.students.filter(s => s.id !== playerId);
     const studentsHtml = allStudents.map(s => this.renderStudentRow(s)).join('');
     const orgHtml = this.renderOrganizations();
 
@@ -155,12 +156,19 @@ export class DebugScreen {
         margin-bottom:4px;
       ">
         <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
-          <div style="
-            width:48px; height:48px; border-radius:50%;
-            background:#4A90D9; color:#fff;
-            display:flex; align-items:center; justify-content:center;
-            font-size:0.8em; font-weight:bold; flex-shrink:0;
-          ">YOU</div>
+          ${pc.portrait
+            ? `<img src="${pc.portrait}" alt="${pc.name}" style="
+                width:48px; height:48px; border-radius:50%;
+                object-fit:cover; object-position:top;
+                border:2px solid #4A90D9; flex-shrink:0;
+              "/>`
+            : `<div style="
+                width:48px; height:48px; border-radius:50%;
+                background:#4A90D9; color:#fff;
+                display:flex; align-items:center; justify-content:center;
+                font-size:0.8em; font-weight:bold; flex-shrink:0;
+              ">YOU</div>`
+          }
           <div style="flex:1; min-width:0;">
             <div style="display:flex; align-items:center; gap:8px;">
               <span style="font-weight:bold; font-size:0.95em; color:#8cf;">${pc.name}</span>

@@ -175,10 +175,82 @@ simple grey background, masterpiece, best quality
 
 ---
 
-## 未作成のキーパーソン（残り4名）
+### 橋本 翼（はしもと つばさ）
+- **所属**: 1-D キーパーソン
+- **外見**: くしゃっとした明るい茶髪（短め）、大きな丸い茶色の目、やや小柄、日焼け気味
+- **内面**: ゲームと動画が大好きな自由人。深く考えるのは苦手だが、柔軟な発想で周りを驚かせることがある
+- **性格**: 柔軟
+- **趣味**: ゲーム、動画
+- **支持**: 革新45、学園祭方針: 外部寄り
+- **口癖**: 「いいね、それもアリだね！」
+- **画像**: `portraits/hashimoto_tsubasa.png`
+- **seed**: 155
+- **プロンプト**:
+```
+1boy, (kizoku:1.0), (anmi:0.5), (kishida_mel:0.5),
+big round brown eyes, slightly tanned skin,
+Japanese high school student, short messy light brown hair, small build,
+dark navy blue school blazer, white dress shirt, red striped necktie,
+upper body portrait, face close-up, looking at viewer, carefree cheerful grin, blush,
+simple grey background, masterpiece, best quality
+```
 
-game-spec.mdより:
-- 橋本 翼（1-D）: 柔軟、ゲーム好き、革新45
-- 加藤 美月（2-D）: 柔軟、恋バナ好き、体育60
-- 鈴木 翔太（3-A）: 慎重、恋バナ好き、保守50
-- 斎藤 学（3-C）: 頑固、恋バナ好き、保守70
+### 加藤 美月（かとう みつき）
+- **所属**: 2-D キーパーソン
+- **外見**: 高い位置で結んだブラウンのポニーテール、活発なオレンジブラウンの目、健康的な肌、すらっとした体格
+- **内面**: 明るくて面倒見のいいスポーツ少女。恋バナが大好きで、テニス部ではムードメーカー的存在
+- **性格**: 柔軟
+- **趣味**: 恋バナ、スポーツ
+- **支持**: 体育60、学園祭方針: 内部寄り
+- **口癖**: 「えー、それめっちゃいいじゃん！」
+- **画像**: `portraits/kato_mitsuki.png`
+- **seed**: 277
+- **プロンプト**:
+```
+1girl, (miyase_mahiro:1.0), (kizoku:1.0), (anmi:1.0), (kishida_mel:0.5),
+bright orange-brown eyes, healthy tanned skin,
+Japanese high school student, brown hair in high ponytail, athletic build, bright energetic smile,
+(dark navy blue school blazer:1.3), white dress shirt, red ribbon bow at collar,
+upper body portrait, portrait from chest up, head and shoulders visible, looking at viewer, cheerful lively expression,
+simple grey background, masterpiece, best quality
+```
+
+### 鈴木 翔太（すずき しょうた）
+- **所属**: 3-A キーパーソン
+- **外見**: きれいに流したダークブラウンの髪、穏やかなグレーブルーの目、色白、細身で上品な雰囲気
+- **内面**: 物腰柔らかで社交的だが、慎重に人を見極める一面もある。音楽を愛し、吹奏楽部でクラリネットを担当
+- **性格**: 慎重
+- **趣味**: 恋バナ、音楽
+- **支持**: 保守50、学園祭方針: 内部寄り
+- **口癖**: 「慎重にいきたいかな」
+- **画像**: `portraits/suzuki_shota.png`
+- **seed**: 150
+- **プロンプト**:
+```
+1boy, (kizoku:1.0), (anmi:0.5), (kishida_mel:0.5),
+calm grey-blue eyes, pale skin,
+Japanese high school student, neat dark brown hair swept to the side, slender refined build,
+dark navy blue school blazer, white dress shirt, red striped necktie,
+upper body portrait, face close-up, looking at viewer, composed gentle smile,
+simple grey background, masterpiece, best quality
+```
+
+### 斎藤 学（さいとう まなぶ）
+- **所属**: 3-C キーパーソン
+- **外見**: きっちり短い黒髪、鋭い黒目、痩せ型で背が高い、無愛想な表情
+- **内面**: 学年トップクラスの秀才。頑固で自分の信念を曲げない。勉強と読書が生きがいで、流行には無関心
+- **性格**: 頑固
+- **趣味**: 勉強、読書
+- **支持**: 保守70、学園祭方針: 内部65
+- **口癖**: 「それは違うと思う」
+- **画像**: `portraits/saito_manabu.png`
+- **seed**: 160
+- **プロンプト**:
+```
+1boy, (kizoku:1.0), (anmi:0.5), (kishida_mel:0.5),
+sharp dark black eyes,
+Japanese high school student, short neat black hair, tall and thin build, stern intellectual expression,
+dark navy blue school blazer, white dress shirt, red striped necktie,
+upper body portrait, face close-up, looking at viewer, cold serious expression,
+simple grey background, masterpiece, best quality
+```

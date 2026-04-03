@@ -11,6 +11,10 @@ import nakamuraSakuraPortrait from '../portraits/nakamura_sakura.png';
 import takahashiYutoPortrait from '../portraits/takahashi_yuto.png';
 import matsumotoKentaPortrait from '../portraits/matsumoto_kenta.png';
 import miyazakiAkanePortrait from '../portraits/miyazaki_akane.png';
+import hashimotoTsubasaPortrait from '../portraits/hashimoto_tsubasa.png';
+import katoMitsukiPortrait from '../portraits/kato_mitsuki.png';
+import suzukiShotaPortrait from '../portraits/suzuki_shota.png';
+import saitoManabuPortrait from '../portraits/saito_manabu.png';
 import takayamaSeiichiPortrait from '../portraits/takayama_seiichi.png';
 import yuukiAkariPortrait from '../portraits/yuuki_akari.png';
 import shidoTsuyoshiPortrait from '../portraits/shido_tsuyoshi.png';
@@ -319,7 +323,7 @@ export const STUDENTS: Student[] = [
     stats: { speech: 45, athletic: 45, intel: 40, maxHp: 100 },
     affinity: 0,
     talkCount: 0,
-    portrait: null,
+    portrait: hashimotoTsubasaPortrait,
     candidateId: null,
     playable: true,
   },
@@ -340,7 +344,7 @@ export const STUDENTS: Student[] = [
     stats: { speech: 50, athletic: 70, intel: 30, maxHp: 110 },
     affinity: 0,
     talkCount: 0,
-    portrait: null,
+    portrait: katoMitsukiPortrait,
     candidateId: null,
     playable: true,
   },
@@ -361,7 +365,7 @@ export const STUDENTS: Student[] = [
     stats: { speech: 70, athletic: 20, intel: 65, maxHp: 85 },
     affinity: 0,
     talkCount: 0,
-    portrait: null,
+    portrait: suzukiShotaPortrait,
     candidateId: null,
     playable: true,
   },
@@ -382,7 +386,7 @@ export const STUDENTS: Student[] = [
     stats: { speech: 55, athletic: 15, intel: 90, maxHp: 75 },
     affinity: 0,
     talkCount: 0,
-    portrait: null,
+    portrait: saitoManabuPortrait,
     candidateId: null,
     playable: true,
   },

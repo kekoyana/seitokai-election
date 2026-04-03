@@ -121,13 +121,12 @@ export class Game {
         // 選んだ生徒の思想軸の最大値が支持候補になる
         const candidateId = (['conservative', 'progressive', 'sports'] as CandidateId[])
           .reduce((a, b) => selected.support[a] >= selected.support[b] ? a : b);
-        // 選んだ生徒をプレイヤーに、残りを説得対象に
-        const otherStudents = allStudents.filter(s => s.id !== selected.id);
+        // 選んだ生徒をプレイヤーに（studentsには全員残す＝組織の代表計算に必要）
         this.state = {
           ...createInitialState(),
           screen: 'daily',
           candidate: candidateId,
-          students: otherStudents,
+          students: allStudents,
           playerCharacter: {
             id: selected.id,
             name: selected.name,
@@ -200,6 +199,15 @@ export class Game {
       stamina: this.state.stamina - 5,
     };
     this.dailyScreen?.update(this.state);
+  }
+
+  // プレイヤーのsupportをstudents配列にも同期する（組織票計算に必要）
+  private syncPlayerSupport(students: Student[]): Student[] {
+    const playerId = this.state.playerCharacter?.id;
+    if (!playerId) return students;
+    return students.map(s =>
+      s.id === playerId ? { ...s, support: { ...this.state.playerSupport } } : s
+    );
   }
 
   private calcAffinityGain(student: Student): number {
@@ -428,6 +436,7 @@ export class Game {
           battle: null,
           lastBattleResult: { student, win: false, shiftAmount },
         };
+        this.state = { ...this.state, students: this.syncPlayerSupport(this.state.students) };
         this.showGameOver();
       } else {
         this.state = {
@@ -437,6 +446,7 @@ export class Game {
           battle: null,
           lastBattleResult: { student, win: false, shiftAmount },
         };
+        this.state = { ...this.state, students: this.syncPlayerSupport(this.state.students) };
         this.showDaily();
       }
     } else if (result === 'timeout') {
@@ -462,6 +472,7 @@ export class Game {
           battle: null,
           lastBattleResult: { student, win: false, shiftAmount },
         };
+        this.state = { ...this.state, students: this.syncPlayerSupport(this.state.students) };
         this.showGameOver();
       } else {
         this.state = {
@@ -472,6 +483,7 @@ export class Game {
           battle: null,
           lastBattleResult: { student, win: battle.barPosition > 0, shiftAmount },
         };
+        this.state = { ...this.state, students: this.syncPlayerSupport(this.state.students) };
         this.showDaily();
       }
     }

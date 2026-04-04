@@ -95,6 +95,7 @@ export const LOCATIONS: Location[] = [
   { id: 'tennis_court', name: 'テニスコート' },
   { id: 'music_room', name: '吹奏楽室' },
   { id: 'art_room', name: '美術室' },
+  { id: 'broadcast_room', name: '放送室' },
   { id: 'courtyard', name: '中庭' },
   { id: 'library', name: '図書室' },
   { id: 'cafeteria', name: '食堂' },
@@ -112,7 +113,7 @@ export const LOCATION_FLOOR_MAP: Record<LocationId, Floor> = {
   courtyard: '1f', cafeteria: '1f', library: '1f', nurses_office: '1f',
   corridor_2f: '2f',
   class2a: '2f', class2b: '2f', class2c: '2f', class2d: '2f',
-  music_room: '2f', art_room: '2f',
+  music_room: '2f', art_room: '2f', broadcast_room: '2f',
   corridor_3f: '3f',
   class3a: '3f', class3b: '3f', class3c: '3f', class3d: '3f',
   corridor_ground: 'ground',
@@ -122,7 +123,7 @@ export const LOCATION_FLOOR_MAP: Record<LocationId, Floor> = {
 
 export const FLOOR_ROOMS: Record<Floor, LocationId[]> = {
   '1f': ['class1a', 'class1b', 'class1c', 'class1d', 'courtyard', 'cafeteria', 'library', 'nurses_office'],
-  '2f': ['class2a', 'class2b', 'class2c', 'class2d', 'music_room', 'art_room'],
+  '2f': ['class2a', 'class2b', 'class2c', 'class2d', 'music_room', 'art_room', 'broadcast_room'],
   '3f': ['class3a', 'class3b', 'class3c', 'class3d'],
   'ground': ['track_field', 'soccer_field', 'baseball_field', 'tennis_court'],
 };
@@ -150,6 +151,7 @@ export const TIME_COST = {
   TALK: 15,
   PERSUADE: 30,
   NURSE_REST: 60,
+  TRAINING: 30,
 } as const;
 
 // 一日の最大時間（15:00から19:00 = 240分）
@@ -203,6 +205,7 @@ export const STUDENTS: Student[] = [
   {
     id: 'tanaka_daiki',
     name: '田中大輝',
+    nickname: 'ダイキ',
     gender: 'male',
     className: '1-B',
     clubId: 'soccer',
@@ -225,6 +228,7 @@ export const STUDENTS: Student[] = [
   {
     id: 'yamamoto_ren',
     name: '山本蓮',
+    nickname: '委員長',
     gender: 'male',
     className: '2-B',
     clubId: null,
@@ -247,6 +251,7 @@ export const STUDENTS: Student[] = [
   {
     id: 'sato_yui',
     name: '佐藤ゆい',
+    nickname: 'ゆい',
     gender: 'female',
     className: '1-A',
     clubId: null,
@@ -269,6 +274,7 @@ export const STUDENTS: Student[] = [
   {
     id: 'watanabe_aoi',
     name: '渡辺あおい',
+    nickname: 'あおい',
     gender: 'female',
     className: '2-A',
     clubId: null,
@@ -291,6 +297,7 @@ export const STUDENTS: Student[] = [
   {
     id: 'nakamura_sakura',
     name: '中村さくら',
+    nickname: 'さくら',
     gender: 'female',
     className: '2-C',
     clubId: null,
@@ -314,6 +321,7 @@ export const STUDENTS: Student[] = [
   {
     id: 'takahashi_yuto',
     name: '高橋悠人',
+    nickname: 'ユウト',
     gender: 'male',
     className: '3-B',
     clubId: 'art',
@@ -336,6 +344,7 @@ export const STUDENTS: Student[] = [
   {
     id: 'matsumoto_kenta',
     name: '松本健太',
+    nickname: 'ケンタ',
     gender: 'male',
     className: '3-D',
     clubId: 'track',
@@ -358,6 +367,7 @@ export const STUDENTS: Student[] = [
   {
     id: 'miyazaki_akane',
     name: '宮崎あかね',
+    nickname: 'あかね',
     gender: 'female',
     className: '1-C',
     clubId: null,
@@ -380,6 +390,7 @@ export const STUDENTS: Student[] = [
   {
     id: 'hashimoto_tsubasa',
     name: '橋本翼',
+    nickname: 'つばさ',
     gender: 'male',
     className: '1-D',
     clubId: 'baseball',
@@ -402,6 +413,7 @@ export const STUDENTS: Student[] = [
   {
     id: 'kato_mitsuki',
     name: '加藤美月',
+    nickname: 'みっちゃん',
     gender: 'female',
     className: '2-D',
     clubId: 'tennis',
@@ -424,6 +436,7 @@ export const STUDENTS: Student[] = [
   {
     id: 'suzuki_shota',
     name: '鈴木翔太',
+    nickname: 'ショウ',
     gender: 'male',
     className: '3-A',
     clubId: 'brass',
@@ -446,6 +459,7 @@ export const STUDENTS: Student[] = [
   {
     id: 'saito_manabu',
     name: '斎藤学',
+    nickname: 'ガク',
     gender: 'male',
     className: '3-C',
     clubId: null,
@@ -470,6 +484,7 @@ export const STUDENTS: Student[] = [
   {
     id: 'ogawa_haruka',
     name: '小川はるか',
+    nickname: 'はるちゃん',
     gender: 'female',
     className: '1-A',
     clubId: 'brass',
@@ -493,6 +508,7 @@ export const STUDENTS: Student[] = [
   {
     id: 'inoue_momoka',
     name: '井上桃花',
+    nickname: 'モモ',
     gender: 'female',
     className: '1-A',
     clubId: null,
@@ -516,6 +532,7 @@ export const STUDENTS: Student[] = [
   {
     id: 'endo_ryota',
     name: '遠藤涼太',
+    nickname: 'リョウタ',
     gender: 'male',
     className: '1-B',
     clubId: 'soccer',
@@ -539,6 +556,7 @@ export const STUDENTS: Student[] = [
   {
     id: 'shimizu_nana',
     name: '清水菜々',
+    nickname: 'ナナ',
     gender: 'female',
     className: '1-B',
     clubId: null,
@@ -562,6 +580,7 @@ export const STUDENTS: Student[] = [
   {
     id: 'aoki_sora',
     name: '青木蒼',
+    nickname: 'アオ',
     gender: 'male',
     className: '1-C',
     clubId: null,
@@ -585,6 +604,7 @@ export const STUDENTS: Student[] = [
   {
     id: 'morita_chihiro',
     name: '森田千尋',
+    nickname: 'ちーちゃん',
     gender: 'female',
     className: '1-C',
     clubId: 'art',
@@ -608,6 +628,7 @@ export const STUDENTS: Student[] = [
   {
     id: 'nishida_kaito',
     name: '西田海斗',
+    nickname: 'カイト',
     gender: 'male',
     className: '1-D',
     clubId: 'baseball',
@@ -631,6 +652,7 @@ export const STUDENTS: Student[] = [
   {
     id: 'hayashi_riko',
     name: '林りこ',
+    nickname: 'りこりん',
     gender: 'female',
     className: '1-D',
     clubId: null,
@@ -654,6 +676,7 @@ export const STUDENTS: Student[] = [
   {
     id: 'fujita_mei',
     name: '藤田芽衣',
+    nickname: 'メイ',
     gender: 'female',
     className: '2-A',
     clubId: 'tennis',
@@ -677,6 +700,7 @@ export const STUDENTS: Student[] = [
   {
     id: 'ueda_takumi',
     name: '上田拓海',
+    nickname: 'タク',
     gender: 'male',
     className: '2-A',
     clubId: null,
@@ -700,6 +724,7 @@ export const STUDENTS: Student[] = [
   {
     id: 'kimura_yuna',
     name: '木村ゆな',
+    nickname: 'ゆなち',
     gender: 'female',
     className: '2-B',
     clubId: null,
@@ -723,6 +748,7 @@ export const STUDENTS: Student[] = [
   {
     id: 'murakami_sota',
     name: '村上蒼太',
+    nickname: 'ソウタ',
     gender: 'male',
     className: '2-B',
     clubId: 'soccer',
@@ -746,6 +772,7 @@ export const STUDENTS: Student[] = [
   {
     id: 'yoshida_hinata',
     name: '吉田ひなた',
+    nickname: 'ひなた',
     gender: 'female',
     className: '2-C',
     clubId: 'art',
@@ -769,6 +796,7 @@ export const STUDENTS: Student[] = [
   {
     id: 'okamoto_rin',
     name: '岡本凜',
+    nickname: 'りんちゃん',
     gender: 'female',
     className: '2-C',
     clubId: null,
@@ -792,6 +820,7 @@ export const STUDENTS: Student[] = [
   {
     id: 'goto_hayato',
     name: '後藤隼人',
+    nickname: 'ハヤト',
     gender: 'male',
     className: '2-D',
     clubId: 'track',
@@ -815,6 +844,7 @@ export const STUDENTS: Student[] = [
   {
     id: 'sakamoto_miu',
     name: '坂本美羽',
+    nickname: 'ミウ',
     gender: 'female',
     className: '2-D',
     clubId: null,
@@ -838,6 +868,7 @@ export const STUDENTS: Student[] = [
   {
     id: 'yamaguchi_ryo',
     name: '山口涼',
+    nickname: 'リョウ',
     gender: 'male',
     className: '3-A',
     clubId: 'brass',
@@ -861,6 +892,7 @@ export const STUDENTS: Student[] = [
   {
     id: 'ikeda_kotone',
     name: '池田琴音',
+    nickname: 'コトネ',
     gender: 'female',
     className: '3-A',
     clubId: null,
@@ -884,6 +916,7 @@ export const STUDENTS: Student[] = [
   {
     id: 'otsuka_itsuki',
     name: '大塚樹',
+    nickname: 'イツキ',
     gender: 'male',
     className: '3-B',
     clubId: null,
@@ -907,6 +940,7 @@ export const STUDENTS: Student[] = [
   {
     id: 'tanabe_misaki',
     name: '田辺美咲',
+    nickname: 'ミサキ',
     gender: 'female',
     className: '3-B',
     clubId: 'tennis',
@@ -930,6 +964,7 @@ export const STUDENTS: Student[] = [
   {
     id: 'kawano_shiori',
     name: '河野しおり',
+    nickname: 'しおりん',
     gender: 'female',
     className: '3-C',
     clubId: null,
@@ -953,6 +988,7 @@ export const STUDENTS: Student[] = [
   {
     id: 'maeda_taiga',
     name: '前田大河',
+    nickname: 'タイガ',
     gender: 'male',
     className: '3-C',
     clubId: 'track',
@@ -976,6 +1012,7 @@ export const STUDENTS: Student[] = [
   {
     id: 'noguchi_saki',
     name: '野口咲希',
+    nickname: 'サキ',
     gender: 'female',
     className: '3-D',
     clubId: 'baseball',
@@ -999,6 +1036,7 @@ export const STUDENTS: Student[] = [
   {
     id: 'ishikawa_yusuke',
     name: '石川悠介',
+    nickname: 'ユウスケ',
     gender: 'male',
     className: '3-D',
     clubId: null,
@@ -1021,6 +1059,7 @@ export const STUDENTS: Student[] = [
   {
     id: 'iwata_daichi',
     name: '岩田大地',
+    nickname: 'ダイチ',
     gender: 'male',
     className: '3-D',
     clubId: 'baseball',
@@ -1044,6 +1083,7 @@ export const STUDENTS: Student[] = [
   {
     id: 'takayama_seiichi',
     name: '鷹山誠一',
+    nickname: '鷹山先輩',
     gender: 'male',
     className: '3-A',
     clubId: null,
@@ -1066,6 +1106,7 @@ export const STUDENTS: Student[] = [
   {
     id: 'yuuki_akari',
     name: '結城あかり',
+    nickname: 'あかりん',
     gender: 'female',
     className: '3-C',
     clubId: 'art',
@@ -1088,6 +1129,7 @@ export const STUDENTS: Student[] = [
   {
     id: 'shido_tsuyoshi',
     name: '獅堂剛',
+    nickname: '獅堂',
     gender: 'male',
     className: '3-D',
     clubId: 'track',
@@ -1166,64 +1208,87 @@ const CLUB_LOCATION_MAP: Record<string, LocationId> = {
   iwata_daichi: 'baseball_field',
 };
 
-// 生徒の場所スケジュール
-export function getStudentLocation(studentId: string, timeSlot: string, day: number): LocationId {
-  // 生徒のクラスを引くためにSTUDENTSを参照
+// 生徒の場所スケジュール（currentTime: 0=15:00, 240=19:00）
+// 戻り値 null = 帰宅済み（どこにもいない）
+export function getStudentLocation(studentId: string, _timeSlot: string, day: number, currentTime: number = 0): LocationId | null {
   const student = STUDENTS.find(s => s.id === studentId);
   if (!student) return 'class1b';
 
   const classLoc = CLASS_LOCATION_MAP[student.className] ?? 'class1b';
-  const rand = (day * 7 + studentId.charCodeAt(0)) % 3;
+  // 生徒ごとに決定論的な乱数シード
+  const seed = day * 7 + studentId.charCodeAt(0) + (studentId.charCodeAt(1) ?? 0) * 13;
+  const rand = seed % 5;
+  const hasClub = studentId in CLUB_LOCATION_MAP;
+  const clubLoc = CLUB_LOCATION_MAP[studentId];
 
-  switch (timeSlot) {
-    case 'morning':
-      return classLoc;
-
-    case 'lunch': {
-      // ランダムで食堂か中庭
-      return rand < 2 ? 'cafeteria' : 'courtyard';
+  // 15:00-16:00 (0-60): 放課後すぐ
+  if (currentTime < 60) {
+    if (hasClub) {
+      // 部活組: 半数は教室でまだ準備中、半数は部活場所へ
+      return rand < 2 ? classLoc : clubLoc;
     }
-
-    case 'afternoon':
-      return classLoc;
-
-    case 'afterschool': {
-      const clubLoc = CLUB_LOCATION_MAP[studentId];
-      if (clubLoc) return clubLoc;
-      // 帰宅組: 教室・中庭・図書室をランダム
-      const options: LocationId[] = [classLoc, 'courtyard', 'library'];
-      return options[rand % options.length];
-    }
-
-    default:
-      return classLoc;
+    // 帰宅組: 教室・中庭・図書室・食堂
+    const options: LocationId[] = [classLoc, 'courtyard', 'library', 'cafeteria'];
+    return options[rand % options.length];
   }
+
+  // 16:00-17:00 (60-120): 部活本番
+  if (currentTime < 120) {
+    if (hasClub) return clubLoc;
+    // 帰宅組: ぶらぶら、一部は教室に残る
+    const options: LocationId[] = [classLoc, 'courtyard', 'library', 'cafeteria'];
+    return options[(rand + 1) % options.length];
+  }
+
+  // 17:00-18:00 (120-180): 部活後半、帰宅組の一部が帰宅
+  if (currentTime < 180) {
+    if (hasClub) {
+      // 部活組: まだ活動中、ごく一部は休憩で移動
+      return rand < 4 ? clubLoc : 'courtyard';
+    }
+    // 帰宅組: 約40%が帰宅
+    if (rand < 2) return null;
+    const options: LocationId[] = ['courtyard', 'library', classLoc];
+    return options[rand % options.length];
+  }
+
+  // 18:00-19:00 (180-240): 大半が帰宅
+  if (hasClub) {
+    // 部活組: 約40%が帰宅、残りは部活場所
+    if (rand < 2) return null;
+    return clubLoc;
+  }
+  // 帰宅組: 約80%が帰宅
+  if (rand < 4) return null;
+  return 'library';
 }
 
-// 候補者の場所スケジュール
-export function getCandidateLocation(candidateId: CandidateId, timeSlot: string, day: number): LocationId {
-  const rand = (day * 7 + candidateId.charCodeAt(0)) % 3;
+// 候補者の場所スケジュール（候補者は選挙期間中なので帰宅しない）
+export function getCandidateLocation(candidateId: CandidateId, _timeSlot: string, day: number, currentTime: number = 0): LocationId {
+  const seed = day * 7 + candidateId.charCodeAt(0);
   const classMap: Record<CandidateId, LocationId> = {
-    conservative: 'class3a', // 鷹山: 3-A
-    progressive: 'class3c',  // 結城: 3-C
-    sports: 'class3d',       // 獅堂: 3-D
+    conservative: 'class3a',
+    progressive: 'class3c',
+    sports: 'class3d',
   };
   const classLoc = classMap[candidateId];
 
   const clubMap: Partial<Record<CandidateId, LocationId>> = {
-    progressive: 'art_room',   // 結城あかり → 美術部
-    sports: 'track_field',     // 獅堂剛 → 陸上部
+    progressive: 'art_room',
+    sports: 'track_field',
   };
 
-  switch (timeSlot) {
-    case 'morning': return classLoc;
-    case 'lunch': return rand < 2 ? 'cafeteria' : 'courtyard';
-    case 'afternoon': return classLoc;
-    case 'afterschool': {
-      return clubMap[candidateId] ?? 'courtyard';
-    }
-    default: return classLoc;
+  // 15:00-16:00: 教室で選挙準備 or 中庭で演説
+  if (currentTime < 60) {
+    return seed % 2 === 0 ? classLoc : 'courtyard';
   }
+  // 16:00-17:30: 部活がある候補者は部活、ない候補者は中庭・食堂で活動
+  if (currentTime < 150) {
+    return clubMap[candidateId] ?? (seed % 2 === 0 ? 'courtyard' : 'cafeteria');
+  }
+  // 17:30-19:00: 中庭や廊下で最後の選挙活動
+  const lateOptions: LocationId[] = ['courtyard', 'cafeteria', 'library'];
+  return lateOptions[seed % lateOptions.length];
 }
 
 export const FACTION_LABELS: Record<string, string> = {

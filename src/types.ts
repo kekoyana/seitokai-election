@@ -16,7 +16,7 @@ export type LocationId =
   | 'class2a' | 'class2b' | 'class2c' | 'class2d'
   | 'class3a' | 'class3b' | 'class3c' | 'class3d'
   | 'track_field' | 'soccer_field' | 'baseball_field' | 'tennis_court'
-  | 'music_room' | 'art_room'
+  | 'music_room' | 'art_room' | 'broadcast_room'
   | 'courtyard' | 'library' | 'cafeteria' | 'nurses_office'
   | 'corridor_1f' | 'corridor_2f' | 'corridor_3f' | 'corridor_ground';
 
@@ -78,6 +78,7 @@ export type Gender = 'male' | 'female';
 export interface Student {
   id: string;
   name: string;
+  nickname: string;           // あだ名
   gender: Gender;
   className: string;
   clubId: string | null;

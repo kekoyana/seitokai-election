@@ -211,6 +211,7 @@ export class CharacterSelectScreen {
           <div style="flex:1; min-width:0;">
             <div style="display:flex; align-items:center; gap:6px;">
               <span style="font-size:1em; font-weight:bold; color:var(--game-text);">${s.name}</span>
+              <span style="font-size:0.75em; color:var(--game-text-dim);">（${s.nickname}）</span>
             </div>
             <div style="font-size:0.8em; color:var(--game-text-dim);">
               ${s.className}　${s.gender === 'male' ? '♂' : '♀'}　${PERSONALITY_LABELS[s.personality] ?? s.personality}

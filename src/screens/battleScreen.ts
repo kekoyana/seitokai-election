@@ -115,7 +115,7 @@ export class BattleScreen {
           : renderInitialIcon(student.name, student.personality, 96, 'rgba(255,255,255,0.3)')
         }
         <div style="color:#fff; min-width:120px;">
-          <div style="font-size:1.05em; font-weight:bold;">${student.name}</div>
+          <div style="font-size:1.05em; font-weight:bold;">${student.name} <span style="font-size:0.75em; font-weight:normal; opacity:0.7;">（${student.nickname}）</span></div>
           <div style="font-size:0.82em; opacity:0.7; margin-bottom:6px;">${student.className}</div>
           <div style="
             display:inline-flex; align-items:center; gap:6px;

@@ -120,6 +120,7 @@ export interface DailyCallbacks {
   onTalk: (student: Student) => void;
   onPersuade: (student: Student) => void;
   onNurseRest: () => void;
+  onTrain: (stat: 'speech' | 'athletic' | 'intel') => void;
   onNextDay: () => void;
 }
 
@@ -156,13 +157,13 @@ export class DailyScreen {
     return this.state.students.filter(s =>
       s.id !== playerId &&
       s.candidateId === null &&
-      getStudentLocation(s.id, this.state.timeSlot, this.state.day) === this.state.currentLocation
+      getStudentLocation(s.id, this.state.timeSlot, this.state.day, this.state.currentTime) === this.state.currentLocation
     );
   }
 
   private getCandidatesAtLocation(): typeof CANDIDATES {
     return CANDIDATES.filter(c =>
-      getCandidateLocation(c.id, this.state.timeSlot, this.state.day) === this.state.currentLocation
+      getCandidateLocation(c.id, this.state.timeSlot, this.state.day, this.state.currentTime) === this.state.currentLocation
     );
   }
 
@@ -314,6 +315,43 @@ export class DailyScreen {
       "></div>
     `;
 
+    // 時間切れモーダル
+    const timeUpModalHtml = isTimeUp ? `
+      <div id="timeup-modal" style="
+        position:absolute; inset:0; z-index:100;
+        background:rgba(0,0,0,0.6);
+        display:flex; align-items:center; justify-content:center;
+        animation: fadeIn 0.4s ease;
+      ">
+        <div style="
+          background:linear-gradient(180deg, #2a2040 0%, #1a1030 100%);
+          border:2px solid #8070a0;
+          border-radius:16px;
+          padding:32px 40px;
+          text-align:center;
+          box-shadow:0 8px 32px rgba(0,0,0,0.5);
+          max-width:320px;
+        ">
+          <div style="font-size:1.5em; margin-bottom:12px;">🌙</div>
+          <p style="color:#e0d8f0; font-size:0.95em; line-height:1.6; margin-bottom:20px;">
+            もう遅い時間だ…<br>今日はここまでにしよう
+          </p>
+          <button id="timeup-next-day-btn" style="
+            padding:12px 36px;
+            background:linear-gradient(135deg,#6a5acd,#483d8b);
+            color:#fff; border:2px solid #8878c8;
+            border-radius:50px;
+            font-size:1em; font-weight:bold;
+            cursor:pointer; font-family:inherit;
+            box-shadow:0 4px 12px rgba(72,61,139,0.4);
+            transition: transform 0.1s;
+          " onpointerdown="this.style.transform='scale(0.95)'"
+             onpointerup="this.style.transform='scale(1)'"
+          >翌日へ →</button>
+        </div>
+      </div>
+    ` : '';
+
     this.container.innerHTML = `
       ${timeOverlayHtml}
       ${hudHtml}
@@ -322,6 +360,7 @@ export class DailyScreen {
       </div>
       ${logBoxHtml}
       ${bottomBar}
+      ${timeUpModalHtml}
     `;
 
     this.attachEvents();
@@ -447,6 +486,60 @@ export class DailyScreen {
     `;
   }
 
+  private renderTrainingPanel(isOutOfStamina: boolean): string {
+    const loc = this.state.currentLocation;
+    const trainCost = 10;
+    const timeCost = TIME_COST.TRAINING;
+    const canTrain = !isOutOfStamina && this.state.stamina >= trainCost
+      && this.state.currentTime + timeCost <= MAX_TIME;
+    const pc = this.state.playerCharacter;
+
+    type TrainInfo = { stat: 'speech' | 'athletic' | 'intel'; label: string; statLabel: string; desc: string; icon: string; current: number; color: string };
+    let info: TrainInfo | null = null;
+
+    if (loc === 'broadcast_room' && pc) {
+      info = { stat: 'speech', label: '発声練習', statLabel: '弁舌', desc: 'マイクの前で発声練習をする', icon: '🎙️', current: pc.stats.speech, color: '#E07820' };
+    } else if ((loc === 'track_field' || loc === 'soccer_field' || loc === 'baseball_field' || loc === 'tennis_court') && pc) {
+      info = { stat: 'athletic', label: '運動', statLabel: '運動', desc: 'グラウンドで体を動かす', icon: '🏃', current: pc.stats.athletic, color: '#27AE60' };
+    } else if (loc === 'library' && pc) {
+      info = { stat: 'intel', label: '読書', statLabel: '知力', desc: '本を読んで知識を深める', icon: '📚', current: pc.stats.intel, color: '#2E5FAC' };
+    }
+
+    if (!info) return '';
+
+    const noTime = !isOutOfStamina && this.state.stamina >= trainCost
+      && this.state.currentTime + timeCost > MAX_TIME;
+    const pct = Math.min(100, info.current);
+
+    return `
+      <div class="game-panel" style="margin-bottom:12px; padding:12px 16px;">
+        <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+          <span style="font-size:1.5em;">${info.icon}</span>
+          <div style="flex:1;">
+            <div style="font-size:0.9em; font-weight:bold; color:var(--game-text);">${info.desc}</div>
+          </div>
+          <button data-train="${info.stat}" class="game-btn ${canTrain ? 'game-btn-primary' : 'game-btn-disabled'}" style="
+            padding:8px 16px;
+            font-size:0.85em; font-family:var(--game-font);
+          ">${info.label}（⚡${trainCost} / ${timeCost}分）</button>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span style="font-size:0.78em; color:var(--game-text-dim); min-width:32px;">${info.statLabel}</span>
+          <div style="flex:1; height:14px; background:var(--game-panel-inner); border-radius:7px; overflow:hidden; border:1px solid ${info.color}30;">
+            <div style="
+              width:${pct}%; height:100%;
+              background:linear-gradient(90deg, ${info.color}90, ${info.color});
+              border-radius:7px;
+              transition: width 0.3s ease;
+            "></div>
+          </div>
+          <span style="font-size:0.82em; font-weight:bold; color:${info.color}; min-width:28px; text-align:right;">${info.current}</span>
+        </div>
+        ${noTime ? '<div style="font-size:0.72em; color:#C0392B; margin-top:6px; text-align:right;">時間が足りない</div>' : ''}
+      </div>
+    `;
+  }
+
   private renderMainPanel(studentsHere: Student[], isOutOfStamina: boolean): string {
     const candidatesHere = this.getCandidatesAtLocation();
     const candidatesHtml = candidatesHere.map(c => this.renderCandidateCard(c)).join('');
@@ -455,14 +548,14 @@ export class DailyScreen {
       ? `<div style="text-align:center; color:#aaa; padding:20px; font-size:0.9em;">ここには誰もいない</div>`
       : studentsHere.map(s => this.renderStudentCard(s)).join('');
 
-    const endDayHtml = isOutOfStamina ? `
+    const endDayHtml = (isOutOfStamina && !(this.state.currentTime >= MAX_TIME)) ? `
       <div style="
         background:rgba(255,255,255,0.9);
         border-radius:12px; padding:16px;
         margin-top:12px; text-align:center;
         border:2px solid #F0A030;
       ">
-        <p style="color:#888; font-size:0.85em; margin-bottom:12px;">${this.state.currentTime >= MAX_TIME ? 'もう遅い時間だ…今日はここまでにしよう' : '体力が尽きました'}</p>
+        <p style="color:#888; font-size:0.85em; margin-bottom:12px;">体力が尽きました</p>
         <button id="next-day-btn" style="
           padding:12px 32px;
           background:linear-gradient(135deg,#F0A030,#D08010);
@@ -490,9 +583,13 @@ export class DailyScreen {
       </div>
     ` : '';
 
+    // トレーニングパネル
+    const trainingHtml = this.renderTrainingPanel(isOutOfStamina);
+
     return `
       ${orgInfoHtml}
       ${nurseRestHtml}
+      ${trainingHtml}
 
       <div class="game-panel" style="margin-bottom:12px;">
         <h3 style="font-size:0.9em; color:var(--game-heading); margin-bottom:10px; font-weight:bold;">この場所にいる生徒</h3>
@@ -583,6 +680,7 @@ export class DailyScreen {
         <div style="flex:1; min-width:0;">
           <div style="display:flex; align-items:center; gap:4px; flex-wrap:wrap;">
             <span style="font-size:0.9em; font-weight:bold; color:var(--game-text);">${s.name}</span>
+            <span style="font-size:0.72em; color:var(--game-text-dim);">（${s.nickname}）</span>
           </div>
           <div style="display:flex; align-items:center; gap:4px; flex-wrap:wrap; margin-top:1px; font-size:0.75em; color:var(--game-text-dim);">
             ${renderStudentAffiliation(s.id, s.className, s.clubId)}
@@ -816,6 +914,7 @@ export class DailyScreen {
           <div style="flex:1; min-width:0;">
             <div style="display:flex; align-items:center; gap:4px;">
               <span style="font-size:0.85em; font-weight:bold; color:var(--game-text);">${s.name}</span>
+              <span style="font-size:0.65em; color:var(--game-text-dim);">（${s.nickname}）</span>
               <span style="font-size:0.6em; color:${roleColor}; font-weight:bold;">${role}</span>
             </div>
             <div style="font-size:0.68em; color:var(--game-text-dim);">${s.className}</div>
@@ -863,11 +962,11 @@ export class DailyScreen {
     const studentCount = this.state.students.filter(s =>
       s.id !== playerId &&
       s.candidateId === null &&
-      getStudentLocation(s.id, this.state.timeSlot, this.state.day) === locId
+      getStudentLocation(s.id, this.state.timeSlot, this.state.day, this.state.currentTime) === locId
     ).length;
     // 候補者は専用の位置関数で判定
     const candidateCount = CANDIDATES.filter(c =>
-      getCandidateLocation(c.id, this.state.timeSlot, this.state.day) === locId
+      getCandidateLocation(c.id, this.state.timeSlot, this.state.day, this.state.currentTime) === locId
     ).length;
     return studentCount + candidateCount;
   }
@@ -977,14 +1076,14 @@ export class DailyScreen {
     const isOutOfStamina = this.state.stamina <= 0 || isCorridorTimeUp;
     const canEnter = !isCorridorTimeUp && this.state.stamina >= MOVE_COST.ENTER_ROOM;
 
-    const endDayHtml = isOutOfStamina ? `
+    const endDayHtml = (isOutOfStamina && !(this.state.currentTime >= MAX_TIME)) ? `
       <div style="
         background:rgba(255,255,255,0.9);
         border-radius:12px; padding:16px;
         margin-top:12px; text-align:center;
         border:2px solid #F0A030;
       ">
-        <p style="color:#888; font-size:0.85em; margin-bottom:12px;">${this.state.currentTime >= MAX_TIME ? 'もう遅い時間だ…今日はここまでにしよう' : '体力が尽きました'}</p>
+        <p style="color:#888; font-size:0.85em; margin-bottom:12px;">体力が尽きました</p>
         <button id="next-day-btn" style="
           padding:12px 32px;
           background:linear-gradient(135deg,#F0A030,#D08010);
@@ -1117,7 +1216,7 @@ export class DailyScreen {
       <div style="display:grid; grid-template-columns:1fr 1fr 1fr auto; gap:0; border-top:1px solid #a0a8b0;">
         <div style="padding:3px; border-right:1px solid #a0a8b0;">${this.renderRoomBtn('music_room', canEnter, s)}</div>
         <div style="padding:3px; border-right:1px solid #a0a8b0;">${this.renderRoomBtn('art_room', canEnter, s)}</div>
-        <div style="padding:3px; background:#eaeff4; border-right:1px solid #a0a8b0;"></div>
+        <div style="padding:3px; border-right:1px solid #a0a8b0;">${this.renderRoomBtn('broadcast_room', canEnter, s)}</div>
         <div style="padding:3px; display:flex; align-items:stretch; width:48px;">
           ${this.renderStairsBtn('1f', '2f', 'down')}
         </div>
@@ -1310,7 +1409,7 @@ export class DailyScreen {
 
     const infoLineHtml = `
       <div style="text-align:center;">
-        <div style="font-size:1.1em; font-weight:bold; color:#333;">${s.name}</div>
+        <div style="font-size:1.1em; font-weight:bold; color:#333;">${s.name} <span style="font-size:0.75em; color:#888; font-weight:normal;">（${s.nickname}）</span></div>
         <div style="display:flex; justify-content:center; align-items:center; gap:4px; flex-wrap:wrap; margin-top:2px; font-size:0.8em; color:#888;">
           ${renderStudentAffiliation(s.id, s.className, s.clubId)}
           <span style="font-size:0.94em; color:#999;">${PERS_LABELS[s.personality] ?? s.personality}</span>
@@ -1533,6 +1632,14 @@ export class DailyScreen {
       this.callbacks.onNurseRest();
     });
 
+    // トレーニングボタン
+    this.container.querySelectorAll<HTMLButtonElement>('[data-train]').forEach(btn => {
+      btn.addEventListener('pointerup', () => {
+        const stat = btn.dataset['train'] as 'speech' | 'athletic' | 'intel';
+        this.callbacks.onTrain(stat);
+      });
+    });
+
     // 会話ボタン
     this.container.querySelectorAll<HTMLButtonElement>('[data-action-talk]').forEach(btn => {
       btn.addEventListener('pointerup', () => {
@@ -1572,6 +1679,12 @@ export class DailyScreen {
       this.render();
     });
 
+    // 翌日ボタン（時間切れモーダル）
+    const timeUpBtn = this.container.querySelector<HTMLButtonElement>('#timeup-next-day-btn');
+    timeUpBtn?.addEventListener('pointerup', () => {
+      this.callbacks.onNextDay();
+    });
+
     // 翌日ボタン（体力切れ時）
     const nextDayBtn = this.container.querySelector<HTMLButtonElement>('#next-day-btn');
     nextDayBtn?.addEventListener('pointerup', () => {
@@ -1601,6 +1714,54 @@ export class DailyScreen {
       this.conversationOverlay = null;
       this.container.style.pointerEvents = '';
     }
+  }
+
+  showTrainingResult(icon: string, statLabel: string, oldValue: number, newValue: number, color: string): void {
+    const overlay = document.createElement('div');
+    overlay.style.cssText = `
+      position:fixed; inset:0; z-index:200;
+      display:flex; align-items:center; justify-content:center;
+      background:rgba(0,0,0,0.4);
+      animation: fadeIn 0.2s ease;
+    `;
+    const gain = newValue - oldValue;
+    overlay.innerHTML = `
+      <div style="
+        background:var(--game-panel-bg);
+        border:2px solid ${color};
+        border-radius:16px;
+        padding:24px 32px;
+        text-align:center;
+        box-shadow:0 8px 32px rgba(0,0,0,0.3);
+        min-width:200px;
+        animation: game-slide-up 0.3s ease;
+      ">
+        <div style="font-size:2em; margin-bottom:8px;">${icon}</div>
+        <div style="font-size:1.1em; font-weight:bold; color:var(--game-text); margin-bottom:12px;">
+          ${statLabel} <span style="color:${color};">+${gain}</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px; justify-content:center; margin-bottom:8px;">
+          <span style="font-size:0.9em; color:var(--game-text-dim);">${oldValue}</span>
+          <span style="font-size:1.2em; color:${color};">→</span>
+          <span style="font-size:1.1em; font-weight:bold; color:${color};">${newValue}</span>
+        </div>
+        <div style="
+          width:100%; height:16px;
+          background:var(--game-panel-inner);
+          border-radius:8px; overflow:hidden;
+          border:1px solid ${color}30;
+        ">
+          <div style="
+            width:${Math.min(100, newValue)}%; height:100%;
+            background:linear-gradient(90deg, ${color}90, ${color});
+            border-radius:8px;
+          "></div>
+        </div>
+      </div>
+    `;
+    overlay.addEventListener('pointerup', () => overlay.remove());
+    (this.container.parentElement ?? document.body).appendChild(overlay);
+    setTimeout(() => overlay.remove(), 2000);
   }
 
   mount(parent: HTMLElement): void {

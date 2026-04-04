@@ -176,6 +176,7 @@ export class Game {
       onTalk: (student: Student) => this.handleTalk(student),
       onPersuade: (student: Student) => this.handlePersuade(student),
       onNurseRest: () => this.handleNurseRest(),
+      onTrain: (stat: 'speech' | 'athletic' | 'intel') => this.handleTrain(stat),
       onNextDay: () => this.handleNextDay(),
     });
     this.dailyScreen.mount(this.root);
@@ -325,6 +326,50 @@ export class Game {
       actionLogs: [...this.state.actionLogs, `保健室で1時間休憩した（体力+${recovery}）`],
     };
     this.dailyScreen?.update(this.state);
+  }
+
+  private handleTrain(stat: 'speech' | 'athletic' | 'intel'): void {
+    if (this.isTimeUp()) return;
+    if (this.state.stamina < 10) return;
+    if (!this.state.playerCharacter) return;
+
+    const TRAIN_AMOUNT = Math.floor(Math.random() * 4); // 0〜3
+    const statLabels: Record<string, string> = {
+      speech: '弁舌', athletic: '運動', intel: '知力',
+    };
+    const statIcons: Record<string, string> = {
+      speech: '🎙️', athletic: '🏃', intel: '📚',
+    };
+    const statColors: Record<string, string> = {
+      speech: '#E07820', athletic: '#27AE60', intel: '#2E5FAC',
+    };
+    const locationLabels: Record<string, string> = {
+      speech: '放送室で発声練習', athletic: 'グラウンドで運動', intel: '図書室で読書',
+    };
+
+    const oldValue = this.state.playerCharacter.stats[stat];
+    const newStats = { ...this.state.playerCharacter.stats };
+    newStats[stat] = Math.min(100, newStats[stat] + TRAIN_AMOUNT);
+    const newValue = newStats[stat];
+
+    const playerId = this.state.playerCharacter.id;
+    this.state = {
+      ...this.state,
+      playerCharacter: {
+        ...this.state.playerCharacter,
+        stats: newStats,
+      },
+      students: this.state.students.map(s =>
+        s.id === playerId ? { ...s, stats: newStats } : s
+      ),
+      stamina: this.state.stamina - 10,
+      currentTime: Math.min(MAX_TIME, this.state.currentTime + TIME_COST.TRAINING),
+      actionLogs: [...this.state.actionLogs, `${locationLabels[stat]}をした（${statLabels[stat]}${TRAIN_AMOUNT > 0 ? `+${TRAIN_AMOUNT}` : '変化なし'}）`],
+    };
+    this.dailyScreen?.update(this.state);
+    this.dailyScreen?.showTrainingResult(
+      statIcons[stat], statLabels[stat], oldValue, newValue, statColors[stat]
+    );
   }
 
   private getPlayerClassLocation(): LocationId {

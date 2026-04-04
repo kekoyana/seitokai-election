@@ -220,11 +220,6 @@ export class DailyScreen {
       ">
         <span>支持者: <strong style="color:${candidateColor}">${supporterCount}</strong>名</span>
         <span>場所: <strong>${FLOOR_LABELS[getFloorFromLocation(this.state.currentLocation)]} ${isCorridorLocation(this.state.currentLocation) ? '廊下' : currentLocation?.name ?? ''}</strong></span>
-        <button id="log-toggle" style="
-          margin-left:auto; background:none; border:1px solid #aab;
-          border-radius:4px; padding:1px 8px; cursor:pointer;
-          font-family:inherit; font-size:1em; color:#555;
-        ">ログ${this.state.actionLogs.length > 0 ? ` (${this.state.actionLogs.length})` : ''}</button>
       </div>
     `;
 
@@ -247,60 +242,43 @@ export class DailyScreen {
       mainHtml = this.renderMainPanel(studentsHere, isOutOfStamina);
     }
 
-    // ログオーバーレイ
-    const logOverlayHtml = this.showLog ? `
-      <div id="log-overlay" style="
-        position:absolute; inset:0;
-        background:rgba(0,0,0,0.5);
-        display:flex; flex-direction:column;
-        z-index:100;
+    // HUD風メッセージボックス（画面下部に固定）
+    const logs = this.state.actionLogs;
+    const visibleLogs = this.showLog
+      ? [...logs].reverse()
+      : logs.length > 0 ? [logs[logs.length - 1]] : [];
+    const logBoxHtml = `
+      <div style="
+        position:absolute; bottom:36px; left:8px; right:8px;
+        pointer-events:auto; z-index:50;
       ">
-        <div style="
-          flex:1; margin:48px 12px 50px;
-          background:rgba(255,255,255,0.95);
-          border-radius:12px;
-          display:flex; flex-direction:column;
-          overflow:hidden;
+        <div id="log-box" style="
+          background:rgba(0,0,0,0.75); backdrop-filter:blur(4px);
+          border-radius:10px; padding:8px 12px;
+          color:#e8e8e8; font-size:0.78em; line-height:1.6;
+          cursor:pointer;
+          ${this.showLog ? 'max-height:40vh; overflow-y:auto;' : 'max-height:3.6em; overflow:hidden;'}
         ">
-          <div style="
-            display:flex; align-items:center; justify-content:space-between;
-            padding:10px 14px; border-bottom:1px solid #e0e8f0;
-            flex-shrink:0;
-          ">
-            <span style="font-weight:bold; font-size:0.9em; color:#333;">行動ログ</span>
-            <button id="log-close" style="
-              background:#ddd; border:none; border-radius:50%;
-              width:28px; height:28px; cursor:pointer; font-size:1em;
-            ">×</button>
-          </div>
-          <div style="flex:1; overflow-y:auto; padding:10px 14px;">
-            ${this.state.actionLogs.length === 0
-              ? '<div style="color:#999; font-size:0.85em; text-align:center; margin-top:20px;">まだ行動ログがありません</div>'
-              : [...this.state.actionLogs].reverse().map((log, i) => `
-                <div style="
-                  padding:8px 0;
-                  border-bottom:1px solid #f0f0f0;
-                  font-size:0.82em; color:#444;
-                  line-height:1.6;
-                  white-space:pre-line;
-                ">
-                  <span style="color:#aaa; font-size:0.8em;">#${this.state.actionLogs.length - i}</span>
-                  ${log}
-                </div>
-              `).join('')
-            }
-          </div>
+          ${visibleLogs.length === 0
+            ? '<span style="color:#888;">...</span>'
+            : visibleLogs.map(log => `
+              <div style="
+                white-space:pre-line;
+                ${this.showLog ? 'padding:4px 0; border-bottom:1px solid rgba(255,255,255,0.1);' : ''}
+              ">${log}</div>
+            `).join('')
+          }
         </div>
       </div>
-    ` : '';
+    `;
 
     this.container.innerHTML = `
       ${hudHtml}
-      <div style="flex:1; overflow-y:auto; padding:48px 16px 12px;">
+      <div style="flex:1; overflow-y:auto; padding:48px 16px 52px;">
         ${mainHtml}
       </div>
+      ${logBoxHtml}
       ${bottomBar}
-      ${logOverlayHtml}
     `;
 
     this.attachEvents();
@@ -1358,21 +1336,10 @@ export class DailyScreen {
       if (bgmIcon) bgmIcon.textContent = newVol > 0 ? '🔊' : '🔇';
     });
 
-    // ログトグル
-    this.container.querySelector('#log-toggle')?.addEventListener('pointerup', () => {
+    // メッセージボックスタップで展開/折りたたみ
+    this.container.querySelector('#log-box')?.addEventListener('pointerup', () => {
       this.showLog = !this.showLog;
       this.render();
-    });
-    this.container.querySelector('#log-close')?.addEventListener('pointerup', () => {
-      this.showLog = false;
-      this.render();
-    });
-    // ログオーバーレイ背景クリックで閉じる
-    this.container.querySelector('#log-overlay')?.addEventListener('pointerup', (e) => {
-      if ((e.target as HTMLElement).id === 'log-overlay') {
-        this.showLog = false;
-        this.render();
-      }
     });
 
     // プレイヤーアイコン

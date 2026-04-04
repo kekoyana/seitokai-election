@@ -1,0 +1,166 @@
+# デザインガイド
+
+## コンセプト
+
+ときメモ/パワプロ風の学園ゲームUI。
+明るく爽やかな学園の雰囲気を保ちつつ、「ゲームのウィンドウ」としての存在感を持たせる。
+
+### やること
+- 白背景 + 太い色枠のパネル（ゲームウィンドウ感）
+- 立体感のあるボタン（グラデーション + ベベル + 押し込み）
+- 丸ゴシック系フォント（柔らかさ）
+- 明るい配色ベース（学園の日常感）
+
+### やらないこと
+- Webアプリ的なグラスモーフィズム（`backdrop-filter: blur`）
+- ピル型ボタン（`border-radius: 50px`）
+- フラットデザイン（影・枠なしのボタン）
+- ダークテーマ全面適用（バトル画面は例外）
+
+## カラーシステム
+
+### CSS変数（`src/game.css` の `:root` で定義）
+
+| 変数名 | 値 | 用途 |
+|--------|------|------|
+| `--game-bg-light` | `#d8eaf8` | 画面背景（水色側） |
+| `--game-bg-warm` | `#f5efe0` | 画面背景（暖色側） |
+| `--game-panel-bg` | `rgba(255,255,255,0.95)` | パネル背景 |
+| `--game-panel-border` | `#3868a8` | パネル枠（メイン） |
+| `--game-panel-border-light` | `#70a0d8` | パネル枠（軽め） |
+| `--game-panel-highlight` | `#f08030` | ホバー時のハイライト |
+| `--game-panel-inner` | `#e8f0f8` | パネル内の背景（説明文等） |
+| `--game-heading` | `#1a3060` | 見出し文字色 |
+| `--game-heading-accent` | `#d04020` | 見出しアクセント（赤） |
+| `--game-text` | `#2a3040` | 通常テキスト |
+| `--game-text-dim` | `#6878a0` | 補助テキスト |
+| `--game-accent` | `#2878c8` | アクセントカラー |
+
+### 派閥色（`src/data.ts` の `CANDIDATE_INFO` で定義）
+
+| 派閥 | color | accentColor |
+|------|-------|-------------|
+| 保守派 | `#1B3A6B`（濃紺） | `#2E5FAC`（青） |
+| 革新派 | `#C45A00`（橙） | `#E07820`（明るい橙） |
+| 体育派 | `#A00000`（赤） | `#D02020`（明るい赤） |
+
+#### 派閥色の使い方ルール
+- 「味方」「支持中」を表す色は**固定色（緑など）ではなく、その派閥のイメージカラー**を使う
+- 派閥バッジ、支持表示、組織のハイライト等はすべて `CANDIDATES` の `color` を参照する
+- 新しい派閥が追加された場合も `CANDIDATE_INFO` に定義すれば自動的に反映される設計にする
+
+### 効果色（ログ内テキスト用。詳細は `docs/worldview.md` を参照）
+
+| 種類 | 色 | 用途 |
+|------|------|------|
+| ポジティブ | `#7EC850` | 好感度UP、体力回復、趣味が好き |
+| ネガティブ | `#F07070` | 好感度DOWN、趣味が嫌い |
+| 中立 | `#999` | 趣味が普通、変化なし |
+
+これらは派閥色とは無関係な「効果の種類」を示す色。混同しないこと。
+
+### 意味的なUI色（好感度表示など）
+
+| 状態 | 色 | 備考 |
+|------|------|------|
+| 好意的（好感度高） | `#27AE60` | UI上のラベル色。ログの効果色とは別 |
+| 不快（好感度低） | `#C0392B` | 同上 |
+| 普通 | `#888` | 同上 |
+
+## フォント
+
+```
+--game-font: 'M PLUS Rounded 1c', 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif;
+```
+
+- Google Fontsから `M PLUS Rounded 1c`（ウェイト: 400, 700, 900）を読み込み
+- 見出し: `font-weight: 900` または `700`
+- 本文: `font-weight: 400`
+- すべてのボタン・入力欄に `font-family: var(--game-font)` を指定すること
+
+## コンポーネント
+
+### パネル（ウィンドウ）
+
+| クラス | 用途 | 特徴 |
+|--------|------|------|
+| `.game-panel` | メインパネル | 白背景、青太枠(3px)、角丸8px |
+| `.game-panel-light` | 補助パネル | 半透明白、青細枠(2px)、角丸6px |
+| `.game-panel-dark` | バトル画面専用 | ダーク背景、青枠(3px) |
+
+```html
+<!-- 基本パネル -->
+<div class="game-panel">内容</div>
+
+<!-- 補助パネル（派閥説明など） -->
+<div class="game-panel-light">内容</div>
+```
+
+### ボタン
+
+| クラス | 色 | 用途 |
+|--------|------|------|
+| `.game-btn-primary` | 青 | メインアクション（移動、会話） |
+| `.game-btn-danger` | 赤 | 危険な操作 |
+| `.game-btn-success` | 緑 | 肯定、成功 |
+| `.game-btn-warning` | 橙 | 説得、翌日へ |
+| `.game-btn-disabled` | グレー | 操作不可 |
+
+```html
+<button class="game-btn game-btn-primary">会話</button>
+<button class="game-btn game-btn-warning">説得</button>
+<button class="game-btn game-btn-disabled" disabled>体力不足</button>
+```
+
+ボタンの特徴:
+- `border-radius: 6px`（角張りすぎず、丸すぎず）
+- 上下グラデーション（180deg、明→暗）
+- `border-bottom-color` を暗くして立体感を出す
+- `:active` で `translateY(2px)` の押し込みエフェクト
+
+### HUDバッジ
+
+| クラス | 用途 |
+|--------|------|
+| `.game-hud-badge` | 日常画面のHUD（白背景） |
+| `.game-hud-badge-dark` | バトル画面のHUD（ダーク背景） |
+
+### キャラカード
+
+`.game-chara-card` — 生徒一覧で使うカード。ホバーでオレンジハイライト。
+
+### プログレスバー
+
+`.game-bar` + `.game-bar-fill` — ステータスバー、説得バーなど。
+
+## 画面別テーマ
+
+| 画面 | 背景 | パネル | HUD |
+|------|------|--------|-----|
+| タイトル | 背景画像 | `.game-panel` | なし |
+| キャラ選択 | 明るいグラデ | `.game-panel`, `.game-chara-card` | なし |
+| 日常 | 明るいグラデ | `.game-panel`, `.game-chara-card` | `.game-hud-badge` |
+| バトル | ダークグラデ(`#1a2840`〜`#283850`) | インラインダーク | `.game-hud-badge-dark` |
+| エンディング | 明るいグラデ | `.game-panel` | なし |
+
+バトル画面だけがダークテーマ。緊張感・非日常感の演出として意図的に分けている。
+
+## ポートレート画像
+
+| 箇所 | サイズ | 角丸 | 枠線 |
+|------|--------|------|------|
+| キャラ選択カード | 56x56px | `4px` | `2px solid 派閥色` |
+| 日常画面カード | 48x48px | `4px` | `2px solid #b0c0d8` or 派閥色 |
+| バトル画面 | 96x96px | `4px` | `2px solid var(--game-panel-border)` |
+| HUDアイコン | 28x28px | `3px` | `1px solid rgba(255,255,255,0.5)` |
+
+共通: `object-fit: cover; object-position: top;`
+
+## やってはいけないこと
+
+- `border-radius: 50%`（丸アイコン）の使用 → `4px` の角丸に統一
+- `backdrop-filter: blur()` の使用 → 不透明パネルで代替
+- `border-radius: 50px` のピル型ボタン → `.game-btn`（6px）を使う
+- 派閥の味方表示に `#27AE60`（緑）を固定で使う → 派閥色を動的に参照
+- ボタンに `border: none` → 必ず枠線をつけて立体感を出す
+- `font-family: inherit` のみでフォント未指定 → `var(--game-font)` を明示

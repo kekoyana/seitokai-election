@@ -2,7 +2,7 @@ import type {
   BattleState, Student, PlayerAttitude, Topic, Stance,
   EnemyMood, HobbyTopic, CandidateId, BattleLog, PreferenceAttr, Gender
 } from './types';
-import { getCatchphrase } from './data';
+import { getCatchphrase } from './catchphrase';
 
 // 態度倍率（思想話題のバー効果に適用）
 const ATTITUDE_MULTIPLIER: Record<PlayerAttitude, number> = {

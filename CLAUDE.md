@@ -41,6 +41,7 @@ docs/
   characters.md         # キャラクター設定・画像プロンプト
   glossary.md           # 用語集
   worldview.md          # 世界観・トーン設定（ログ文面のルール）
+  design-guide.md       # UIデザインガイド（色・フォント・コンポーネント）
   portrait-config.md    # ComfyUI画像生成設定
 portraits/              # キャラクターポートレート画像（Vite importで使用）
   raw/                  # 生成元の生画像（gitignore対象）

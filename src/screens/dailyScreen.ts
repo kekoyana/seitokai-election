@@ -6,8 +6,10 @@ import {
   FLOOR_LABELS, MOVE_COST, getFloorMoveCost, renderSupportBar,
 } from '../data';
 import { ORGANIZATIONS, ORGANIZATION_TYPE_LABELS } from '../data/organizations';
-import { getOrganizationVote } from '../logic/organizationLogic';
+import { getOrganizationVote, calcOrganizationSupport } from '../logic/organizationLogic';
 import { bgm } from '../bgm';
+import type { ConversationStep } from '../logic/conversationGenerator';
+import { ConversationOverlay } from './conversationOverlay';
 
 /** Day番号(1〜30)を「9/1」形式の日付文字列に変換（9月1日スタート） */
 function dayToDate(day: number): string {
@@ -104,6 +106,7 @@ export class DailyScreen {
     orgId?: string;       // 選択中の組織ID
     studentId?: string;   // 選択中の生徒ID（組織内の生徒詳細）
   } | null = null;
+  private conversationOverlay: ConversationOverlay | null = null;
 
   constructor(state: GameState, callbacks: DailyCallbacks) {
     this.state = state;
@@ -342,10 +345,8 @@ export class DailyScreen {
     `;
   }
 
-  private renderRoomOrgInfo(): string {
-    const org = ORGANIZATIONS.find(o => o.id === this.state.currentLocation);
-    if (!org) return '';
-
+  /** 組織情報セクション（クラス詳細・情報画面で共通） */
+  private renderOrgInfoSection(org: typeof ORGANIZATIONS[number]): string {
     const vote = getOrganizationVote(org, this.state.students);
     const voteCandidate = CANDIDATES.find(c => c.id === vote);
     const isAlly = vote === this.state.candidate;
@@ -362,54 +363,40 @@ export class DailyScreen {
     const allMemberIds = [org.leaderId, ...org.subLeaderIds, ...org.memberIds];
     const totalMembers = allMemberIds.length;
 
-    // 派閥ごとの人数
-    const factionCounts: Record<CandidateId, number> = { conservative: 0, progressive: 0, sports: 0 };
-    for (const id of allMemberIds) {
-      const s = this.state.students.find(st => st.id === id);
-      if (s) {
-        const top = (['conservative', 'progressive', 'sports'] as CandidateId[])
-          .reduce((a, b) => s.support[a] >= s.support[b] ? a : b);
-        factionCounts[top]++;
-      }
-    }
+    // 組織の支持ベクトル（組織タイプに応じた重み付き計算結果）
+    const orgSupport = calcOrganizationSupport(org, this.state.students);
 
-    const factionBars = CANDIDATES.map(c => {
-      const count = factionCounts[c.id as CandidateId] ?? 0;
-      const pct = totalMembers > 0 ? (count / totalMembers) * 100 : 0;
-      return `<div style="flex:1; display:flex; align-items:center; gap:4px; font-size:0.7em;">
-        <span style="color:${c.color}; width:24px; text-align:right; font-weight:bold;">${count}</span>
-        <div style="flex:1; height:6px; background:rgba(0,0,0,0.4); border-radius:2px; overflow:hidden;">
-          <div style="width:${pct}%; height:100%; background:${c.color};"></div>
-        </div>
-      </div>`;
-    }).join('');
+    return `
+      <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+        <span style="font-size:0.75em; background:var(--game-panel-inner); color:var(--game-text-dim); border-radius:4px; padding:2px 6px;">${typeLabel}</span>
+        <span style="
+          font-size:0.75em; padding:2px 8px; border-radius:4px;
+          background:${(voteCandidate?.color ?? '#888')}30;
+          color:${voteCandidate?.color ?? '#888'};
+          border:1px solid ${(voteCandidate?.color ?? '#888')}50;
+          font-weight:bold;
+        ">${FACTION_LABELS[vote] ?? ''}派${isAlly ? ' ✓' : ''}</span>
+      </div>
+      <div style="display:flex; align-items:center; gap:6px; margin-bottom:4px; font-size:0.72em; color:var(--game-text-dim);">
+        <span>決定方式: ${typeDesc[org.type] ?? ''}</span>
+        <span style="opacity:0.4;">|</span>
+        <span>代表: <strong style="color:var(--game-text);">${leader?.name ?? '?'}</strong></span>
+        <span style="opacity:0.4;">|</span>
+        <span>${totalMembers}名</span>
+      </div>
+      <div style="font-size:0.72em; color:var(--game-text-dim); margin-bottom:6px; line-height:1.5;">${org.description}</div>
+      ${renderSupportBar(orgSupport, 14, true)}
+    `;
+  }
+
+  private renderRoomOrgInfo(): string {
+    const org = ORGANIZATIONS.find(o => o.id === this.state.currentLocation);
+    if (!org) return '';
 
     return `
       <div class="game-panel" style="margin-bottom:12px; padding:10px 12px;">
-        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
-          <div style="display:flex; align-items:center; gap:8px;">
-            <span style="font-size:0.95em; font-weight:bold; color:var(--game-text);">${org.name}</span>
-            <span style="font-size:0.7em; background:rgba(74,96,144,0.3); color:var(--game-text-dim); border-radius:3px; padding:1px 6px;">${typeLabel}</span>
-          </div>
-          <span style="
-            font-size:0.75em; padding:2px 8px; border-radius:4px;
-            background:${(voteCandidate?.color ?? '#888')}30;
-            color:${voteCandidate?.color ?? '#888'};
-            border:1px solid ${(voteCandidate?.color ?? '#888')}50;
-            font-weight:bold;
-          ">${FACTION_LABELS[vote] ?? ''}派${isAlly ? ' ✓' : ''}</span>
-        </div>
-        <div style="font-size:0.72em; color:var(--game-text-dim); margin-bottom:6px; line-height:1.5;">${org.description}</div>
-        <div style="display:flex; align-items:center; gap:6px; margin-bottom:6px; font-size:0.72em; color:var(--game-text-dim);">
-          <span>決定方式: ${typeDesc[org.type] ?? ''}</span>
-          <span style="opacity:0.4;">|</span>
-          <span>代表: <strong style="color:var(--game-text);">${leader?.name ?? '?'}</strong></span>
-          <span style="opacity:0.4;">|</span>
-          <span>${totalMembers}名</span>
-        </div>
-        <div style="display:flex; gap:6px;">
-          ${factionBars}
-        </div>
+        <div style="font-size:0.95em; font-weight:bold; color:var(--game-text); margin-bottom:6px;">${org.name}</div>
+        ${this.renderOrgInfoSection(org)}
       </div>
     `;
   }
@@ -703,12 +690,6 @@ export class DailyScreen {
   }
 
   private renderInfoOrgDetail(org: typeof ORGANIZATIONS[number]): string {
-    const vote = getOrganizationVote(org, this.state.students);
-    const voteCandidate = CANDIDATES.find(c => c.id === vote);
-    const isAlly = vote === this.state.candidate;
-    const typeLabel = ORGANIZATION_TYPE_LABELS[org.type] ?? org.type;
-    const candidateColor = this.getCandidateColor();
-
     // 組織の全メンバーID
     const allMemberIds = [org.leaderId, ...org.subLeaderIds, ...org.memberIds];
     const members = allMemberIds.map(id => {
@@ -716,27 +697,19 @@ export class DailyScreen {
       return s ? { student: s, role: id === org.leaderId ? '代表' : org.subLeaderIds.includes(id) ? '副代表' : 'メンバー' } : null;
     }).filter((m): m is { student: Student; role: string } => m !== null);
 
-    // 組織タイプの説明
-    const typeDesc: Record<string, string> = {
-      dictatorship: '代表の意向が強く反映される',
-      council: '代表と副代表が合議で決める',
-      delegation: '副代表に権限が委ねられている',
-      majority: 'メンバー全員の多数決で決まる',
-    };
-
     const memberRows = members.map(({ student: s, role }) => {
       const sup = s.support;
       const maxKey = (['conservative', 'progressive', 'sports'] as const)
         .reduce((a, b) => sup[a] >= sup[b] ? a : b);
       const sc = CANDIDATES.find(c => c.id === maxKey);
-      const roleColor = role === '代表' ? '#E74C3C' : role === '副代表' ? '#E07820' : '#888';
+      const roleColor = role === '代表' ? '#E74C3C' : role === '副代表' ? '#E07820' : 'var(--game-text-dim)';
 
       return `
         <button data-info-student="${s.id}" style="
           display:flex; align-items:center; gap:8px; width:100%;
           padding:6px 8px; border-radius:8px;
           background:rgba(255,255,255,0.5);
-          border:1px solid #e8f0f8;
+          border:1px solid var(--game-panel-inner);
           margin-bottom:3px; cursor:pointer;
           text-align:left; font-family:inherit;
         ">
@@ -750,10 +723,10 @@ export class DailyScreen {
           }
           <div style="flex:1; min-width:0;">
             <div style="display:flex; align-items:center; gap:4px;">
-              <span style="font-size:0.85em; font-weight:bold; color:#333;">${s.name}</span>
+              <span style="font-size:0.85em; font-weight:bold; color:var(--game-text);">${s.name}</span>
               <span style="font-size:0.6em; color:${roleColor}; font-weight:bold;">${role}</span>
             </div>
-            <div style="font-size:0.68em; color:#888;">${s.className}</div>
+            <div style="font-size:0.68em; color:var(--game-text-dim);">${s.className}</div>
           </div>
           <div style="display:flex; align-items:center; gap:4px; flex-shrink:0;">
             <span style="
@@ -761,41 +734,26 @@ export class DailyScreen {
               background:${(sc?.color ?? '#888')}15; color:${sc?.color ?? '#888'};
               border:1px solid ${(sc?.color ?? '#888')}30;
             ">${FACTION_LABELS[maxKey] ?? ''}</span>
-            <span style="color:#bbb; font-size:0.8em;">›</span>
+            <span style="color:var(--game-text-dim); font-size:0.8em;">›</span>
           </div>
         </button>
       `;
     }).join('');
 
-    const backTab = org.id.startsWith('club_') ? 'club' : 'class';
-
     return `
-      <div class="game-panel" style="
-        padding:14px;
-      ">
+      <div class="game-panel" style="padding:14px;">
         ${this.renderInfoHeader(org.name, 'back-to-list')}
 
-        <!-- 組織情報 -->
+        <!-- 組織情報（共通セクション） -->
         <div style="
-          background:rgba(240,245,255,0.8); border-radius:8px;
+          background:var(--game-panel-inner); border-radius:8px;
           padding:10px; margin-bottom:12px;
         ">
-          <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
-            <span style="font-size:0.75em; background:#f0f0f5; color:#888; border-radius:4px; padding:2px 6px;">${typeLabel}</span>
-            <span style="
-              font-size:0.78em; padding:2px 8px; border-radius:8px;
-              background:${(voteCandidate?.color ?? '#888')}15;
-              color:${voteCandidate?.color ?? '#888'};
-              border:1px solid ${(voteCandidate?.color ?? '#888')}33;
-              font-weight:bold;
-            ">${FACTION_LABELS[vote] ?? ''}派${isAlly ? ' ✓' : ''}</span>
-          </div>
-          <div style="font-size:0.72em; color:#888;">${typeDesc[org.type] ?? ''}</div>
-          <div style="font-size:0.72em; color:#666; margin-top:4px; line-height:1.5;">${org.description}</div>
+          ${this.renderOrgInfoSection(org)}
         </div>
 
         <!-- メンバー一覧 -->
-        <div style="font-size:0.78em; color:#888; margin-bottom:6px; font-weight:bold;">
+        <div style="font-size:0.78em; color:var(--game-text-dim); margin-bottom:6px; font-weight:bold;">
           メンバー（${members.length}名）
         </div>
         ${memberRows}
@@ -1518,11 +1476,30 @@ export class DailyScreen {
     });
   }
 
+  showConversation(steps: ConversationStep[], onFinish: () => void): void {
+    this.hideConversation();
+    this.container.style.pointerEvents = 'none';
+    this.conversationOverlay = new ConversationOverlay(steps, () => {
+      this.hideConversation();
+      onFinish();
+    });
+    this.conversationOverlay.mount(this.container.parentElement ?? document.body);
+  }
+
+  hideConversation(): void {
+    if (this.conversationOverlay) {
+      this.conversationOverlay.unmount();
+      this.conversationOverlay = null;
+      this.container.style.pointerEvents = '';
+    }
+  }
+
   mount(parent: HTMLElement): void {
     parent.appendChild(this.container);
   }
 
   unmount(): void {
+    this.hideConversation();
     this.container.remove();
   }
 }

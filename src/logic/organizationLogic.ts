@@ -112,7 +112,7 @@ export function calcOrganizationSupport(
         .map(id => getStudentSupport(id, students))
         .filter((v): v is SupportVec => v !== null);
 
-      const counts: Record<CandidateId, number> = {
+      const counts: SupportVec = {
         conservative: 0,
         progressive: 0,
         sports: 0,
@@ -120,17 +120,7 @@ export function calcOrganizationSupport(
       for (const sv of allSupports) {
         counts[getSupportCandidate(sv)]++;
       }
-      const maxCount = Math.max(...Object.values(counts));
-      const winners = (Object.keys(counts) as CandidateId[]).filter(k => counts[k] === maxCount);
-      if (winners.length === 1) {
-        // 勝ったcandidateIdに対応するsupportベクターを返す（代表のを使って上書き）
-        const winId = winners[0];
-        const mock: SupportVec = { conservative: 0, progressive: 0, sports: 0 };
-        mock[winId] = 100;
-        return mock;
-      }
-      // 同数 → 代表で決定
-      return leaderSupport;
+      return counts;
     }
 
     default:
@@ -144,5 +134,13 @@ export function getOrganizationVote(
   students: Student[]
 ): CandidateId {
   const support = calcOrganizationSupport(org, students);
-  return getSupportCandidate(support);
+  const maxVal = Math.max(support.conservative, support.progressive, support.sports);
+  const winners = (['conservative', 'progressive', 'sports'] as CandidateId[])
+    .filter(k => support[k] === maxVal);
+  // 同数時は代表の支持で決定（majority以外では通常発生しない）
+  if (winners.length > 1) {
+    const leaderSupport = getStudentSupport(org.leaderId, students);
+    if (leaderSupport) return getSupportCandidate(leaderSupport);
+  }
+  return winners[0];
 }

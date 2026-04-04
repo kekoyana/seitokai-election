@@ -1046,6 +1046,28 @@ export const STUDENTS: Student[] = [
     candidateId: null,
     playable: false,
   },
+  {
+    id: 'iwata_daichi',
+    name: '岩田大地',
+    gender: 'male',
+    className: '3-D',
+    clubId: 'baseball',
+    description: '野球部キャプテン。声が大きく面倒見がいい熱血漢。後輩からの信頼は厚く、試合ではチームを鼓舞する。',
+    hairStyle: 'straight' as HairStyle,
+    personality: 'passionate' as Personality,
+    hobbies: makeHobbies(['sports_hobby', 'cooking'], ['study']),
+    revealedHobbies: new Set<HobbyTopic>(),
+    support: { conservative: 20, progressive: 25, sports: 55 },
+    attributes: ['sporty', 'energetic'] as Attribute[],
+    likedAttributes: ['energetic', 'ponytail', 'cool'] as PreferenceAttr[],
+    dislikedAttributes: ['introverted', 'glasses', 'airhead'] as PreferenceAttr[],
+    stats: { speech: 35, athletic: 85, intel: 20, maxHp: 100 },
+    affinity: 0,
+    talkCount: 0,
+    portrait: null,
+    candidateId: null,
+    playable: false,
+  },
   // 候補者（説得不可）
   {
     id: 'takayama_seiichi',
@@ -1169,6 +1191,7 @@ const CLUB_LOCATION_MAP: Record<string, LocationId> = {
   tanabe_misaki: 'tennis_court',
   maeda_taiga: 'track_field',
   noguchi_saki: 'baseball_field',
+  iwata_daichi: 'baseball_field',
 };
 
 // 生徒の場所スケジュール

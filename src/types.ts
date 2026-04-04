@@ -154,6 +154,7 @@ export type OrganizationType = 'dictatorship' | 'council' | 'delegation' | 'majo
 export interface Organization {
   id: string;
   name: string;
+  description: string;
   type: OrganizationType;
   leaderId: string;
   subLeaderIds: string[];

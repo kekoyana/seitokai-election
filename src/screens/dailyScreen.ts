@@ -21,46 +21,65 @@ const CLUB_LABELS: Record<string, string> = {
 };
 
 /** 生徒のクラス・部活での肩書きを取得 */
-function getStudentTitles(studentId: string): string[] {
-  const titles: string[] = [];
+/** 生徒の所属・役職情報を構造化して返す */
+function getStudentRoleInfo(studentId: string, clubId: string | null): {
+  hasClassRole: boolean;
+  hasClubRole: boolean;
+  clubName: string;
+  badgesHtml: string;
+} {
+  const badges: { label: string; isLeader: boolean }[] = [];
+  let hasClassRole = false;
+  let hasClubRole = false;
+  // クラス役職
   for (const org of ORGANIZATIONS) {
-    const isClass = org.id.startsWith('class');
-    const orgLabel = isClass ? org.name : org.name;
+    if (!org.id.startsWith('class')) continue;
     if (org.leaderId === studentId) {
-      titles.push(`${orgLabel} 代表`);
+      badges.push({ label: `${org.name.replace('組', '')} 代表`, isLeader: true });
+      hasClassRole = true;
     } else if (org.subLeaderIds.includes(studentId)) {
-      titles.push(`${orgLabel} 副代表`);
+      badges.push({ label: `${org.name.replace('組', '')} 副代表`, isLeader: false });
+      hasClassRole = true;
     }
   }
-  return titles;
-}
-
-/** 肩書きバッジHTML */
-function renderTitleBadges(studentId: string): string {
-  const titles = getStudentTitles(studentId);
-  if (titles.length === 0) return '';
-  return titles.map(t => {
-    const isLeader = t.includes('代表') && !t.includes('副');
-    const color = isLeader ? '#C0392B' : '#E07820';
+  // 部活役職
+  const clubName = clubId ? (CLUB_LABELS[clubId] ?? clubId) : '';
+  if (clubId) {
+    const orgId = `club_${clubId}`;
+    const org = ORGANIZATIONS.find(o => o.id === orgId);
+    if (org) {
+      if (org.leaderId === studentId) {
+        badges.push({ label: `${clubName} 代表`, isLeader: true });
+        hasClubRole = true;
+      } else if (org.subLeaderIds.includes(studentId)) {
+        badges.push({ label: `${clubName} 副代表`, isLeader: false });
+        hasClubRole = true;
+      }
+    }
+  }
+  const badgesHtml = badges.map(b => {
+    const color = b.isLeader ? '#C0392B' : '#E07820';
     return `<span style="
       font-size:0.62em; padding:1px 5px; border-radius:4px;
       background:${color}18; color:${color};
       border:1px solid ${color}30;
       white-space:nowrap;
-    ">${t}</span>`;
+    ">${b.label}</span>`;
   }).join(' ');
+  return { hasClassRole, hasClubRole, clubName, badgesHtml };
 }
 
-/** 部活名バッジHTML */
-function renderClubBadge(clubId: string | null): string {
-  if (!clubId) return '';
-  const name = CLUB_LABELS[clubId] ?? clubId;
-  return `<span style="
-    font-size:0.65em; padding:1px 5px; border-radius:4px;
-    background:rgba(78,130,180,0.1); color:#4E82B4;
-    border:1px solid rgba(78,130,180,0.2);
-    white-space:nowrap;
-  ">${name}</span>`;
+/** 生徒のクラス名・所属・役職をまとめた1行HTMLを返す */
+function renderStudentAffiliation(studentId: string, className: string, clubId: string | null): string {
+  const info = getStudentRoleInfo(studentId, clubId);
+  const parts: string[] = [];
+  // クラス名: 役職バッジがなければプレーンテキストで表示
+  if (!info.hasClassRole) parts.push(className);
+  // 部活名: 役職バッジがなければプレーンテキストで表示
+  if (!info.hasClubRole && info.clubName) parts.push(info.clubName);
+  // バッジ
+  if (info.badgesHtml) parts.push(info.badgesHtml);
+  return parts.join(' ');
 }
 
 export interface DailyCallbacks {
@@ -271,9 +290,8 @@ export class DailyScreen {
               background:#27AE6020; color:#27AE60;
             ">支持中</span>` : ''}
           </div>
-          <div style="display:flex; align-items:center; gap:4px; flex-wrap:wrap;">
-            <span style="font-size:0.75em; color:#888;">${c.className}</span>
-            ${studentData ? renderClubBadge(studentData.clubId) : ''}
+          <div style="display:flex; align-items:center; gap:4px; flex-wrap:wrap; font-size:0.75em; color:#888;">
+            ${studentData ? renderStudentAffiliation(studentData.id, c.className, studentData.clubId) : c.className}
           </div>
           <div style="font-size:0.72em; color:#888;">${c.platform}</div>
           ${studentData ? `<div style="font-size:0.72em; color:${affinityColor};">好感度: ${affinityLabel}</div>` : ''}
@@ -428,11 +446,9 @@ export class DailyScreen {
         <div style="flex:1; min-width:0;">
           <div style="display:flex; align-items:center; gap:4px; flex-wrap:wrap;">
             <span style="font-size:0.9em; font-weight:bold; color:#333;">${s.name}</span>
-            ${renderTitleBadges(s.id)}
           </div>
-          <div style="display:flex; align-items:center; gap:4px; flex-wrap:wrap; margin-top:1px;">
-            <span style="font-size:0.75em; color:#888;">${s.className}</span>
-            ${renderClubBadge(s.clubId)}
+          <div style="display:flex; align-items:center; gap:4px; flex-wrap:wrap; margin-top:1px; font-size:0.75em; color:#888;">
+            ${renderStudentAffiliation(s.id, s.className, s.clubId)}
           </div>
           <div style="font-size:0.72em; color:${affinityColor};">好感度: ${affinityLabel}</div>
           ${(() => {
@@ -1284,13 +1300,9 @@ export class DailyScreen {
           }
           <div style="text-align:center;">
             <div style="font-size:1.1em; font-weight:bold; color:#333;">${s.name}</div>
-            <div style="display:flex; justify-content:center; align-items:center; gap:4px; flex-wrap:wrap; margin-top:2px;">
-              <span style="font-size:0.8em; color:#888;">${s.className}</span>
-              ${renderClubBadge(s.clubId)}
-              <span style="font-size:0.75em; color:#999;">${PERS_LABELS[s.personality] ?? s.personality}</span>
-            </div>
-            <div style="display:flex; justify-content:center; gap:4px; flex-wrap:wrap; margin-top:2px;">
-              ${renderTitleBadges(s.id)}
+            <div style="display:flex; justify-content:center; align-items:center; gap:4px; flex-wrap:wrap; margin-top:2px; font-size:0.8em; color:#888;">
+              ${renderStudentAffiliation(s.id, s.className, s.clubId)}
+              <span style="font-size:0.94em; color:#999;">${PERS_LABELS[s.personality] ?? s.personality}</span>
             </div>
             <div style="font-size:0.78em; color:#888; margin-top:2px;">「${getCatchphrase(s.personality, s.attributes)}」</div>
           </div>
@@ -1308,13 +1320,9 @@ export class DailyScreen {
           : `<div style="text-align:center; margin-bottom:10px;">${renderInitialIcon(s.name, s.personality, 180, supportCandidate?.color ?? '#d0e0f0')}</div>`
         }
         <div style="text-align:center; margin-bottom:14px;">
-          <div style="display:flex; justify-content:center; align-items:center; gap:4px; flex-wrap:wrap;">
-            <span style="font-size:0.8em; color:#888;">${s.className}</span>
-            ${renderClubBadge(s.clubId)}
-            <span style="font-size:0.75em; color:#999;">${PERS_LABELS[s.personality] ?? s.personality}</span>
-          </div>
-          <div style="display:flex; justify-content:center; gap:4px; flex-wrap:wrap; margin-top:2px;">
-            ${renderTitleBadges(s.id)}
+          <div style="display:flex; justify-content:center; align-items:center; gap:4px; flex-wrap:wrap; font-size:0.8em; color:#888;">
+            ${renderStudentAffiliation(s.id, s.className, s.clubId)}
+            <span style="font-size:0.94em; color:#999;">${PERS_LABELS[s.personality] ?? s.personality}</span>
           </div>
           <div style="font-size:0.78em; color:#888; margin-top:2px;">「${getCatchphrase(s.personality, s.attributes)}」</div>
         </div>`;

@@ -45,6 +45,22 @@ export class BattleScreen {
     const moodEmoji: Record<string, string> = {
       furious: '😡', upset: '😒', normal: '😐', favorable: '🙂', devoted: '😊'
     };
+    const moodLevels = ['furious', 'upset', 'normal', 'favorable', 'devoted'] as const;
+    const moodColors: Record<string, string> = {
+      furious: '#E74C3C', upset: '#E67E22', normal: '#95A5A6', favorable: '#3498DB', devoted: '#2ECC71'
+    };
+    const currentMoodIdx = moodLevels.indexOf(battle.enemyMood as typeof moodLevels[number]);
+    const moodIndicatorHtml = moodLevels.map((m, i) => {
+      const isCurrent = i === currentMoodIdx;
+      const color = moodColors[m];
+      return `<span style="
+        display:inline-block; width:${isCurrent ? '10px' : '8px'}; height:${isCurrent ? '10px' : '8px'};
+        border-radius:50%;
+        background:${isCurrent ? color : 'rgba(255,255,255,0.2)'};
+        ${isCurrent ? `box-shadow:0 0 6px ${color};` : ''}
+        transition:all 0.3s;
+      "></span>`;
+    }).join('');
 
     this.container.style.cssText = `
       position: fixed; inset: 0;
@@ -109,11 +125,16 @@ export class BattleScreen {
           <div style="font-size:1.05em; font-weight:bold;">${student.name}</div>
           <div style="font-size:0.82em; opacity:0.7; margin-bottom:6px;">${student.className}</div>
           <div style="
-            display:inline-block;
+            display:inline-flex; align-items:center; gap:6px;
             background:rgba(255,255,255,0.15);
-            border-radius:20px; padding:3px 12px;
+            border-radius:20px; padding:5px 12px;
             font-size:0.82em;
-          ">${moodEmoji[battle.enemyMood] ?? ''} ${moodLabel}</div>
+          ">
+            <span>${moodEmoji[battle.enemyMood] ?? ''} ${moodLabel}</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:4px; margin-top:4px;">
+            ${moodIndicatorHtml}
+          </div>
         </div>
       </div>
 

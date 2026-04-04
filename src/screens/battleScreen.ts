@@ -1,6 +1,7 @@
 import type { GameState, PlayerAttitude, Topic, Stance, CandidateId, HobbyTopic } from '../types';
 import { CANDIDATES, HOBBY_LABELS, MOOD_LABELS, renderInitialIcon } from '../data';
 import { bgm } from '../bgm';
+import battleBg from '../../assets/backgrounds/battle.jpg';
 
 export interface BattleCallbacks {
   onAttitudeSelect: (attitude: PlayerAttitude) => void;
@@ -65,7 +66,8 @@ export class BattleScreen {
 
     this.container.style.cssText = `
       position: fixed; inset: 0;
-      background: linear-gradient(160deg, #1a2840 0%, #283850 100%);
+      background: linear-gradient(160deg, rgba(26,40,64,0.85) 0%, rgba(40,56,80,0.85) 100%),
+        url('${battleBg}') center/cover no-repeat;
       display: flex; flex-direction: column;
       font-family: var(--game-font);
       overflow: hidden;

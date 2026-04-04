@@ -2,7 +2,7 @@
 
 ## 確定済みキャラクター（男女4名ずつ、計8名）
 
-画像は `portraits/` に格納。rawデータ(1024x1024)は `portraits/raw/` に格納。
+画像は `assets/portraits/` に格納。rawデータ(1024x1024)は `assets/portraits/raw/` に格納。
 
 ---
 
@@ -16,7 +16,7 @@
 - **趣味**: ゲーム（意外にもインドア趣味）
 - **支持**: 体育50、学園祭方針: 内部55
 - **口癖**: 「よっしゃ！」
-- **画像**: `portraits/tanaka_daiki.png`
+- **画像**: `assets/portraits/tanaka_daiki.png`
 - **seed**: 111
 - **プロンプト**:
 ```
@@ -36,7 +36,7 @@ simple grey background, masterpiece, best quality
 - **趣味**: ゲーム（誰にも言ってない）
 - **支持**: 保守55、学園祭方針: 内部60
 - **口癖**: 「規則ですから」
-- **画像**: `portraits/yamamoto_ren.png`
+- **画像**: `assets/portraits/yamamoto_ren.png`
 - **seed**: 102
 - **プロンプト**:
 ```
@@ -56,7 +56,7 @@ simple grey background, masterpiece, best quality
 - **趣味**: SNS（作品をSNSで発信している）
 - **支持**: 革新60、学園祭方針: 外部75
 - **口癖**: 「それって、本気で言ってる？」
-- **画像**: `portraits/takahashi_yuto.png`
+- **画像**: `assets/portraits/takahashi_yuto.png`
 - **seed**: 103
 - **プロンプト**:
 ```
@@ -76,7 +76,7 @@ simple grey background, masterpiece, best quality
 - **趣味**: ゲーム（格闘ゲームが好き）
 - **支持**: 体育65、学園祭方針: 内部60
 - **口癖**: 「…行動で示せ」
-- **画像**: `portraits/matsumoto_kenta.png`
+- **画像**: `assets/portraits/matsumoto_kenta.png`
 - **seed**: 104
 - **プロンプト**:
 ```
@@ -100,7 +100,7 @@ simple grey background, masterpiece, best quality
 - **趣味**: 恋バナ
 - **支持**: 革新40、学園祭方針: 外部60
 - **口癖**: 「えー、それめっちゃいいじゃん！」
-- **画像**: `portraits/sato_yui.png`
+- **画像**: `assets/portraits/sato_yui.png`
 - **seed**: 201
 - **プロンプト**:
 ```
@@ -120,7 +120,7 @@ simple grey background, masterpiece, best quality
 - **趣味**: SNS
 - **支持**: 革新45、学園祭方針: 外部65
 - **口癖**: 「データで見ると…」
-- **画像**: `portraits/watanabe_aoi.png`
+- **画像**: `assets/portraits/watanabe_aoi.png`
 - **seed**: 215
 - **プロンプト**:
 ```
@@ -141,7 +141,7 @@ simple grey background, masterpiece, best quality
 - **趣味**: SNS（人の投稿を観察するのが好き）
 - **支持**: 保守60、学園祭方針: 内部50
 - **口癖**: 「ふふ、そうなんだ？」
-- **画像**: `portraits/nakamura_sakura.png`
+- **画像**: `assets/portraits/nakamura_sakura.png`
 - **seed**: 203
 - **プロンプト**:
 ```
@@ -161,7 +161,7 @@ simple grey background, masterpiece, best quality
 - **趣味**: SNS（読書アカウントを運営）
 - **支持**: 保守35、学園祭方針: 内部45
 - **口癖**: 「あの…私は…」
-- **画像**: `portraits/miyazaki_akane.png`
+- **画像**: `assets/portraits/miyazaki_akane.png`
 - **seed**: 204
 - **プロンプト**:
 ```
@@ -183,7 +183,7 @@ simple grey background, masterpiece, best quality
 - **趣味**: ゲーム、動画
 - **支持**: 革新45、学園祭方針: 外部寄り
 - **口癖**: 「いいね、それもアリだね！」
-- **画像**: `portraits/hashimoto_tsubasa.png`
+- **画像**: `assets/portraits/hashimoto_tsubasa.png`
 - **seed**: 155
 - **プロンプト**:
 ```
@@ -203,7 +203,7 @@ simple grey background, masterpiece, best quality
 - **趣味**: 恋バナ、スポーツ
 - **支持**: 体育60、学園祭方針: 内部寄り
 - **口癖**: 「えー、それめっちゃいいじゃん！」
-- **画像**: `portraits/kato_mitsuki.png`
+- **画像**: `assets/portraits/kato_mitsuki.png`
 - **seed**: 277
 - **プロンプト**:
 ```
@@ -223,7 +223,7 @@ simple grey background, masterpiece, best quality
 - **趣味**: 恋バナ、音楽
 - **支持**: 保守50、学園祭方針: 内部寄り
 - **口癖**: 「慎重にいきたいかな」
-- **画像**: `portraits/suzuki_shota.png`
+- **画像**: `assets/portraits/suzuki_shota.png`
 - **seed**: 150
 - **プロンプト**:
 ```
@@ -243,7 +243,7 @@ simple grey background, masterpiece, best quality
 - **趣味**: 勉強、読書
 - **支持**: 保守70、学園祭方針: 内部65
 - **口癖**: 「それは違うと思う」
-- **画像**: `portraits/saito_manabu.png`
+- **画像**: `assets/portraits/saito_manabu.png`
 - **seed**: 160
 - **プロンプト**:
 ```

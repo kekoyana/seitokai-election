@@ -5,4 +5,4 @@ dist/
 ai-sprites-local/venv/
 ai-sprites-local/__pycache__/
 test-portraits/
-portraits/raw/
+assets/portraits/raw/

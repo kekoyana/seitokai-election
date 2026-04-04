@@ -1,4 +1,4 @@
-import titleBg from '../../backgrounds/title.jpg';
+import titleBg from '../../assets/backgrounds/title.jpg';
 import { bgm } from '../bgm';
 
 export interface TitleCallbacks {

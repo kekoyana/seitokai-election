@@ -8,6 +8,7 @@ import {
 import { ORGANIZATIONS, ORGANIZATION_TYPE_LABELS } from '../data/organizations';
 import { getOrganizationVote, calcOrganizationSupport } from '../logic/organizationLogic';
 import { bgm } from '../bgm';
+import dailyBg from '../../assets/backgrounds/daily.jpg';
 import type { ConversationStep, ConversationResult } from '../logic/conversationGenerator';
 import { ConversationOverlay } from './conversationOverlay';
 
@@ -149,7 +150,8 @@ export class DailyScreen {
 
     this.container.style.cssText = `
       position: fixed; inset: 0;
-      background: linear-gradient(160deg, var(--game-bg-light) 0%, var(--game-bg-warm) 100%);
+      background: linear-gradient(160deg, rgba(216,234,248,0.8) 0%, rgba(245,239,224,0.8) 100%),
+        url('${dailyBg}') center/cover no-repeat;
       display: flex; flex-direction: column;
       font-family: var(--game-font);
       overflow: hidden;

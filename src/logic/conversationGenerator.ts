@@ -2,6 +2,7 @@ import type { Student, HobbyTopic, Personality, Gender } from '../types';
 import { HOBBY_LABELS } from '../data';
 import {
   getTalkLines, getPlayerLines, NARRATION_RESULTS, getAffinityLevel,
+  getChitchatLines, CHITCHAT_NARRATIONS,
 } from '../data/conversationLines';
 
 export interface ConversationStep {
@@ -116,6 +117,62 @@ export function generateConversationData(
   const result: ConversationResult = {
     text: pick(NARRATION_RESULTS[resultType]),
     effectHtml: resultEffectParts.join('　'),
+  };
+
+  return { steps, result };
+}
+
+/**
+ * 雑談データを生成（生徒から話しかけてくる）
+ * 短い会話で好感度が微量変動する
+ */
+export function generateChitchatData(
+  student: Student,
+  playerName: string,
+  playerPortrait: string | null,
+  playerPersonality: Personality,
+  playerGender: Gender,
+): ConversationData {
+  const steps: ConversationStep[] = [];
+  const chitchatLines = getChitchatLines(student.personality, student.gender);
+  const playerLines = getPlayerLines(playerPersonality, playerGender);
+
+  // 1. 生徒が話しかけてくる
+  steps.push({
+    speaker: 'student',
+    name: student.name,
+    portrait: student.portrait,
+    text: `「${pick(chitchatLines.opener)}」`,
+  });
+
+  // 2. プレイヤーの応答
+  steps.push({
+    speaker: 'player',
+    name: playerName,
+    portrait: playerPortrait,
+    text: `「${pick(playerLines.greeting)}」`,
+  });
+
+  // 3. 雑談の内容
+  steps.push({
+    speaker: 'student',
+    name: student.name,
+    portrait: student.portrait,
+    text: `「${pick(chitchatLines.topic)}」`,
+  });
+
+  // 4. 締め
+  steps.push({
+    speaker: 'student',
+    name: student.name,
+    portrait: student.portrait,
+    text: `「${pick(chitchatLines.closer)}」`,
+  });
+
+  const affinityGain = Math.random() < 0.7 ? 1 : 2;
+  const result: ConversationResult = {
+    text: pick(CHITCHAT_NARRATIONS),
+    effectHtml: `<span style="color:#7EC850;">好感度 +${affinityGain}</span>`,
   };
 
   return { steps, result };

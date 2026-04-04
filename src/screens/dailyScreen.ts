@@ -208,21 +208,21 @@ export class DailyScreen {
       ">
         <div id="player-icon" class="game-hud-badge" style="
           pointer-events:auto; cursor:pointer;
-          display:flex; align-items:center; gap:8px;
+          display:flex; align-items:center; gap:6px;
           background:${candidateColor}CC;
           border-color:${candidateColor};
-          padding:4px 12px 4px 4px;
+          padding:3px 10px 3px 3px;
         ">
           ${pc ? (pc.portrait
             ? `<img src="${pc.portrait}" alt="${pc.name}" style="
-                width:56px; height:56px; border-radius:3px;
+                width:28px; height:28px; border-radius:3px;
                 object-fit:cover; object-position:top;
                 border:1px solid rgba(255,255,255,0.5);
               "/>`
-            : renderInitialIcon(pc.name, pc.personality, 56, 'rgba(255,255,255,0.5)')
+            : renderInitialIcon(pc.name, pc.personality, 28, 'rgba(255,255,255,0.5)')
           ) : ''}
-          <span style="font-weight:bold; color:#fff;">${pc?.name ?? ''}</span>
-          <span style="opacity:0.8; font-size:0.9em; color:#fff;">${FACTION_LABELS[this.state.candidate ?? ''] ?? ''}派</span>
+          <span style="font-weight:bold; color:#fff; font-size:0.85em;">${pc?.name ?? ''}</span>
+          <span style="opacity:0.8; font-size:0.75em; color:#fff;">${FACTION_LABELS[this.state.candidate ?? ''] ?? ''}派</span>
         </div>
         <div class="game-hud-badge" style="
           pointer-events:auto;
@@ -1394,48 +1394,56 @@ export class DailyScreen {
       </div>
     `;
 
-    // ヘッダー部（ポートレート + 名前 + 所属情報）
+    // ヘッダー部（ポートレート + 名前 + 所属情報を横並び）
     const closeBtnId = isPlayer ? 'close-player-btn' : 'close-info-btn';
-    const portraitHtml = s.portrait
-      ? `<div style="text-align:center; margin-bottom:10px;">
-          <img src="${s.portrait}" alt="${s.name}" style="
-            width:180px; height:180px; border-radius:50%;
+    const portraitSize = 80;
+    const portraitImgHtml = s.portrait
+      ? `<img src="${s.portrait}" alt="${s.name}" style="
+            width:${portraitSize}px; height:${portraitSize}px; border-radius:8px;
             object-fit:cover; object-position:top;
-            border:3px solid ${borderColor};
-            box-shadow:0 4px 12px rgba(0,0,0,0.1);
-          "/>
-        </div>`
-      : `<div style="text-align:center; margin-bottom:10px;">${renderInitialIcon(s.name, s.personality, 180, borderColor)}</div>`;
+            border:2px solid ${borderColor};
+            box-shadow:0 2px 8px rgba(0,0,0,0.15);
+            flex-shrink:0;
+          "/>`
+      : renderInitialIcon(s.name, s.personality, portraitSize, borderColor);
 
     const infoLineHtml = `
-      <div style="text-align:center;">
-        <div style="font-size:1.1em; font-weight:bold; color:#333;">${s.name} <span style="font-size:0.75em; color:#888; font-weight:normal;">（${s.nickname}）</span></div>
-        <div style="display:flex; justify-content:center; align-items:center; gap:4px; flex-wrap:wrap; margin-top:2px; font-size:0.8em; color:#888;">
+      <div style="flex:1; min-width:0;">
+        <div style="font-size:1.05em; font-weight:bold; color:#333;">${s.name} <span style="font-size:0.72em; color:#888; font-weight:normal;">（${s.nickname}）</span></div>
+        <div style="display:flex; align-items:center; gap:4px; flex-wrap:wrap; margin-top:2px; font-size:0.78em; color:#888;">
           ${renderStudentAffiliation(s.id, s.className, s.clubId)}
-          <span style="font-size:0.94em; color:#999;">${PERS_LABELS[s.personality] ?? s.personality}</span>
+          <span style="color:#999;">${PERS_LABELS[s.personality] ?? s.personality}</span>
         </div>
         ${isPlayer
-          ? `<div style="font-size:0.78em; color:${borderColor}; font-weight:bold; margin-top:2px;">${FACTION_LABELS[this.state.candidate ?? ''] ?? ''}派</div>`
+          ? `<div style="font-size:0.75em; color:${borderColor}; font-weight:bold; margin-top:2px;">${FACTION_LABELS[this.state.candidate ?? ''] ?? ''}派</div>`
           : ''
         }
-        <div style="font-size:0.78em; color:#888; margin-top:2px;">「${getCatchphrase(s.personality, s.attributes)}」</div>
-        <div style="font-size:0.75em; color:#666; margin-top:6px; line-height:1.5; background:#f8f9fb; border-radius:8px; padding:6px 10px; text-align:left;">${s.description}</div>
+        <div style="font-size:0.75em; color:#888; margin-top:2px;">「${getCatchphrase(s.personality, s.attributes)}」</div>
       </div>`;
 
+    const profileDescHtml = `
+      <div style="font-size:0.75em; color:#666; line-height:1.5; background:#f8f9fb; border-radius:8px; padding:6px 10px; margin-bottom:8px;">${s.description}</div>`;
+
     const headerHtml = backAction === 'close'
-      ? `<div style="margin-bottom:14px;">
-          <div style="display:flex; justify-content:flex-end; margin-bottom:8px;">
+      ? `<div style="margin-bottom:10px;">
+          <div style="display:flex; justify-content:flex-end; margin-bottom:4px;">
             <button id="${closeBtnId}" style="
               background:#ddd; border:none; border-radius:50%;
               width:28px; height:28px; cursor:pointer; font-size:1em;
             ">×</button>
           </div>
-          ${portraitHtml}
-          ${infoLineHtml}
+          <div style="display:flex; align-items:flex-start; gap:12px; margin-bottom:8px;">
+            ${portraitImgHtml}
+            ${infoLineHtml}
+          </div>
+          ${profileDescHtml}
         </div>`
       : `${this.renderInfoHeader(s.name, backAction)}
-        ${portraitHtml}
-        <div style="margin-bottom:14px;">${infoLineHtml}</div>`;
+        <div style="display:flex; align-items:flex-start; gap:12px; margin-bottom:8px;">
+          ${portraitImgHtml}
+          ${infoLineHtml}
+        </div>
+        ${profileDescHtml}`;
 
     // プレイヤー用: スタミナ + 思想（playerSupport）
     // 生徒用: 好感度 + 会話回数 + 思想（student.support）

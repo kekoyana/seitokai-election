@@ -5,8 +5,9 @@ import type {
 import {
   STUDENTS, getFloorFromLocation, getCorridorForFloor,
   FLOOR_ADJACENCY, MOVE_COST, getFloorMoveCost, TIME_COST, MAX_TIME,
+  getStudentLocation,
 } from './data';
-import { generateConversationData, generateTalkLogSummary } from './logic/conversationGenerator';
+import { generateConversationData, generateTalkLogSummary, generateChitchatData } from './logic/conversationGenerator';
 import { ORGANIZATIONS } from './data/organizations';
 import { getOrganizationVote } from './logic/organizationLogic';
 import {
@@ -195,6 +196,7 @@ export class Game {
       currentTime: Math.min(MAX_TIME, this.state.currentTime + TIME_COST.ENTER_ROOM),
     };
     this.dailyScreen?.update(this.state);
+    this.tryChitchat();
   }
 
   private handleExitRoom(): void {
@@ -222,6 +224,50 @@ export class Game {
       currentTime: Math.min(MAX_TIME, this.state.currentTime + timeCost),
     };
     this.dailyScreen?.update(this.state);
+    this.tryChitchat();
+  }
+
+  /** 移動後に一定確率で雑談イベントを発生させる */
+  private tryChitchat(): void {
+    if (Math.random() > 0.25) return; // 25%の確率
+
+    const pc = this.state.playerCharacter;
+    if (!pc) return;
+
+    // 現在地にいる生徒（候補者・プレイヤー自身を除く）
+    const studentsHere = this.state.students.filter(s =>
+      !s.candidateId &&
+      s.id !== pc.id &&
+      getStudentLocation(s.id, this.state.timeSlot, this.state.day, this.state.currentTime) === this.state.currentLocation
+    );
+    if (studentsHere.length === 0) return;
+
+    const student = studentsHere[Math.floor(Math.random() * studentsHere.length)];
+
+    const convData = generateChitchatData(
+      student,
+      pc.name,
+      pc.portrait ?? null,
+      pc.personality,
+      pc.gender,
+    );
+
+    // 好感度を微量上昇
+    const affinityGain = convData.result.effectHtml.includes('+2') ? 2 : 1;
+    const updatedStudents = this.state.students.map(s =>
+      s.id === student.id
+        ? { ...s, affinity: Math.min(100, s.affinity + affinityGain) }
+        : s
+    );
+    this.state = { ...this.state, students: updatedStudents };
+
+    this.dailyScreen?.showConversation(convData.steps, convData.result, () => {
+      this.state = {
+        ...this.state,
+        actionLogs: [...this.state.actionLogs, `${student.name}が話しかけてきた。 <span style="color:#7EC850;">好感度+${affinityGain}</span>`],
+      };
+      this.dailyScreen?.update(this.state);
+    });
   }
 
   private handleTalk(student: Student): void {

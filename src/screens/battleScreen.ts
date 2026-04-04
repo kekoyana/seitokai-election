@@ -65,9 +65,9 @@ export class BattleScreen {
 
     this.container.style.cssText = `
       position: fixed; inset: 0;
-      background: linear-gradient(160deg, #1a2a3a 0%, #2c3e50 100%);
+      background: linear-gradient(160deg, var(--game-bg-dark) 0%, var(--game-bg-mid) 100%);
       display: flex; flex-direction: column;
-      font-family: 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif;
+      font-family: var(--game-font);
       overflow: hidden;
     `;
 
@@ -81,22 +81,12 @@ export class BattleScreen {
         display:flex; justify-content:space-between; align-items:flex-start;
         padding:10px 12px; pointer-events:none; z-index:10;
       ">
-        <div style="
-          pointer-events:auto;
-          background:rgba(0,0,0,0.55); color:#fff;
-          border-radius:16px; padding:5px 10px;
-          box-shadow:0 2px 8px rgba(0,0,0,0.3);
-          font-size:0.78em; backdrop-filter:blur(4px);
-        ">
+        <div class="game-hud-badge" style="pointer-events:auto;">
           R<strong>${battle.round}</strong>/${battle.maxRounds}
         </div>
-        <div style="
+        <div class="game-hud-badge" style="
           pointer-events:auto;
           display:flex; gap:6px; align-items:center;
-          background:rgba(0,0,0,0.55); color:#fff;
-          border-radius:16px; padding:5px 10px;
-          box-shadow:0 2px 8px rgba(0,0,0,0.3);
-          font-size:0.78em; backdrop-filter:blur(4px);
         ">
           <span>⚡<strong>${this.state.stamina}</strong></span>
           <span style="opacity:0.4;">|</span>
@@ -116,8 +106,8 @@ export class BattleScreen {
         ${student.portrait
           ? `<img src="${student.portrait}" alt="${student.name}" style="
               width:96px; height:96px;
-              border-radius:50%; object-fit:cover; object-position:top;
-              border:3px solid rgba(255,255,255,0.3);
+              border-radius:4px; object-fit:cover; object-position:top;
+              border:2px solid var(--game-panel-border);
               box-shadow:0 4px 16px rgba(0,0,0,0.5);
             "/>`
           : renderInitialIcon(student.name, student.personality, 96, 'rgba(255,255,255,0.3)')
@@ -151,9 +141,8 @@ export class BattleScreen {
           </span>
           <span>成功 (+70)</span>
         </div>
-        <div style="
-          height:16px; background:rgba(255,255,255,0.15);
-          border-radius:8px; overflow:hidden; position:relative;
+        <div class="game-bar" style="
+          height:16px; position:relative;
         ">
           <!-- 中心線 -->
           <div style="
@@ -189,8 +178,8 @@ export class BattleScreen {
       <div id="battle-log-box" style="
         ${this.showLog ? 'max-height:40vh; overflow-y:auto;' : 'max-height:3.6em; overflow:hidden;'}
         padding:6px 16px; cursor:pointer; flex-shrink:0;
-        background:rgba(0,0,0,0.6); backdrop-filter:blur(4px);
-        border-top:1px solid rgba(255,255,255,0.1);
+        background:var(--game-panel-bg);
+        border-top:2px solid var(--game-panel-border);
       ">
         ${(this.showLog ? battle.logs : battle.logs.slice(-2)).map(log => `
           <div style="
@@ -260,11 +249,11 @@ export class BattleScreen {
         <p style="color:rgba(255,255,255,0.7); font-size:0.85em; margin-bottom:16px;">
           ${message}
         </p>
-        <button id="finish-btn" style="
+        <button id="finish-btn" class="game-btn" style="
           padding:12px 32px;
-          background:${btnColor};
-          color:#fff; border:none; border-radius:50px;
-          font-size:1em; font-weight:bold; cursor:pointer; font-family:inherit;
+          background:linear-gradient(180deg,${btnColor},${btnColor}aa);
+          border-color:${btnColor};
+          font-size:1em; font-family:var(--game-font);
         ">日常へ戻る</button>
       </div>
     `;
@@ -276,7 +265,7 @@ export class BattleScreen {
 
     if (battle.phase === 'select_attitude') {
       return `
-        <div style="color:rgba(255,255,255,0.8); font-size:0.85em; margin-bottom:8px; text-align:center;">
+        <div style="color:var(--game-gold); font-size:0.85em; margin-bottom:8px; text-align:center; font-weight:bold;">
           【1】態度を選択
         </div>
         <div style="display:flex; flex-direction:column; gap:8px;">
@@ -296,11 +285,11 @@ export class BattleScreen {
           { id: 'sports', label: '体育派の政策' },
         ] as { id: CandidateId; label: string }[]
       ).map(t =>
-        `<button data-topic="${t.id}" style="
-          padding:8px 12px; text-align:left;
-          background:${t.id === candidate ? candidateColor : 'rgba(255,255,255,0.1)'};
-          border:1px solid rgba(255,255,255,0.2); border-radius:8px;
-          color:#fff; font-size:0.82em; cursor:pointer; font-family:inherit;
+        `<button data-topic="${t.id}" class="game-btn" style="
+          padding:8px 12px; text-align:left; width:100%;
+          background:${t.id === candidate ? `linear-gradient(180deg,${candidateColor},${candidateColor}aa)` : 'linear-gradient(180deg,rgba(40,50,80,0.8),rgba(20,30,50,0.8))'};
+          border-color:${t.id === candidate ? candidateColor : 'var(--game-panel-border)'};
+          font-size:0.82em; font-family:var(--game-font);
         ">
           ${t.id === candidate ? '★ ' : ''}${t.label}
         </button>`
@@ -314,11 +303,11 @@ export class BattleScreen {
           const prefColor = pref === 'like' ? '#7EC850' : pref === 'dislike' ? '#F07070' : pref === 'neutral' ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.35)';
           const prefIcon = pref === 'like' ? ' ♥' : pref === 'dislike' ? ' ✗' : pref === 'neutral' ? ' ―' : '';
           return `
-            <button data-topic="${id}" style="
+            <button data-topic="${id}" class="game-btn" style="
               padding:8px 12px; text-align:left;
-              background:rgba(255,255,255,0.08);
-              border:1px solid rgba(255,255,255,0.15); border-radius:8px;
-              color:${prefColor}; font-size:0.82em; cursor:pointer; font-family:inherit;
+              background:linear-gradient(180deg,rgba(40,50,80,0.6),rgba(20,30,50,0.6));
+              border-color:rgba(74,96,144,0.5);
+              color:${prefColor}; font-size:0.82em; font-family:var(--game-font);
             ">
               ${label}${prefIcon}${!isRevealed ? ' ?' : ''}
             </button>
@@ -326,7 +315,7 @@ export class BattleScreen {
         }).join('');
 
       return `
-        <div style="color:rgba(255,255,255,0.8); font-size:0.85em; margin-bottom:8px; text-align:center;">
+        <div style="color:var(--game-gold); font-size:0.85em; margin-bottom:8px; text-align:center; font-weight:bold;">
           【2】話題を選択
         </div>
         <div style="margin-bottom:8px;">
@@ -337,39 +326,35 @@ export class BattleScreen {
           <div style="font-size:0.75em; color:rgba(255,255,255,0.5); margin-bottom:4px;">雑談（趣味）<span style="color:#F0D070;">（相手の機嫌が変化）</span></div>
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:4px;">${hobbyTopicsHtml}</div>
         </div>
-        <button id="cancel-btn" style="
+        <button id="cancel-btn" class="game-btn" style="
           width:100%; padding:10px;
-          background:rgba(255,255,255,0.1);
-          border:1px solid rgba(255,255,255,0.3); border-radius:8px;
-          color:rgba(255,255,255,0.7); font-size:0.85em; cursor:pointer; font-family:inherit;
+          background:linear-gradient(180deg,rgba(60,70,100,0.6),rgba(30,40,60,0.6));
+          border-color:var(--game-panel-border);
+          color:var(--game-text-dim); font-size:0.85em; font-family:var(--game-font);
         ">← 態度選択に戻る</button>
       `;
     }
 
     if (battle.phase === 'select_stance') {
       return `
-        <div style="color:rgba(255,255,255,0.8); font-size:0.85em; margin-bottom:8px; text-align:center;">
+        <div style="color:var(--game-gold); font-size:0.85em; margin-bottom:8px; text-align:center; font-weight:bold;">
           【3】立場を選択
         </div>
         <div style="display:flex; gap:10px; margin-bottom:12px;">
-          <button data-stance="positive" style="
+          <button data-stance="positive" class="game-btn game-btn-success" style="
             flex:1; padding:16px;
-            background:linear-gradient(135deg,#2E7D32,#1B5E20);
-            color:#fff; border:none; border-radius:12px;
-            font-size:1em; font-weight:bold; cursor:pointer; font-family:inherit;
-          ">👍 肯定</button>
-          <button data-stance="negative" style="
+            font-size:1em; font-family:var(--game-font);
+          ">肯定</button>
+          <button data-stance="negative" class="game-btn game-btn-danger" style="
             flex:1; padding:16px;
-            background:linear-gradient(135deg,#C62828,#7B0000);
-            color:#fff; border:none; border-radius:12px;
-            font-size:1em; font-weight:bold; cursor:pointer; font-family:inherit;
-          ">👎 否定</button>
+            font-size:1em; font-family:var(--game-font);
+          ">否定</button>
         </div>
-        <button id="cancel-btn" style="
+        <button id="cancel-btn" class="game-btn" style="
           width:100%; padding:10px;
-          background:rgba(255,255,255,0.1);
-          border:1px solid rgba(255,255,255,0.3); border-radius:8px;
-          color:rgba(255,255,255,0.7); font-size:0.85em; cursor:pointer; font-family:inherit;
+          background:linear-gradient(180deg,rgba(60,70,100,0.6),rgba(30,40,60,0.6));
+          border-color:var(--game-panel-border);
+          color:var(--game-text-dim); font-size:0.85em; font-family:var(--game-font);
         ">← 話題選択に戻る</button>
       `;
     }
@@ -390,12 +375,11 @@ export class BattleScreen {
     const cost = { friendly: 3, normal: 5, strong: 8 }[id];
     const disabled = this.state.stamina < cost;
     return `
-      <button data-attitude="${id}" style="
-        padding:12px 16px; text-align:left;
-        background:${disabled ? 'rgba(100,100,100,0.3)' : `${color}33`};
-        border:2px solid ${disabled ? '#666' : color};
-        border-radius:10px; color:${disabled ? '#888' : '#fff'};
-        font-size:0.9em; cursor:${disabled ? 'not-allowed' : 'pointer'}; font-family:inherit;
+      <button data-attitude="${id}" class="game-btn ${disabled ? 'game-btn-disabled' : ''}" style="
+        padding:12px 16px; text-align:left; width:100%;
+        background:${disabled ? 'linear-gradient(180deg,#555,#333)' : `linear-gradient(180deg,${color}cc,${color}88)`};
+        border-color:${disabled ? '#666' : color};
+        font-size:0.9em; font-family:var(--game-font);
         display:flex; justify-content:space-between; align-items:center;
         opacity:${disabled ? '0.5' : '1'};
       " ${disabled ? 'disabled' : ''}>

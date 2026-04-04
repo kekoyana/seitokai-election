@@ -7,6 +7,7 @@ import {
   FLOOR_ADJACENCY, MOVE_COST, getFloorMoveCost, HOBBY_LABELS
 } from './data';
 import { ORGANIZATIONS } from './data/organizations';
+import { getOrganizationVote } from './logic/organizationLogic';
 import {
   initBattle, resolvePlayerTurn, resolveEnemyTurn,
   checkBattleEnd, applyWinShift, applyLoseShift, applyTimeoutShift,
@@ -489,7 +490,11 @@ export class Game {
         lastBattleResult: { student, win: true, shiftAmount },
         actionLogs: [...this.state.actionLogs, logEntry],
       };
-      this.showDaily();
+      if (this.isAllOrganizationsUnified()) {
+        this.showEnding();
+      } else {
+        this.showDaily();
+      }
     } else if (result === 'lose') {
       // 失敗: プレイヤーの思想が相手方向にシフト
       const { newSupport, shiftPercent } = applyLoseShift(
@@ -521,7 +526,11 @@ export class Game {
           actionLogs: [...this.state.actionLogs, logEntry],
         };
         this.state = { ...this.state, students: this.syncPlayerSupport(this.state.students) };
-        this.showDaily();
+        if (this.isAllOrganizationsUnified()) {
+          this.showEnding();
+        } else {
+          this.showDaily();
+        }
       }
     } else if (result === 'timeout') {
       // タイムアウト: バー位置に応じて双方の思想をシフト
@@ -562,7 +571,11 @@ export class Game {
           actionLogs: [...this.state.actionLogs, logEntry],
         };
         this.state = { ...this.state, students: this.syncPlayerSupport(this.state.students) };
-        this.showDaily();
+        if (this.isAllOrganizationsUnified()) {
+          this.showEnding();
+        } else {
+          this.showDaily();
+        }
       }
     }
   }
@@ -576,6 +589,13 @@ export class Game {
       },
     });
     this.endingScreen.mount(this.root);
+  }
+
+  /** すべての組織が同一候補を支持しているかチェック */
+  private isAllOrganizationsUnified(): boolean {
+    if (ORGANIZATIONS.length === 0) return false;
+    const first = getOrganizationVote(ORGANIZATIONS[0], this.state.students);
+    return ORGANIZATIONS.every(org => getOrganizationVote(org, this.state.students) === first);
   }
 
   private showEnding(): void {

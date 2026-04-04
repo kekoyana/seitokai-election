@@ -34,9 +34,9 @@ export class CharacterSelectScreen {
   private render(): void {
     this.container.style.cssText = `
       position:fixed; inset:0;
-      background:linear-gradient(160deg, #E8F4FD 0%, #FFF9E6 100%);
+      background:linear-gradient(160deg, var(--game-bg-dark) 0%, var(--game-bg-mid) 100%);
       display:flex; flex-direction:column;
-      font-family:'Hiragino Kaku Gothic ProN','Meiryo',sans-serif;
+      font-family:var(--game-font);
       overflow:hidden; box-sizing:border-box;
     `;
 
@@ -49,17 +49,18 @@ export class CharacterSelectScreen {
       const count = this.students.filter(s => this.getSupportFaction(s) === info.id).length;
       return `<button class="faction-tab" data-faction="${info.id}" style="
         flex:1;
-        background:${active ? info.color : 'transparent'};
-        color:${active ? '#fff' : info.color};
-        border:none;
-        border-bottom:3px solid ${active ? info.color : 'transparent'};
+        background:${active ? info.color : 'rgba(20,30,60,0.6)'};
+        color:${active ? '#fff' : '#8090b0'};
+        border:2px solid ${active ? info.color : 'transparent'};
+        border-bottom:${active ? 'none' : '2px solid var(--game-panel-border)'};
         padding:10px 8px 8px;
         cursor:pointer;
-        font-family:inherit;
+        font-family:var(--game-font);
         font-size:0.85em;
-        font-weight:${active ? 'bold' : 'normal'};
+        font-weight:bold;
         transition:all 0.15s;
-        border-radius:${active ? '8px 8px 0 0' : '0'};
+        border-radius:4px 4px 0 0;
+        text-shadow:${active ? '0 1px 2px rgba(0,0,0,0.5)' : 'none'};
       ">${FACTION_LABELS[info.id]}派 <span style="font-size:0.8em; opacity:0.7;">(${count})</span></button>`;
     }).join('');
 
@@ -67,20 +68,18 @@ export class CharacterSelectScreen {
     let descHtml: string;
     if (activeInfo) {
       descHtml = `
-        <div style="
-          background:${activeInfo.color}10;
+        <div class="game-panel-light" style="
           border-left:4px solid ${activeInfo.color};
-          border-radius:0 8px 8px 0;
-          padding:10px 14px;
           margin:0 16px 12px;
           display:flex; align-items:center; gap:12px;
         ">
           ${activeCandidate?.portrait
             ? `<img src="${activeCandidate.portrait}" alt="${activeCandidate.name}" style="
-                width:64px; height:64px; border-radius:50%;
+                width:64px; height:64px; border-radius:4px;
                 object-fit:cover; object-position:top;
-                border:3px solid ${activeInfo.color};
+                border:2px solid ${activeInfo.color};
                 flex-shrink:0;
+                box-shadow:0 2px 8px rgba(0,0,0,0.4);
               "/>`
             : ''
           }
@@ -88,11 +87,11 @@ export class CharacterSelectScreen {
             <div style="font-weight:bold; color:${activeInfo.color}; font-size:0.9em; margin-bottom:4px;">
               ${activeInfo.platform}
             </div>
-            <div style="font-size:0.8em; color:#666; line-height:1.6;">
+            <div style="font-size:0.8em; color:var(--game-text-dim); line-height:1.6;">
               ${activeInfo.description}
             </div>
             ${activeCandidate ? `
-              <div style="font-size:0.78em; color:#888; margin-top:6px;">
+              <div style="font-size:0.78em; color:var(--game-text-dim); margin-top:6px;">
                 候補者: <span style="font-weight:bold; color:${activeInfo.color};">${activeCandidate.name}</span>
               </div>
             ` : ''}
@@ -101,18 +100,14 @@ export class CharacterSelectScreen {
       `;
     } else {
       descHtml = `
-        <div style="
-          background:#f0f4f8;
-          border-left:4px solid #aab;
-          border-radius:0 8px 8px 0;
-          padding:14px;
+        <div class="game-panel-light" style="
           margin:0 16px 12px;
           text-align:center;
         ">
-          <div style="font-size:0.95em; color:#555; margin-bottom:4px;">
+          <div style="font-size:0.95em; color:var(--game-gold); margin-bottom:4px;">
             支持する思想を選んでください
           </div>
-          <div style="font-size:0.8em; color:#888; line-height:1.6;">
+          <div style="font-size:0.8em; color:var(--game-text-dim); line-height:1.6;">
             上のタブから派閥を選ぶと、所属する生徒の一覧が表示されます
           </div>
         </div>
@@ -130,14 +125,14 @@ export class CharacterSelectScreen {
         text-align:center; padding:20px 16px 0;
         flex-shrink:0;
       ">
-        <h1 style="font-size:1.3em; color:#333; margin:0 0 4px;">キャラクター選択</h1>
-        <p style="font-size:0.85em; color:#888; margin:0 0 16px;">あなたの分身となる生徒を選んでください</p>
+        <h1 class="game-title" style="font-size:1.3em; margin:0 0 4px;">キャラクター選択</h1>
+        <p style="font-size:0.85em; color:var(--game-text-dim); margin:0 0 16px;">あなたの分身となる生徒を選んでください</p>
       </div>
       <div style="
         display:flex; gap:0;
         padding:0 16px;
         flex-shrink:0;
-        border-bottom:1px solid #e0e8f0;
+        border-bottom:2px solid var(--game-panel-border);
       ">${tabsHtml}</div>
       <div style="flex:1; overflow-y:auto; padding:12px 16px;">
         ${descHtml}
@@ -171,8 +166,9 @@ export class CharacterSelectScreen {
   private renderCard(s: Student): string {
     const attrsHtml = s.attributes.map(a =>
       `<span style="
-        background:#e8f0fa; color:#3a5080;
-        border-radius:10px; padding:1px 7px; font-size:0.75em;
+        background:rgba(74,144,217,0.2); color:#8ab0e8;
+        border:1px solid rgba(74,144,217,0.3);
+        border-radius:3px; padding:1px 7px; font-size:0.75em;
       ">${ATTRIBUTE_LABELS[a] ?? a}</span>`
     ).join(' ');
 
@@ -183,11 +179,11 @@ export class CharacterSelectScreen {
 
     const statsBar = (label: string, value: number, color: string) => `
       <div style="display:flex; align-items:center; gap:6px; font-size:0.75em;">
-        <span style="width:28px; color:#888;">${label}</span>
-        <div style="flex:1; height:6px; background:#e0e8f0; border-radius:3px; overflow:hidden;">
-          <div style="width:${value}%; height:100%; background:${color}; border-radius:3px;"></div>
+        <span style="width:28px; color:var(--game-text-dim);">${label}</span>
+        <div style="flex:1; height:8px; background:rgba(0,0,0,0.4); border:1px solid rgba(74,96,144,0.4); border-radius:2px; overflow:hidden;">
+          <div style="width:${value}%; height:100%; background:${color}; box-shadow:inset 0 -1px 0 rgba(0,0,0,0.2);"></div>
         </div>
-        <span style="width:20px; text-align:right; color:#555;">${value}</span>
+        <span style="width:20px; text-align:right; color:var(--game-text);">${value}</span>
       </div>
     `;
 
@@ -195,37 +191,34 @@ export class CharacterSelectScreen {
     const supportCandidate = CANDIDATES.find(c => c.id === supportCandidateId);
 
     return `
-      <button data-student-id="${s.id}" style="
-        background:rgba(255,255,255,0.9);
-        border:2px solid #e0eaf5;
-        border-radius:14px; padding:14px;
+      <button data-student-id="${s.id}" class="game-chara-card" style="
         cursor:pointer; text-align:left;
-        font-family:inherit;
-        transition:border-color 0.15s, box-shadow 0.15s;
-      " onpointerenter="this.style.borderColor='${supportCandidate?.color ?? '#4A90D9'}';this.style.boxShadow='0 4px 16px rgba(0,0,0,0.08)'"
-         onpointerleave="this.style.borderColor='#e0eaf5';this.style.boxShadow='none'">
+        font-family:var(--game-font);
+      " onpointerenter="this.style.borderColor='${supportCandidate?.color ?? '#4A90D9'}';this.style.boxShadow='0 0 12px ${supportCandidate?.color ?? '#4A90D9'}40'"
+         onpointerleave="this.style.borderColor='var(--game-panel-border)';this.style.boxShadow='0 2px 6px rgba(0,0,0,0.3)'">
         <div style="display:flex; align-items:center; gap:12px; margin-bottom:10px;">
           ${s.portrait
             ? `<img src="${s.portrait}" alt="${s.name}" style="
-                width:56px; height:56px; border-radius:50%;
+                width:56px; height:56px; border-radius:4px;
                 object-fit:cover; object-position:top;
-                border:3px solid ${supportCandidate?.color ?? '#d0e0f0'}; flex-shrink:0;
+                border:2px solid ${supportCandidate?.color ?? '#4a6090'}; flex-shrink:0;
+                box-shadow:0 2px 6px rgba(0,0,0,0.4);
               "/>`
-            : renderInitialIcon(s.name, s.personality, 56, supportCandidate?.color ?? '#d0e0f0')
+            : renderInitialIcon(s.name, s.personality, 56, supportCandidate?.color ?? '#4a6090')
           }
           <div style="flex:1;">
             <div style="display:flex; align-items:center; gap:6px;">
-              <span style="font-size:1em; font-weight:bold; color:#333;">${s.name}</span>
+              <span style="font-size:1em; font-weight:bold; color:var(--game-text);">${s.name}</span>
             </div>
-            <div style="font-size:0.8em; color:#888;">
+            <div style="font-size:0.8em; color:var(--game-text-dim);">
               ${s.className}　${s.gender === 'male' ? '♂' : '♀'}　${PERSONALITY_LABELS[s.personality] ?? s.personality}
             </div>
-            <div style="font-size:0.78em; color:#999;">「${getCatchphrase(s.personality, s.attributes)}」</div>
+            <div style="font-size:0.78em; color:var(--game-gold-dark);">「${getCatchphrase(s.personality, s.attributes)}」</div>
           </div>
         </div>
 
-        <div style="font-size:0.78em; color:#666; line-height:1.5; margin-bottom:8px;
-          background:#f8f9fb; border-radius:8px; padding:8px 10px;">
+        <div style="font-size:0.78em; color:var(--game-text-dim); line-height:1.5; margin-bottom:8px;
+          background:rgba(0,0,0,0.3); border-radius:4px; padding:8px 10px; border:1px solid rgba(74,96,144,0.3);">
           ${s.description}
         </div>
 
@@ -239,7 +232,7 @@ export class CharacterSelectScreen {
           ${statsBar('知性', s.stats.intel, '#27AE60')}
         </div>
 
-        <div style="font-size:0.78em; color:#888;">
+        <div style="font-size:0.78em; color:var(--game-text-dim);">
           好き: ${hobbiesLiked || 'なし'}
         </div>
       </button>

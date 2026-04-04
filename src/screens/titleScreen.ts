@@ -21,82 +21,62 @@ export class TitleScreen {
       background: url('${titleBg}') center/cover no-repeat;
       display: flex; flex-direction: column;
       align-items: center; justify-content: center;
-      font-family: 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif;
+      font-family: var(--game-font);
       overflow-y: auto; padding: 20px; box-sizing: border-box;
     `;
 
     this.container.innerHTML = `
       <div style="text-align:center; max-width:480px; width:100%;">
-        <div style="
-          background: linear-gradient(135deg, rgba(27,58,107,0.9), rgba(46,95,172,0.9));
-          backdrop-filter: blur(8px);
-          border-radius: 16px;
+        <div class="game-panel" style="
           padding: 32px 24px;
           margin-bottom: 24px;
-          box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+          text-align: center;
         ">
-          <div style="font-size:2.8em; font-weight:bold; color:#fff; letter-spacing:0.1em; margin-bottom:8px; text-shadow:0 2px 8px rgba(0,0,0,0.3);">
+          <div class="game-title" style="font-size:2.8em; font-weight:900; letter-spacing:0.15em; margin-bottom:8px;">
             生徒会選挙
           </div>
-          <div style="font-size:1.1em; color:#B8D4FF; letter-spacing:0.2em; margin-bottom:4px;">
+          <div style="font-size:1.1em; color:var(--game-gold-dark); letter-spacing:0.2em; margin-bottom:4px;">
             〜30日間の説得戦〜
           </div>
-          <div style="
-            height: 2px;
-            background: linear-gradient(90deg, transparent, #B8D4FF, transparent);
-            margin: 12px 0;
-          "></div>
-          <p style="color:#D0E8FF; font-size:0.85em; line-height:1.7;">
+          <div class="game-divider"></div>
+          <p style="color:var(--game-text-dim); font-size:0.85em; line-height:1.7;">
             あなたは学園の1生徒。<br>
             支持する候補者の当選を目指し、<br>
             30日間で仲間を増やしていこう。
           </p>
         </div>
 
-        <div style="
-          background: rgba(255,255,255,0.85);
-          backdrop-filter: blur(8px);
-          border-radius: 12px;
+        <div class="game-panel-light" style="
           padding: 16px 20px;
           margin-bottom: 24px;
-          border: 1px solid rgba(255,255,255,0.5);
           text-align: left;
           font-size: 0.82em;
-          color: #444;
           line-height: 1.8;
         ">
-          <div style="font-weight:bold; color:#1B3A6B; margin-bottom:8px;">遊び方</div>
-          <div>・生徒を1人選んで選挙活動を開始</div>
-          <div>・体力の続く限り移動・会話・説得を繰り返す</div>
-          <div>・説得バトルでターン制の綱引きに勝てば支持を獲得</div>
-          <div>・30日後、組織の多数票を獲得した候補者が当選！</div>
+          <div style="font-weight:bold; color:var(--game-gold); margin-bottom:8px; font-size:1.05em;">遊び方</div>
+          <div style="color:var(--game-text);">・生徒を1人選んで選挙活動を開始</div>
+          <div style="color:var(--game-text);">・体力の続く限り移動・会話・説得を繰り返す</div>
+          <div style="color:var(--game-text);">・説得バトルでターン制の綱引きに勝てば支持を獲得</div>
+          <div style="color:var(--game-text);">・30日後、組織の多数票を獲得した候補者が当選！</div>
         </div>
 
-        <button id="start-btn" style="
+        <button id="start-btn" class="game-btn game-btn-primary" style="
           padding: 16px 48px;
-          background: linear-gradient(135deg, #2E5FAC, #1B3A6B);
-          color: #fff;
-          border: none;
-          border-radius: 50px;
           font-size: 1.2em;
-          font-weight: bold;
-          cursor: pointer;
-          letter-spacing: 0.1em;
-          box-shadow: 0 4px 16px rgba(30,60,120,0.35);
-          transition: transform 0.1s;
-          font-family: inherit;
+          letter-spacing: 0.15em;
+          transition: transform 0.05s;
         ">
           ゲームスタート
         </button>
 
         <div style="
           display:flex; align-items:center; justify-content:center; gap:8px;
-          margin-top:16px; color:#fff; font-size:0.9em;
+          margin-top:16px; color:var(--game-text); font-size:0.9em;
         ">
           <span id="bgm-icon" style="cursor:pointer;">${bgm.volume > 0 ? '🔊' : '🔇'}</span>
           <input id="bgm-volume" type="range" min="0" max="100" value="${Math.round(bgm.volume * 100)}" style="
             width:100px; height:4px; cursor:pointer;
-            accent-color:#B8D4FF; vertical-align:middle;
+            accent-color:var(--game-gold); vertical-align:middle;
           "/>
         </div>
       </div>

@@ -143,7 +143,9 @@ export class EndingScreen {
             ${isVictory ? '選挙に勝利！' : '選挙に敗北...'}
           </div>
           <div style="color:rgba(255,255,255,0.8); font-size:0.9em; margin-bottom:16px;">
-            30日間の選挙活動が終わりました
+            ${this.state.day >= 30
+              ? '30日間の選挙活動が終わりました'
+              : `${this.state.day}日目ですべての組織の支持が統一されました！`}
           </div>
           <div style="
             background:rgba(255,255,255,0.15);

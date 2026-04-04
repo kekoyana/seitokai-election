@@ -146,9 +146,9 @@ export class DailyScreen {
 
     this.container.style.cssText = `
       position: fixed; inset: 0;
-      background: linear-gradient(160deg, #E8F4FD 0%, #FFF9E6 100%);
+      background: linear-gradient(160deg, var(--game-bg-dark) 0%, var(--game-bg-mid) 100%);
       display: flex; flex-direction: column;
-      font-family: 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif;
+      font-family: var(--game-font);
       overflow: hidden;
     `;
 
@@ -169,32 +169,27 @@ export class DailyScreen {
         display:flex; justify-content:space-between; align-items:flex-start;
         padding:10px 12px; pointer-events:none; z-index:10;
       ">
-        <div id="player-icon" style="
+        <div id="player-icon" class="game-hud-badge" style="
           pointer-events:auto; cursor:pointer;
           display:flex; align-items:center; gap:8px;
-          background:${candidateColor}DD; color:#fff;
-          border-radius:20px; padding:4px 12px 4px 4px;
-          box-shadow:0 2px 8px rgba(0,0,0,0.2);
-          font-size:0.78em;
+          background:${candidateColor}CC;
+          border-color:${candidateColor};
+          padding:4px 12px 4px 4px;
         ">
           ${pc ? (pc.portrait
             ? `<img src="${pc.portrait}" alt="${pc.name}" style="
-                width:28px; height:28px; border-radius:50%;
+                width:28px; height:28px; border-radius:3px;
                 object-fit:cover; object-position:top;
-                border:2px solid rgba(255,255,255,0.5);
+                border:1px solid rgba(255,255,255,0.5);
               "/>`
             : renderInitialIcon(pc.name, pc.personality, 28, 'rgba(255,255,255,0.5)')
           ) : ''}
           <span style="font-weight:bold;">${pc?.name ?? ''}</span>
           <span style="opacity:0.8; font-size:0.9em;">${FACTION_LABELS[this.state.candidate ?? ''] ?? ''}派</span>
         </div>
-        <div style="
+        <div class="game-hud-badge" style="
           pointer-events:auto;
           display:flex; gap:6px; align-items:center;
-          background:rgba(0,0,0,0.55); color:#fff;
-          border-radius:16px; padding:5px 10px;
-          box-shadow:0 2px 8px rgba(0,0,0,0.2);
-          font-size:0.78em; backdrop-filter:blur(4px);
         ">
           <span><strong>${dayToDate(this.state.day)}</strong></span>
           <span style="opacity:0.4;">|</span>
@@ -212,14 +207,14 @@ export class DailyScreen {
     // 下部ステータスバー
     const bottomBar = `
       <div style="
-        background:rgba(255,255,255,0.8); backdrop-filter:blur(4px);
-        border-top:1px solid #e0e8f5;
+        background:var(--game-panel-bg);
+        border-top:2px solid var(--game-panel-border);
         padding:6px 16px;
-        display:flex; gap:16px; font-size:0.75em; color:#555;
+        display:flex; gap:16px; font-size:0.75em; color:var(--game-text-dim);
         flex-shrink:0;
       ">
         <span>支持者: <strong style="color:${candidateColor}">${supporterCount}</strong>名</span>
-        <span>場所: <strong>${FLOOR_LABELS[getFloorFromLocation(this.state.currentLocation)]} ${isCorridorLocation(this.state.currentLocation) ? '廊下' : currentLocation?.name ?? ''}</strong></span>
+        <span>場所: <strong style="color:var(--game-text);">${FLOOR_LABELS[getFloorFromLocation(this.state.currentLocation)]} ${isCorridorLocation(this.state.currentLocation) ? '廊下' : currentLocation?.name ?? ''}</strong></span>
       </div>
     `;
 
@@ -252,10 +247,9 @@ export class DailyScreen {
         position:absolute; bottom:36px; left:8px; right:8px;
         pointer-events:auto; z-index:50;
       ">
-        <div id="log-box" style="
-          background:rgba(0,0,0,0.75); backdrop-filter:blur(4px);
-          border-radius:10px; padding:8px 12px;
-          color:#e8e8e8; font-size:0.78em; line-height:1.6;
+        <div id="log-box" class="game-panel" style="
+          padding:8px 12px;
+          font-size:0.78em; line-height:1.6;
           cursor:pointer;
           ${this.showLog ? 'max-height:40vh; overflow-y:auto;' : 'max-height:3.6em; overflow:hidden;'}
         ">
@@ -379,23 +373,15 @@ export class DailyScreen {
     ` : '';
 
     return `
-      <div style="
-        background:rgba(255,255,255,0.85);
-        border-radius:14px; padding:12px 14px; margin-bottom:12px;
-        border:1px solid #e0eaf5;
-      ">
-        <h3 style="font-size:0.9em; color:#555; margin-bottom:10px;">この場所にいる生徒</h3>
+      <div class="game-panel" style="margin-bottom:12px;">
+        <h3 style="font-size:0.9em; color:var(--game-gold); margin-bottom:10px; font-weight:bold;">この場所にいる生徒</h3>
         ${candidatesHtml}
         ${studentsHtml}
       </div>
 
-      <div style="
-        background:rgba(255,255,255,0.85);
-        border-radius:14px; padding:12px 14px; margin-bottom:12px;
-        border:1px solid #e0eaf5;
-      ">
+      <div class="game-panel" style="margin-bottom:12px;">
         <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px;">
-          <button id="exit-room-btn" style="
+          <button id="exit-room-btn" class="game-btn game-btn-primary" style="
             padding:10px 12px;
             background:#4A90D9;
             color:#fff; border:none; border-radius:10px;

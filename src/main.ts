@@ -1,4 +1,5 @@
 import { Game } from './game';
+import './game.css';
 
 // Canvas要素は非表示にする（このゲームはDOM/CSS UIを使用）
 const canvas = document.getElementById('game') as HTMLCanvasElement;

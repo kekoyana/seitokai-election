@@ -10,10 +10,11 @@
 
 ## 開発コマンド
 ```bash
-npm install          # 依存インストール
-npx tsc --noEmit     # 型チェック
-npx vite build       # ビルド
-npx vite --port 5173 # 開発サーバー
+npm install              # 依存インストール
+npx tsc --noEmit         # 型チェック
+npx vite build           # ビルド
+npx vite --port 5173     # 開発サーバー
+npx tsx tools/simulate.ts # 説得バトルシミュレーション
 ```
 
 ## プロジェクト構成
@@ -24,6 +25,7 @@ src/
   types.ts              # 型定義
   data.ts               # 生徒・候補者・場所データ
   battleLogic.ts        # 説得バトル判定ロジック
+  catchphrase.ts        # 性格別キャッチフレーズ（battleLogicから参照）
   data/
     organizations.ts    # 組織データ（クラス・部活）
   logic/
@@ -45,6 +47,8 @@ docs/
   portrait-config.md    # ComfyUI画像生成設定
 portraits/              # キャラクターポートレート画像（Vite importで使用）
   raw/                  # 生成元の生画像（gitignore対象）
+tools/
+  simulate.ts           # 説得バトルシミュレーション（npx tsx tools/simulate.ts）
 ai-sprites-local/       # ローカルComfyUIによる画像生成スクリプト
 ```
 

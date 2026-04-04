@@ -243,3 +243,9 @@
 .game-pulse {
   animation: game-pulse 1.5s ease-in-out infinite;
 }
+
+/* 会話ウィンドウ スライドアップ */
+@keyframes game-conversation-enter {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}

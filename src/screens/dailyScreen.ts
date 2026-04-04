@@ -8,7 +8,7 @@ import {
 import { ORGANIZATIONS, ORGANIZATION_TYPE_LABELS } from '../data/organizations';
 import { getOrganizationVote, calcOrganizationSupport } from '../logic/organizationLogic';
 import { bgm } from '../bgm';
-import type { ConversationStep } from '../logic/conversationGenerator';
+import type { ConversationStep, ConversationResult } from '../logic/conversationGenerator';
 import { ConversationOverlay } from './conversationOverlay';
 
 /** Day番号(1〜30)を「9/1」形式の日付文字列に変換（9月1日スタート） */
@@ -1476,10 +1476,10 @@ export class DailyScreen {
     });
   }
 
-  showConversation(steps: ConversationStep[], onFinish: () => void): void {
+  showConversation(steps: ConversationStep[], result: ConversationResult, onFinish: () => void): void {
     this.hideConversation();
     this.container.style.pointerEvents = 'none';
-    this.conversationOverlay = new ConversationOverlay(steps, () => {
+    this.conversationOverlay = new ConversationOverlay(steps, result, () => {
       this.hideConversation();
       onFinish();
     });

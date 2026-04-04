@@ -4,8 +4,9 @@ import type {
 } from './types';
 import {
   STUDENTS, getFloorFromLocation, isCorridorLocation, getCorridorForFloor,
-  FLOOR_ADJACENCY, MOVE_COST, getFloorMoveCost, HOBBY_LABELS
+  FLOOR_ADJACENCY, MOVE_COST, getFloorMoveCost,
 } from './data';
+import { generateConversationData, generateTalkLogSummary } from './logic/conversationGenerator';
 import { ORGANIZATIONS } from './data/organizations';
 import { getOrganizationVote } from './logic/organizationLogic';
 import {
@@ -236,53 +237,32 @@ export class Game {
       };
     });
 
-    // ログ生成（世界観に合わせた文面 + 色付き効果表示）
-    const logLines: string[] = [];
-    const talkFlavors = [
-      `${student.name}と廊下で雑談をした。`,
-      `${student.name}と休み時間に話し込んだ。`,
-      `${student.name}と少し言葉を交わした。`,
-      `${student.name}と教室で話をした。`,
-    ];
-    logLines.push(talkFlavors[Math.floor(Math.random() * talkFlavors.length)]);
-    if (revealedHobby) {
-      const hobbyName = HOBBY_LABELS[revealedHobby] ?? revealedHobby;
-      const pref = student.hobbies[revealedHobby];
-      const prefLines: Record<string, string[]> = {
-        like: [
-          `話の流れで${hobbyName}の話題になり、目を輝かせて語り始めた。`,
-          `「${hobbyName}って楽しいよね！」と嬉しそうに話してくれた。`,
-          `${hobbyName}が好きらしく、かなり詳しいようだ。`,
-        ],
-        dislike: [
-          `${hobbyName}の話題が出ると、あまり興味なさそうに目をそらした。`,
-          `「${hobbyName}はちょっと…」と苦手そうな反応を見せた。`,
-          `${hobbyName}の話になると微妙な表情を浮かべた。`,
-        ],
-        neutral: [
-          `${hobbyName}の話題が出たが、特に思い入れはないようだ。`,
-          `${hobbyName}について聞いてみたが、反応は薄かった。`,
-        ],
-      };
-      const lines = prefLines[pref];
-      const prefColor = pref === 'like' ? '#7EC850' : pref === 'dislike' ? '#F07070' : '#999';
-      const prefIcon = pref === 'like' ? '♥' : pref === 'dislike' ? '✗' : '―';
-      logLines.push(
-        lines[Math.floor(Math.random() * lines.length)]
-        + ` <span style="color:${prefColor};">${prefIcon}${hobbyName}</span>`
-      );
-    }
-    const affinityColor = affinityGain > 0 ? '#7EC850' : affinityGain < 0 ? '#F07070' : '#999';
-    const affinitySign = affinityGain >= 0 ? '+' : '';
-    logLines.push(`<span style="color:${affinityColor};">好感度${affinitySign}${affinityGain}</span>`);
-
+    // 状態更新（会話演出前にデータだけ反映）
     this.state = {
       ...this.state,
       students: updatedStudents,
       stamina: this.state.stamina - 5,
-      actionLogs: [...this.state.actionLogs, logLines.join(' ')],
     };
     this.dailyScreen?.update(this.state);
+
+    // 会話ウィンドウ表示
+    const pc = this.state.playerCharacter;
+    const convData = generateConversationData(
+      student,
+      pc?.name ?? 'あなた',
+      pc?.portrait ?? null,
+      revealedHobby,
+      affinityGain,
+    );
+    this.dailyScreen?.showConversation(convData.steps, convData.result, () => {
+      // 会話終了: 要約ログを追加
+      const logSummary = generateTalkLogSummary(student, revealedHobby, affinityGain);
+      this.state = {
+        ...this.state,
+        actionLogs: [...this.state.actionLogs, logSummary],
+      };
+      this.dailyScreen?.update(this.state);
+    });
   }
 
   // プレイヤーのsupportをstudents配列にも同期する（組織票計算に必要）

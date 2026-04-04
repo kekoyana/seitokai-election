@@ -85,21 +85,30 @@ const APPEARANCE_PREFS: Set<string> = new Set([
   'flat', 'busty', 'glasses', 'blonde', 'young', 'adult',
 ]);
 
-// 好き属性ボーナス（プレイヤーのlikedAttributesと相手のattributes+hairStyleの一致数）
-// 異性の場合、外見系属性の一致ボーナスが2倍になる
+// 好き属性ボーナス（段階ボーナス方式）
+// 一致数に応じた逓減ボーナス: 0→×1.00, 1→×1.10, 2→×1.20, 3+→×1.25
+// 異性の外見系属性が1つ以上一致すれば追加+0.05（最大×1.30）
 function likedAttributeMultiplier(
   playerLikedAttributes: PreferenceAttr[],
   studentTraits: PreferenceAttr[],
   isOppositeGender: boolean
 ): number {
-  let bonus = 0;
+  let matchCount = 0;
+  let hasAppearanceMatch = false;
   for (const a of playerLikedAttributes) {
     if (studentTraits.includes(a)) {
-      const isAppearance = APPEARANCE_PREFS.has(a);
-      bonus += (isAppearance && isOppositeGender) ? 0.30 : 0.15;
+      matchCount++;
+      if (APPEARANCE_PREFS.has(a)) hasAppearanceMatch = true;
     }
   }
-  return 1.0 + bonus;
+  // 段階ボーナス（逓減）
+  const baseBonus = matchCount === 0 ? 0
+    : matchCount === 1 ? 0.10
+    : matchCount === 2 ? 0.20
+    : 0.25;
+  // 異性外見ボーナス
+  const genderBonus = (isOppositeGender && hasAppearanceMatch) ? 0.05 : 0;
+  return 1.0 + baseBonus + genderBonus;
 }
 
 // 候補者話題の効果を計算（バーに大きく影響）
@@ -182,19 +191,19 @@ interface PlayerStats {
 }
 
 // ステータスボーナス計算
-// speech: 思想話題の全般倍率（0→×1.0, 50→×1.25, 100→×1.5）
-// athletic: 肯定時の追加倍率（0→×1.0, 50→×1.15, 100→×1.3）
-// intel: 否定時の追加倍率（0→×1.0, 50→×1.15, 100→×1.3）
+// speech: 思想話題の全般倍率（0→×1.0, 50→×1.40, 100→×1.80）
+// athletic: 肯定時の追加倍率（0→×1.0, 50→×1.25, 100→×1.50）
+// intel: 否定時の追加倍率（0→×1.0, 50→×1.25, 100→×1.50）
 function calcStatMultiplier(stats: PlayerStats, stance: Stance, isCandidateTopic: boolean): number {
   let multiplier = 1.0;
   if (isCandidateTopic) {
     // 弁舌: 思想話題全般
-    multiplier *= 1.0 + stats.speech * 0.005;
+    multiplier *= 1.0 + stats.speech * 0.008;
     // 運動/知性: 立場に応じた追加ボーナス
     if (stance === 'positive') {
-      multiplier *= 1.0 + stats.athletic * 0.003;
+      multiplier *= 1.0 + stats.athletic * 0.005;
     } else {
-      multiplier *= 1.0 + stats.intel * 0.003;
+      multiplier *= 1.0 + stats.intel * 0.005;
     }
   }
   return multiplier;

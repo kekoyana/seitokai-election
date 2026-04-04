@@ -18,6 +18,31 @@ import saitoManabuPortrait from '../portraits/saito_manabu.png';
 import takayamaSeiichiPortrait from '../portraits/takayama_seiichi.png';
 import yuukiAkariPortrait from '../portraits/yuuki_akari.png';
 import shidoTsuyoshiPortrait from '../portraits/shido_tsuyoshi.png';
+// 追加キャラクター
+import ogawaHarukaPortrait from '../portraits/ogawa_haruka.png';
+import inoueMomokaPortrait from '../portraits/inoue_momoka.png';
+import endoRyotaPortrait from '../portraits/endo_ryota.png';
+import shimizuNanaPortrait from '../portraits/shimizu_nana.png';
+import aokiSoraPortrait from '../portraits/aoki_sora.png';
+import moritaChihiroPortrait from '../portraits/morita_chihiro.png';
+import nishidaKaitoPortrait from '../portraits/nishida_kaito.png';
+import hayashiRikoPortrait from '../portraits/hayashi_riko.png';
+import fujitaMeiPortrait from '../portraits/fujita_mei.png';
+import uedaTakumiPortrait from '../portraits/ueda_takumi.png';
+import kimuraYunaPortrait from '../portraits/kimura_yuna.png';
+import murakamiSotaPortrait from '../portraits/murakami_sota.png';
+import yoshidaHinataPortrait from '../portraits/yoshida_hinata.png';
+import okamotoRinPortrait from '../portraits/okamoto_rin.png';
+import gotoHayatoPortrait from '../portraits/goto_hayato.png';
+import sakamotoMiuPortrait from '../portraits/sakamoto_miu.png';
+import yamaguchiRyoPortrait from '../portraits/yamaguchi_ryo.png';
+import ikedaKotonePortrait from '../portraits/ikeda_kotone.png';
+import otsukaItsukiPortrait from '../portraits/otsuka_itsuki.png';
+import tanabeMisakiPortrait from '../portraits/tanabe_misaki.png';
+import kawanoShioriPortrait from '../portraits/kawano_shiori.png';
+import maedaTaigaPortrait from '../portraits/maeda_taiga.png';
+import noguchiSakiPortrait from '../portraits/noguchi_saki.png';
+import ishikawaYusukePortrait from '../portraits/ishikawa_yusuke.png';
 
 // 候補者の表示情報（色・公約）
 export const CANDIDATE_INFO: CandidateInfo[] = [
@@ -475,7 +500,7 @@ export const STUDENTS: Student[] = [
     stats: { speech: 45, athletic: 25, intel: 55, maxHp: 80 },
     affinity: 0,
     talkCount: 0,
-    portrait: null,
+    portrait: ogawaHarukaPortrait,
     candidateId: null,
     playable: false,
   },
@@ -497,7 +522,7 @@ export const STUDENTS: Student[] = [
     stats: { speech: 60, athletic: 30, intel: 50, maxHp: 85 },
     affinity: 0,
     talkCount: 0,
-    portrait: null,
+    portrait: inoueMomokaPortrait,
     candidateId: null,
     playable: false,
   },
@@ -519,7 +544,7 @@ export const STUDENTS: Student[] = [
     stats: { speech: 25, athletic: 75, intel: 20, maxHp: 115 },
     affinity: 0,
     talkCount: 0,
-    portrait: null,
+    portrait: endoRyotaPortrait,
     candidateId: null,
     playable: false,
   },
@@ -541,7 +566,7 @@ export const STUDENTS: Student[] = [
     stats: { speech: 50, athletic: 35, intel: 35, maxHp: 90 },
     affinity: 0,
     talkCount: 0,
-    portrait: null,
+    portrait: shimizuNanaPortrait,
     candidateId: null,
     playable: false,
   },
@@ -563,7 +588,7 @@ export const STUDENTS: Student[] = [
     stats: { speech: 55, athletic: 15, intel: 70, maxHp: 70 },
     affinity: 0,
     talkCount: 0,
-    portrait: null,
+    portrait: aokiSoraPortrait,
     candidateId: null,
     playable: false,
   },
@@ -585,7 +610,7 @@ export const STUDENTS: Student[] = [
     stats: { speech: 35, athletic: 20, intel: 55, maxHp: 75 },
     affinity: 0,
     talkCount: 0,
-    portrait: null,
+    portrait: moritaChihiroPortrait,
     candidateId: null,
     playable: false,
   },
@@ -607,7 +632,7 @@ export const STUDENTS: Student[] = [
     stats: { speech: 20, athletic: 70, intel: 30, maxHp: 110 },
     affinity: 0,
     talkCount: 0,
-    portrait: null,
+    portrait: nishidaKaitoPortrait,
     candidateId: null,
     playable: false,
   },
@@ -629,7 +654,7 @@ export const STUDENTS: Student[] = [
     stats: { speech: 30, athletic: 10, intel: 60, maxHp: 65 },
     affinity: 0,
     talkCount: 0,
-    portrait: null,
+    portrait: hayashiRikoPortrait,
     candidateId: null,
     playable: false,
   },
@@ -651,7 +676,7 @@ export const STUDENTS: Student[] = [
     stats: { speech: 55, athletic: 65, intel: 50, maxHp: 95 },
     affinity: 0,
     talkCount: 0,
-    portrait: null,
+    portrait: fujitaMeiPortrait,
     candidateId: null,
     playable: false,
   },
@@ -673,7 +698,7 @@ export const STUDENTS: Student[] = [
     stats: { speech: 40, athletic: 30, intel: 70, maxHp: 80 },
     affinity: 0,
     talkCount: 0,
-    portrait: null,
+    portrait: uedaTakumiPortrait,
     candidateId: null,
     playable: false,
   },
@@ -695,7 +720,7 @@ export const STUDENTS: Student[] = [
     stats: { speech: 65, athletic: 35, intel: 60, maxHp: 85 },
     affinity: 0,
     talkCount: 0,
-    portrait: null,
+    portrait: kimuraYunaPortrait,
     candidateId: null,
     playable: false,
   },
@@ -717,7 +742,7 @@ export const STUDENTS: Student[] = [
     stats: { speech: 20, athletic: 70, intel: 25, maxHp: 115 },
     affinity: 0,
     talkCount: 0,
-    portrait: null,
+    portrait: murakamiSotaPortrait,
     candidateId: null,
     playable: false,
   },
@@ -739,7 +764,7 @@ export const STUDENTS: Student[] = [
     stats: { speech: 50, athletic: 20, intel: 65, maxHp: 80 },
     affinity: 0,
     talkCount: 0,
-    portrait: null,
+    portrait: yoshidaHinataPortrait,
     candidateId: null,
     playable: false,
   },
@@ -761,7 +786,7 @@ export const STUDENTS: Student[] = [
     stats: { speech: 50, athletic: 25, intel: 45, maxHp: 90 },
     affinity: 0,
     talkCount: 0,
-    portrait: null,
+    portrait: okamotoRinPortrait,
     candidateId: null,
     playable: false,
   },
@@ -783,7 +808,7 @@ export const STUDENTS: Student[] = [
     stats: { speech: 35, athletic: 80, intel: 25, maxHp: 120 },
     affinity: 0,
     talkCount: 0,
-    portrait: null,
+    portrait: gotoHayatoPortrait,
     candidateId: null,
     playable: false,
   },
@@ -805,7 +830,7 @@ export const STUDENTS: Student[] = [
     stats: { speech: 40, athletic: 20, intel: 55, maxHp: 75 },
     affinity: 0,
     talkCount: 0,
-    portrait: null,
+    portrait: sakamotoMiuPortrait,
     candidateId: null,
     playable: false,
   },
@@ -827,7 +852,7 @@ export const STUDENTS: Student[] = [
     stats: { speech: 55, athletic: 25, intel: 75, maxHp: 80 },
     affinity: 0,
     talkCount: 0,
-    portrait: null,
+    portrait: yamaguchiRyoPortrait,
     candidateId: null,
     playable: false,
   },
@@ -849,7 +874,7 @@ export const STUDENTS: Student[] = [
     stats: { speech: 55, athletic: 20, intel: 80, maxHp: 75 },
     affinity: 0,
     talkCount: 0,
-    portrait: null,
+    portrait: ikedaKotonePortrait,
     candidateId: null,
     playable: false,
   },
@@ -871,7 +896,7 @@ export const STUDENTS: Student[] = [
     stats: { speech: 75, athletic: 30, intel: 65, maxHp: 85 },
     affinity: 0,
     talkCount: 0,
-    portrait: null,
+    portrait: otsukaItsukiPortrait,
     candidateId: null,
     playable: false,
   },
@@ -893,7 +918,7 @@ export const STUDENTS: Student[] = [
     stats: { speech: 45, athletic: 60, intel: 40, maxHp: 100 },
     affinity: 0,
     talkCount: 0,
-    portrait: null,
+    portrait: tanabeMisakiPortrait,
     candidateId: null,
     playable: false,
   },
@@ -915,7 +940,7 @@ export const STUDENTS: Student[] = [
     stats: { speech: 50, athletic: 15, intel: 85, maxHp: 70 },
     affinity: 0,
     talkCount: 0,
-    portrait: null,
+    portrait: kawanoShioriPortrait,
     candidateId: null,
     playable: false,
   },
@@ -937,7 +962,7 @@ export const STUDENTS: Student[] = [
     stats: { speech: 15, athletic: 85, intel: 15, maxHp: 125 },
     affinity: 0,
     talkCount: 0,
-    portrait: null,
+    portrait: maedaTaigaPortrait,
     candidateId: null,
     playable: false,
   },
@@ -959,7 +984,7 @@ export const STUDENTS: Student[] = [
     stats: { speech: 50, athletic: 45, intel: 55, maxHp: 90 },
     affinity: 0,
     talkCount: 0,
-    portrait: null,
+    portrait: noguchiSakiPortrait,
     candidateId: null,
     playable: false,
   },
@@ -981,7 +1006,7 @@ export const STUDENTS: Student[] = [
     stats: { speech: 30, athletic: 65, intel: 15, maxHp: 120 },
     affinity: 0,
     talkCount: 0,
-    portrait: null,
+    portrait: ishikawaYusukePortrait,
     candidateId: null,
     playable: false,
   },

@@ -146,7 +146,7 @@ export class DailyScreen {
 
     this.container.style.cssText = `
       position: fixed; inset: 0;
-      background: linear-gradient(160deg, var(--game-bg-dark) 0%, var(--game-bg-mid) 100%);
+      background: linear-gradient(160deg, var(--game-bg-light) 0%, var(--game-bg-warm) 100%);
       display: flex; flex-direction: column;
       font-family: var(--game-font);
       overflow: hidden;
@@ -184,21 +184,21 @@ export class DailyScreen {
               "/>`
             : renderInitialIcon(pc.name, pc.personality, 28, 'rgba(255,255,255,0.5)')
           ) : ''}
-          <span style="font-weight:bold;">${pc?.name ?? ''}</span>
-          <span style="opacity:0.8; font-size:0.9em;">${FACTION_LABELS[this.state.candidate ?? ''] ?? ''}派</span>
+          <span style="font-weight:bold; color:#fff;">${pc?.name ?? ''}</span>
+          <span style="opacity:0.8; font-size:0.9em; color:#fff;">${FACTION_LABELS[this.state.candidate ?? ''] ?? ''}派</span>
         </div>
         <div class="game-hud-badge" style="
           pointer-events:auto;
           display:flex; gap:6px; align-items:center;
         ">
           <span><strong>${dayToDate(this.state.day)}</strong></span>
-          <span style="opacity:0.4;">|</span>
+          <span style="opacity:0.3;">|</span>
           <span>⚡<strong>${this.state.stamina}</strong></span>
-          <span style="opacity:0.4;">|</span>
+          <span style="opacity:0.3;">|</span>
           <span id="bgm-icon" style="cursor:pointer; font-size:1em; line-height:1;">${bgm.volume > 0 ? '🔊' : '🔇'}</span>
           <input id="bgm-volume" type="range" min="0" max="100" value="${Math.round(bgm.volume * 100)}" style="
             width:60px; height:4px; cursor:pointer;
-            accent-color:#fff; vertical-align:middle;
+            accent-color:var(--game-accent); vertical-align:middle;
           "/>
         </div>
       </div>
@@ -290,59 +290,126 @@ export class DailyScreen {
       : studentData && studentData.affinity <= -20 ? '不快' : '普通';
 
     return `
-      <div style="
+      <div class="game-chara-card" style="
         display:flex; align-items:center; gap:10px;
-        padding:8px; border-radius:10px;
-        background:${c.color}08;
-        margin-bottom:6px;
-        border:1px solid ${c.color}30;
+        border-color:${c.color}60;
       ">
         ${c.portrait
           ? `<img src="${c.portrait}" alt="${c.name}" style="
-              width:48px; height:48px; border-radius:50%;
+              width:48px; height:48px; border-radius:4px;
               object-fit:cover; object-position:top;
               border:2px solid ${c.color};
               flex-shrink:0;
+              box-shadow:0 2px 6px rgba(0,0,0,0.4);
             "/>`
           : renderInitialIcon(c.name, c.personality, 48, c.color)
         }
         <div style="flex:1; min-width:0;">
           <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
-            <span style="font-size:0.9em; font-weight:bold; color:#333;">${c.name}</span>
+            <span style="font-size:0.9em; font-weight:bold; color:var(--game-text);">${c.name}</span>
             <span style="
-              font-size:0.65em; padding:1px 6px; border-radius:6px;
-              background:${c.color}20; color:${c.color};
-              border:1px solid ${c.color}40;
+              font-size:0.65em; padding:1px 6px; border-radius:3px;
+              background:${c.color}30; color:${c.color};
+              border:1px solid ${c.color}50;
             ">${FACTION_LABELS[c.id] ?? ''}派候補</span>
             ${isPlayerCandidate ? `<span style="
-              font-size:0.65em; padding:1px 6px; border-radius:6px;
-              background:#27AE6020; color:#27AE60;
+              font-size:0.65em; padding:1px 6px; border-radius:3px;
+              background:${c.color}30; color:${c.color};
+              border:1px solid ${c.color}50;
             ">支持中</span>` : ''}
           </div>
-          <div style="display:flex; align-items:center; gap:4px; flex-wrap:wrap; font-size:0.75em; color:#888;">
+          <div style="display:flex; align-items:center; gap:4px; flex-wrap:wrap; font-size:0.75em; color:var(--game-text-dim);">
             ${studentData ? renderStudentAffiliation(studentData.id, c.className, studentData.clubId) : c.className}
           </div>
-          <div style="font-size:0.72em; color:#888;">${c.platform}</div>
+          <div style="font-size:0.72em; color:var(--game-text-dim);">${c.platform}</div>
           ${studentData ? `<div style="font-size:0.72em; color:${affinityColor};">好感度: ${affinityLabel}</div>` : ''}
         </div>
         ${studentData ? `
           <div style="display:flex; flex-direction:column; gap:4px; flex-shrink:0;">
-            <button data-action-talk="${studentData.id}" style="
+            <button data-action-talk="${studentData.id}" class="game-btn ${canTalk ? 'game-btn-primary' : 'game-btn-disabled'}" style="
               padding:5px 10px;
-              background:${canTalk ? '#4A90D9' : '#ccc'};
-              color:#fff; border:none; border-radius:8px;
-              font-size:0.78em; cursor:${canTalk ? 'pointer' : 'not-allowed'};
-              font-family:inherit;
+              font-size:0.78em; font-family:var(--game-font);
             ">会話(⚡${talkCost})</button>
-            <button data-action-info="${studentData.id}" style="
+            <button data-action-info="${studentData.id}" class="game-btn" style="
               padding:5px 10px;
-              background:#8E9BAD;
-              color:#fff; border:none; border-radius:8px;
-              font-size:0.78em; cursor:pointer;
-              font-family:inherit;
+              background:linear-gradient(180deg,#6a7890,#4a5870);
+              border-color:#8090a8;
+              font-size:0.78em; font-family:var(--game-font);
             ">情報</button>
           </div>
         ` : ''}
+      </div>
+    `;
+  }
+
+  private renderRoomOrgInfo(): string {
+    const org = ORGANIZATIONS.find(o => o.id === this.state.currentLocation);
+    if (!org) return '';
+
+    const vote = getOrganizationVote(org, this.state.students);
+    const voteCandidate = CANDIDATES.find(c => c.id === vote);
+    const isAlly = vote === this.state.candidate;
+    const typeLabel = ORGANIZATION_TYPE_LABELS[org.type] ?? org.type;
+
+    const typeDesc: Record<string, string> = {
+      dictatorship: '代表の意向が強く反映',
+      council: '代表と副代表が合議',
+      delegation: '副代表に権限を委任',
+      majority: '全員の多数決',
+    };
+
+    const leader = this.state.students.find(s => s.id === org.leaderId);
+    const allMemberIds = [org.leaderId, ...org.subLeaderIds, ...org.memberIds];
+    const totalMembers = allMemberIds.length;
+
+    // 派閥ごとの人数
+    const factionCounts: Record<CandidateId, number> = { conservative: 0, progressive: 0, sports: 0 };
+    for (const id of allMemberIds) {
+      const s = this.state.students.find(st => st.id === id);
+      if (s) {
+        const top = (['conservative', 'progressive', 'sports'] as CandidateId[])
+          .reduce((a, b) => s.support[a] >= s.support[b] ? a : b);
+        factionCounts[top]++;
+      }
+    }
+
+    const factionBars = CANDIDATES.map(c => {
+      const count = factionCounts[c.id as CandidateId] ?? 0;
+      const pct = totalMembers > 0 ? (count / totalMembers) * 100 : 0;
+      return `<div style="flex:1; display:flex; align-items:center; gap:4px; font-size:0.7em;">
+        <span style="color:${c.color}; width:24px; text-align:right; font-weight:bold;">${count}</span>
+        <div style="flex:1; height:6px; background:rgba(0,0,0,0.4); border-radius:2px; overflow:hidden;">
+          <div style="width:${pct}%; height:100%; background:${c.color};"></div>
+        </div>
+      </div>`;
+    }).join('');
+
+    return `
+      <div class="game-panel" style="margin-bottom:12px; padding:10px 12px;">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span style="font-size:0.95em; font-weight:bold; color:var(--game-text);">${org.name}</span>
+            <span style="font-size:0.7em; background:rgba(74,96,144,0.3); color:var(--game-text-dim); border-radius:3px; padding:1px 6px;">${typeLabel}</span>
+          </div>
+          <span style="
+            font-size:0.75em; padding:2px 8px; border-radius:4px;
+            background:${(voteCandidate?.color ?? '#888')}30;
+            color:${voteCandidate?.color ?? '#888'};
+            border:1px solid ${(voteCandidate?.color ?? '#888')}50;
+            font-weight:bold;
+          ">${FACTION_LABELS[vote] ?? ''}派${isAlly ? ' ✓' : ''}</span>
+        </div>
+        <div style="font-size:0.72em; color:var(--game-text-dim); margin-bottom:6px; line-height:1.5;">${org.description}</div>
+        <div style="display:flex; align-items:center; gap:6px; margin-bottom:6px; font-size:0.72em; color:var(--game-text-dim);">
+          <span>決定方式: ${typeDesc[org.type] ?? ''}</span>
+          <span style="opacity:0.4;">|</span>
+          <span>代表: <strong style="color:var(--game-text);">${leader?.name ?? '?'}</strong></span>
+          <span style="opacity:0.4;">|</span>
+          <span>${totalMembers}名</span>
+        </div>
+        <div style="display:flex; gap:6px;">
+          ${factionBars}
+        </div>
       </div>
     `;
   }
@@ -372,9 +439,13 @@ export class DailyScreen {
       </div>
     ` : '';
 
+    const orgInfoHtml = this.renderRoomOrgInfo();
+
     return `
+      ${orgInfoHtml}
+
       <div class="game-panel" style="margin-bottom:12px;">
-        <h3 style="font-size:0.9em; color:var(--game-gold); margin-bottom:10px; font-weight:bold;">この場所にいる生徒</h3>
+        <h3 style="font-size:0.9em; color:var(--game-heading); margin-bottom:10px; font-weight:bold;">この場所にいる生徒</h3>
         ${candidatesHtml}
         ${studentsHtml}
       </div>
@@ -391,22 +462,20 @@ export class DailyScreen {
             <div style="font-weight:bold;">← 廊下へ</div>
             <div style="font-size:0.75em; opacity:0.85;">フロア移動</div>
           </button>
-          <button id="info-btn" style="
+          <button id="info-btn" class="game-btn" style="
             padding:10px 12px;
-            background:#8E6BAD;
-            color:#fff; border:none; border-radius:10px;
-            font-size:0.85em; cursor:pointer;
-            text-align:left; font-family:inherit;
+            background:linear-gradient(180deg,#8E6BAD,#6E4B8D);
+            border-color:#a080c0;
+            font-size:0.85em;
+            text-align:left; font-family:var(--game-font);
           ">
             <div style="font-weight:bold;">情報</div>
             <div style="font-size:0.75em; opacity:0.85;">クラス・部活</div>
           </button>
-          <button id="next-day-btn-always" style="
+          <button id="next-day-btn-always" class="game-btn game-btn-warning" style="
             padding:10px 12px;
-            background:linear-gradient(135deg,#F0A030,#D08010);
-            color:#fff; border:none; border-radius:10px;
-            font-size:0.85em; cursor:pointer;
-            text-align:left; font-family:inherit;
+            font-size:0.85em;
+            text-align:left; font-family:var(--game-font);
           ">
             <div style="font-weight:bold;">翌日へ</div>
             <div style="font-size:0.75em; opacity:0.85;">${dayToDate(this.state.day)}</div>
@@ -448,27 +517,24 @@ export class DailyScreen {
     const affinityLabel = s.affinity >= 20 ? '好意的' : s.affinity <= -20 ? '不快' : '普通';
 
     return `
-      <div style="
+      <div class="game-chara-card" style="
         display:flex; align-items:center; gap:10px;
-        padding:8px; border-radius:10px;
-        background:rgba(255,255,255,0.6);
-        margin-bottom:6px;
-        border:1px solid #e8f0f8;
       ">
         ${s.portrait
           ? `<img src="${s.portrait}" alt="${s.name}" style="
-              width:48px; height:48px; border-radius:50%;
+              width:48px; height:48px; border-radius:4px;
               object-fit:cover; object-position:top;
-              border:2px solid #d0e0f0;
+              border:2px solid var(--game-panel-border);
               flex-shrink:0;
+              box-shadow:0 2px 6px rgba(0,0,0,0.4);
             "/>`
-          : renderInitialIcon(s.name, s.personality, 48, '#d0e0f0')
+          : renderInitialIcon(s.name, s.personality, 48, '#b0c0d8')
         }
         <div style="flex:1; min-width:0;">
           <div style="display:flex; align-items:center; gap:4px; flex-wrap:wrap;">
-            <span style="font-size:0.9em; font-weight:bold; color:#333;">${s.name}</span>
+            <span style="font-size:0.9em; font-weight:bold; color:var(--game-text);">${s.name}</span>
           </div>
-          <div style="display:flex; align-items:center; gap:4px; flex-wrap:wrap; margin-top:1px; font-size:0.75em; color:#888;">
+          <div style="display:flex; align-items:center; gap:4px; flex-wrap:wrap; margin-top:1px; font-size:0.75em; color:var(--game-text-dim);">
             ${renderStudentAffiliation(s.id, s.className, s.clubId)}
           </div>
           <div style="font-size:0.72em; color:${affinityColor};">好感度: ${affinityLabel}</div>
@@ -478,32 +544,26 @@ export class DailyScreen {
             const sc = CANDIDATES.find(c => c.id === maxKey);
             const isAlly = maxKey === this.state.candidate;
             return `<span style="
-              font-size:0.7em; background:${isAlly ? '#27AE60' : sc?.color ?? '#888'}; color:#fff;
-              border-radius:8px; padding:1px 6px;
+              font-size:0.7em; background:${sc?.color ?? '#888'}; color:#fff;
+              border-radius:3px; padding:1px 6px;
+              border:1px solid ${sc?.color ?? '#888'}60;
             ">${FACTION_LABELS[maxKey] ?? ''}派</span>`;
           })()}
         </div>
         <div style="display:flex; flex-direction:column; gap:4px; flex-shrink:0;">
-          <button data-action-talk="${s.id}" style="
+          <button data-action-talk="${s.id}" class="game-btn ${canTalk ? 'game-btn-primary' : 'game-btn-disabled'}" style="
             padding:5px 10px;
-            background:${canTalk ? '#4A90D9' : '#ccc'};
-            color:#fff; border:none; border-radius:8px;
-            font-size:0.78em; cursor:${canTalk ? 'pointer' : 'not-allowed'};
-            font-family:inherit;
+            font-size:0.78em; font-family:var(--game-font);
           ">会話(⚡${talkCost})</button>
-          <button data-action-persuade="${s.id}" style="
+          <button data-action-persuade="${s.id}" class="game-btn ${canPersuade ? 'game-btn-warning' : 'game-btn-disabled'}" style="
             padding:5px 10px;
-            background:${canPersuade ? '#E07820' : '#ccc'};
-            color:#fff; border:none; border-radius:8px;
-            font-size:0.78em; cursor:${canPersuade ? 'pointer' : 'not-allowed'};
-            font-family:inherit;
+            font-size:0.78em; font-family:var(--game-font);
           ">説得</button>
-          <button data-action-info="${s.id}" style="
+          <button data-action-info="${s.id}" class="game-btn" style="
             padding:5px 10px;
-            background:#8E9BAD;
-            color:#fff; border:none; border-radius:8px;
-            font-size:0.78em; cursor:pointer;
-            font-family:inherit;
+            background:linear-gradient(180deg,#6a7890,#4a5870);
+            border-color:#8090a8;
+            font-size:0.78em; font-family:var(--game-font);
           ">情報</button>
         </div>
       </div>
@@ -586,8 +646,8 @@ export class DailyScreen {
         <button data-info-org="${org.id}" style="
           display:flex; align-items:center; gap:8px; width:100%;
           padding:8px; border-radius:8px;
-          background:${isAlly ? 'rgba(39,174,96,0.06)' : 'rgba(255,255,255,0.5)'};
-          border:1px solid ${isAlly ? 'rgba(39,174,96,0.2)' : '#e8f0f8'};
+          background:${isAlly ? `${voteCandidate?.color ?? '#888'}10` : 'rgba(255,255,255,0.5)'};
+          border:1px solid ${isAlly ? `${voteCandidate?.color ?? '#888'}30` : '#e8f0f8'};
           margin-bottom:4px; cursor:pointer;
           text-align:left; font-family:inherit;
         ">
@@ -623,10 +683,8 @@ export class DailyScreen {
     }).join('');
 
     return `
-      <div style="
-        background:rgba(255,255,255,0.9);
-        border-radius:14px; padding:14px;
-        border:1px solid #e0eaf5;
+      <div class="game-panel" style="
+        padding:14px;
       ">
         ${this.renderInfoHeader('情報')}
         ${this.renderInfoTabs(tab)}
@@ -712,10 +770,8 @@ export class DailyScreen {
     const backTab = org.id.startsWith('club_') ? 'club' : 'class';
 
     return `
-      <div style="
-        background:rgba(255,255,255,0.9);
-        border-radius:14px; padding:14px;
-        border:1px solid #e0eaf5;
+      <div class="game-panel" style="
+        padding:14px;
       ">
         ${this.renderInfoHeader(org.name, 'back-to-list')}
 
@@ -888,36 +944,30 @@ export class DailyScreen {
     ` : '';
 
     return `
-      <div style="
-        background:rgba(255,255,255,0.85);
-        border-radius:14px; padding:10px; margin-bottom:12px;
-        border:1px solid #e0eaf5;
+      <div class="game-panel" style="
+        padding:10px; margin-bottom:12px;
       ">
         ${this.renderFloorPlan(currentFloor, canEnter)}
       </div>
 
-      <div style="
-        background:rgba(255,255,255,0.85);
-        border-radius:14px; padding:12px 14px; margin-bottom:12px;
-        border:1px solid #e0eaf5;
+      <div class="game-panel" style="
+        padding:12px 14px; margin-bottom:12px;
       ">
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
-          <button id="info-btn" style="
+          <button id="info-btn" class="game-btn" style="
             padding:10px 12px;
-            background:#8E6BAD;
-            color:#fff; border:none; border-radius:10px;
-            font-size:0.85em; cursor:pointer;
-            text-align:left; font-family:inherit;
+            background:linear-gradient(180deg,#8E6BAD,#6E4B8D);
+            border-color:#a080c0;
+            font-size:0.85em;
+            text-align:left; font-family:var(--game-font);
           ">
             <div style="font-weight:bold;">情報</div>
             <div style="font-size:0.75em; opacity:0.85;">クラス・部活</div>
           </button>
-          <button id="next-day-btn-always" style="
+          <button id="next-day-btn-always" class="game-btn game-btn-warning" style="
             padding:10px 12px;
-            background:linear-gradient(135deg,#F0A030,#D08010);
-            color:#fff; border:none; border-radius:10px;
-            font-size:0.85em; cursor:pointer;
-            text-align:left; font-family:inherit;
+            font-size:0.85em;
+            text-align:left; font-family:var(--game-font);
           ">
             <div style="font-weight:bold;">翌日へ</div>
             <div style="font-size:0.75em; opacity:0.85;">${dayToDate(this.state.day)}</div>
@@ -1262,10 +1312,8 @@ export class DailyScreen {
         </div>`;
 
     return `
-      <div style="
-        background:rgba(255,255,255,0.9);
-        border-radius:14px; padding:14px;
-        border:1px solid #e0eaf5;
+      <div class="game-panel" style="
+        padding:14px;
       ">
         ${headerHtml}
 

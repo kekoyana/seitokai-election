@@ -1,124 +1,129 @@
 /* ========================================
-   ゲームUI テーマ - JRPG/ビジュアルノベル風
+   ゲームUI テーマ - ときメモ/パワプロ風 学園ゲーム
    ======================================== */
 
-@import url('https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700;900&family=DotGothic16&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700;900&display=swap');
 
 :root {
-  /* カラーパレット */
-  --game-bg-dark: #0a0e1a;
-  --game-bg-mid: #1a2040;
-  --game-panel-bg: rgba(10, 15, 35, 0.92);
-  --game-panel-border: #4a6090;
-  --game-panel-border-light: #6a8ac0;
-  --game-panel-highlight: #8ab0e8;
-  --game-gold: #f0d060;
-  --game-gold-dark: #c0a020;
-  --game-text: #e8eaf0;
-  --game-text-dim: #8090b0;
-  --game-accent: #4a90d9;
-  --game-danger: #d04040;
-  --game-success: #40b060;
-  --game-warning: #e0a030;
+  /* カラーパレット - 明るい学園風 */
+  --game-bg-light: #d8eaf8;
+  --game-bg-warm: #f5efe0;
+  --game-panel-bg: rgba(255, 255, 255, 0.95);
+  --game-panel-border: #3868a8;
+  --game-panel-border-light: #70a0d8;
+  --game-panel-highlight: #f08030;
+  --game-panel-inner: #e8f0f8;
+  --game-heading: #1a3060;
+  --game-heading-accent: #d04020;
+  --game-text: #2a3040;
+  --game-text-dim: #6878a0;
+  --game-accent: #2878c8;
+  --game-danger: #c83030;
+  --game-success: #289848;
+  --game-warning: #d89020;
 
   /* フォント */
   --game-font: 'M PLUS Rounded 1c', 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif;
-  --game-font-title: 'DotGothic16', 'M PLUS Rounded 1c', sans-serif;
 }
 
-/* ゲームパネル - RPG風ウィンドウ */
+/* ゲームパネル - ときメモ風ウィンドウ（白背景+太枠+角丸小） */
 .game-panel {
   background: var(--game-panel-bg);
-  border: 2px solid var(--game-panel-border);
-  border-radius: 4px;
+  border: 3px solid var(--game-panel-border);
+  border-radius: 8px;
   box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.1),
-    inset 0 -1px 0 rgba(0,0,0,0.3),
-    0 4px 12px rgba(0,0,0,0.5);
+    inset 0 0 0 1px rgba(255,255,255,0.8),
+    0 3px 8px rgba(0,0,0,0.15);
   padding: 12px;
   color: var(--game-text);
 }
 
 .game-panel-light {
-  background: rgba(20, 30, 60, 0.88);
+  background: rgba(255, 255, 255, 0.85);
   border: 2px solid var(--game-panel-border-light);
-  border-radius: 4px;
+  border-radius: 6px;
   box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.08),
-    0 2px 8px rgba(0,0,0,0.4);
+    inset 0 0 0 1px rgba(255,255,255,0.6),
+    0 2px 6px rgba(0,0,0,0.1);
   padding: 10px;
   color: var(--game-text);
 }
 
-/* ゲームボタン - RPG風 */
+/* ゲームボタン - パワプロ風 立体ボタン */
 .game-btn {
   font-family: var(--game-font);
-  border: 2px solid var(--game-panel-border);
-  border-radius: 4px;
+  border: 2px solid;
+  border-radius: 6px;
   padding: 10px 20px;
   color: #fff;
   cursor: pointer;
   font-weight: 700;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+  text-shadow: 0 1px 1px rgba(0,0,0,0.3);
   box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.2),
-    inset 0 -2px 0 rgba(0,0,0,0.2),
-    0 2px 4px rgba(0,0,0,0.3);
+    inset 0 1px 0 rgba(255,255,255,0.35),
+    inset 0 -2px 0 rgba(0,0,0,0.15),
+    0 2px 0 rgba(0,0,0,0.15);
   transition: transform 0.05s, box-shadow 0.05s;
   position: relative;
 }
 
 .game-btn:active {
-  transform: translateY(1px);
+  transform: translateY(2px);
   box-shadow:
-    inset 0 1px 0 rgba(0,0,0,0.2),
-    0 1px 2px rgba(0,0,0,0.3);
+    inset 0 1px 0 rgba(0,0,0,0.1),
+    0 0px 0 rgba(0,0,0,0.15);
 }
 
 .game-btn-primary {
-  background: linear-gradient(180deg, #4a90d9 0%, #2a60a0 100%);
-  border-color: #6ab0f0;
+  background: linear-gradient(180deg, #4898e0 0%, #2868b0 100%);
+  border-color: #2060a0;
+  border-bottom-color: #184880;
 }
 
 .game-btn-danger {
-  background: linear-gradient(180deg, #d05050 0%, #a03030 100%);
-  border-color: #f07070;
+  background: linear-gradient(180deg, #e05050 0%, #b83030 100%);
+  border-color: #a02828;
+  border-bottom-color: #802020;
 }
 
 .game-btn-success {
-  background: linear-gradient(180deg, #40b060 0%, #208040 100%);
-  border-color: #60d080;
+  background: linear-gradient(180deg, #48b868 0%, #288848 100%);
+  border-color: #208040;
+  border-bottom-color: #186830;
 }
 
 .game-btn-warning {
-  background: linear-gradient(180deg, #e0a030 0%, #b07010 100%);
-  border-color: #f0c050;
+  background: linear-gradient(180deg, #e8a838 0%, #c08020 100%);
+  border-color: #a07018;
+  border-bottom-color: #886010;
 }
 
 .game-btn-disabled {
-  background: linear-gradient(180deg, #555 0%, #333 100%);
-  border-color: #666;
+  background: linear-gradient(180deg, #a8b0b8 0%, #808890 100%);
+  border-color: #707880;
+  border-bottom-color: #606870;
   cursor: not-allowed;
-  opacity: 0.6;
+  opacity: 0.7;
 }
 
 /* HUDバッジ */
 .game-hud-badge {
-  background: rgba(0,0,0,0.7);
-  border: 1px solid var(--game-panel-border);
-  border-radius: 4px;
+  background: rgba(255,255,255,0.92);
+  border: 2px solid var(--game-panel-border);
+  border-radius: 6px;
   padding: 4px 10px;
   color: var(--game-text);
   font-size: 0.78em;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+  font-weight: 700;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.15);
 }
 
 /* ゲーム用プログレスバー */
 .game-bar {
   height: 14px;
-  background: rgba(0,0,0,0.5);
-  border: 2px solid var(--game-panel-border);
-  border-radius: 2px;
+  background: #d0d8e0;
+  border: 2px solid #8898b0;
+  border-radius: 3px;
   overflow: hidden;
   position: relative;
 }
@@ -127,59 +132,65 @@
   height: 100%;
   border-radius: 1px;
   transition: width 0.3s ease;
-  box-shadow: inset 0 -2px 0 rgba(0,0,0,0.2);
+  box-shadow: inset 0 -2px 0 rgba(0,0,0,0.15);
 }
 
 /* ゲームタイトル装飾 */
 .game-title {
-  font-family: var(--game-font-title);
+  font-family: var(--game-font);
+  font-weight: 900;
   text-shadow:
-    0 0 10px rgba(240,208,96,0.5),
-    0 2px 4px rgba(0,0,0,0.8);
-  color: var(--game-gold);
+    0 2px 0 rgba(0,0,0,0.15),
+    0 0 8px rgba(56,104,168,0.3);
+  color: var(--game-heading);
 }
 
 /* スクロールバーのカスタマイズ */
 ::-webkit-scrollbar {
-  width: 6px;
+  width: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: rgba(0,0,0,0.3);
+  background: #e0e8f0;
+  border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb {
+  background: var(--game-panel-border-light);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
   background: var(--game-panel-border);
-  border-radius: 3px;
 }
 
 /* キャラカード */
 .game-chara-card {
-  background: rgba(15, 20, 45, 0.85);
-  border: 2px solid var(--game-panel-border);
-  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 2px solid #b0c0d8;
+  border-radius: 8px;
   padding: 10px;
   margin-bottom: 8px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-  transition: border-color 0.15s;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+  transition: border-color 0.15s, box-shadow 0.15s;
 }
 
 .game-chara-card:hover {
   border-color: var(--game-panel-highlight);
+  box-shadow: 0 3px 10px rgba(240,128,48,0.15);
 }
 
 /* 装飾線 */
 .game-divider {
   height: 2px;
-  background: linear-gradient(90deg, transparent, var(--game-panel-border), transparent);
+  background: linear-gradient(90deg, transparent, var(--game-panel-border-light), transparent);
   margin: 8px 0;
 }
 
 /* タブ */
 .game-tab {
   font-family: var(--game-font);
-  background: rgba(20, 30, 60, 0.6);
+  background: #e0e8f0;
   border: 2px solid transparent;
   border-bottom: none;
-  border-radius: 4px 4px 0 0;
+  border-radius: 6px 6px 0 0;
   padding: 8px 16px;
   color: var(--game-text-dim);
   cursor: pointer;
@@ -190,8 +201,32 @@
 .game-tab-active {
   background: var(--game-panel-bg);
   border-color: var(--game-panel-border);
-  color: var(--game-text);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.1);
+  color: var(--game-heading);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.8);
+}
+
+/* バトル画面用ダークパネル */
+.game-panel-dark {
+  background: rgba(20, 30, 50, 0.92);
+  border: 3px solid #4a6898;
+  border-radius: 8px;
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,0.08),
+    0 3px 8px rgba(0,0,0,0.3);
+  padding: 12px;
+  color: #e8eaf0;
+}
+
+/* バトル用HUDバッジ（ダーク） */
+.game-hud-badge-dark {
+  background: rgba(0,0,0,0.6);
+  border: 2px solid #4a6898;
+  border-radius: 6px;
+  padding: 4px 10px;
+  color: #e0e8f0;
+  font-size: 0.78em;
+  font-weight: 700;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
 }
 
 /* アニメーション */

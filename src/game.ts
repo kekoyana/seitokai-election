@@ -236,14 +236,45 @@ export class Game {
       };
     });
 
-    // ログ生成
+    // ログ生成（世界観に合わせた文面 + 色付き効果表示）
     const logLines: string[] = [];
-    logLines.push(`${student.name}と会話した。`);
+    const talkFlavors = [
+      `${student.name}と廊下で雑談をした。`,
+      `${student.name}と休み時間に話し込んだ。`,
+      `${student.name}と少し言葉を交わした。`,
+      `${student.name}と教室で話をした。`,
+    ];
+    logLines.push(talkFlavors[Math.floor(Math.random() * talkFlavors.length)]);
     if (revealedHobby) {
-      logLines.push(`趣味「${HOBBY_LABELS[revealedHobby] ?? revealedHobby}」が判明！`);
+      const hobbyName = HOBBY_LABELS[revealedHobby] ?? revealedHobby;
+      const pref = student.hobbies[revealedHobby];
+      const prefLines: Record<string, string[]> = {
+        like: [
+          `話の流れで${hobbyName}の話題になり、目を輝かせて語り始めた。`,
+          `「${hobbyName}って楽しいよね！」と嬉しそうに話してくれた。`,
+          `${hobbyName}が好きらしく、かなり詳しいようだ。`,
+        ],
+        dislike: [
+          `${hobbyName}の話題が出ると、あまり興味なさそうに目をそらした。`,
+          `「${hobbyName}はちょっと…」と苦手そうな反応を見せた。`,
+          `${hobbyName}の話になると微妙な表情を浮かべた。`,
+        ],
+        neutral: [
+          `${hobbyName}の話題が出たが、特に思い入れはないようだ。`,
+          `${hobbyName}について聞いてみたが、反応は薄かった。`,
+        ],
+      };
+      const lines = prefLines[pref];
+      const prefColor = pref === 'like' ? '#7EC850' : pref === 'dislike' ? '#F07070' : '#999';
+      const prefIcon = pref === 'like' ? '♥' : pref === 'dislike' ? '✗' : '―';
+      logLines.push(
+        lines[Math.floor(Math.random() * lines.length)]
+        + ` <span style="color:${prefColor};">${prefIcon}${hobbyName}</span>`
+      );
     }
-    const sign = affinityGain >= 0 ? '+' : '';
-    logLines.push(`好感度 ${sign}${affinityGain}`);
+    const affinityColor = affinityGain > 0 ? '#7EC850' : affinityGain < 0 ? '#F07070' : '#999';
+    const affinitySign = affinityGain >= 0 ? '+' : '';
+    logLines.push(`<span style="color:${affinityColor};">好感度${affinitySign}${affinityGain}</span>`);
 
     this.state = {
       ...this.state,
@@ -433,10 +464,20 @@ export class Game {
     if (!this.state.battle || this.state.battle.phase !== 'select_attitude') return;
     if (!shouldPass(this.state.stamina)) return;
 
-    // パス: プレイヤーは行動できず、相手だけ反撃する
-    const passLog = { speaker: 'player' as const, text: '体力不足でうまく話せない...（パス）', effect: 0 };
+    // パス: プレイヤーは行動できず、相手だけ反撃する（少し体力回復）
+    const recovery = Math.floor(Math.random() * 3) + 3; // 3〜5回復
+    const passFlavors = [
+      '疲れで頭が回らない…言葉が出てこない。',
+      '息が上がって、うまく話せない…。',
+      '集中力が途切れ、相手の言葉を聞き流してしまう。',
+      '頭がぼんやりして、反論を組み立てられない。',
+    ];
+    const passText = passFlavors[Math.floor(Math.random() * passFlavors.length)]
+      + ` <span style="color:#7EC850;">少し息を整えた（体力+${recovery}）</span>`;
+    const passLog = { speaker: 'player' as const, text: passText, effect: 0 };
     this.state = {
       ...this.state,
+      stamina: Math.min(100, this.state.stamina + recovery),
       battle: {
         ...this.state.battle,
         logs: [...this.state.battle.logs, passLog],

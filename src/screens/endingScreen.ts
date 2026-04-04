@@ -41,10 +41,10 @@ export class EndingScreen {
 
     this.container.style.cssText = `
       position: fixed; inset: 0;
-      background: linear-gradient(160deg, #E8F4FD 0%, #FFF9E6 100%);
+      background: linear-gradient(160deg, var(--game-bg-light) 0%, var(--game-bg-warm) 100%);
       display: flex; flex-direction: column;
       align-items: center; justify-content: flex-start;
-      font-family: 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif;
+      font-family: var(--game-font);
       overflow-y: auto; padding: 24px 16px; box-sizing: border-box;
     `;
 
@@ -70,11 +70,10 @@ export class EndingScreen {
 
     this.container.innerHTML = `
       <div style="max-width:480px; width:100%;">
-        <div style="
-          background:linear-gradient(135deg, #8B0000, #4A0000);
-          border-radius:16px; padding:24px;
+        <div class="game-panel" style="
+          border-color:#a03030;
+          padding:24px;
           text-align:center; margin-bottom:20px;
-          box-shadow:0 8px 32px rgba(0,0,0,0.3);
         ">
           <div style="font-size:2.5em; margin-bottom:8px;">💀</div>
           <div style="font-size:1.5em; font-weight:bold; color:#fff; margin-bottom:8px;">
@@ -100,12 +99,9 @@ export class EndingScreen {
         </div>
 
         <div style="text-align:center;">
-          <button id="restart-btn" style="
+          <button id="restart-btn" class="game-btn game-btn-primary" style="
             padding:14px 40px;
-            background:linear-gradient(135deg,#2E5FAC,#1B3A6B);
-            color:#fff; border:none; border-radius:50px;
-            font-size:1.05em; font-weight:bold; cursor:pointer; font-family:inherit;
-            box-shadow:0 4px 16px rgba(0,0,0,0.15);
+            font-size:1.05em; font-family:var(--game-font);
           ">もう一度プレイ</button>
         </div>
       </div>
@@ -124,17 +120,12 @@ export class EndingScreen {
       return vote === this.state.candidate;
     }).length;
 
-    const bgColor = isVictory
-      ? 'linear-gradient(135deg, #1B3A6B, #2E5FAC)'
-      : 'linear-gradient(135deg, #555, #333)';
-
     this.container.innerHTML = `
       <div style="max-width:480px; width:100%;">
-        <div style="
-          background:${bgColor};
-          border-radius:16px; padding:24px;
+        <div class="game-panel" style="
+          border-color:${isVictory ? 'var(--game-heading)' : '#666'};
+          padding:24px;
           text-align:center; margin-bottom:20px;
-          box-shadow:0 8px 32px rgba(0,0,0,0.2);
         ">
           <div style="font-size:2.5em; margin-bottom:8px;">
             ${isVictory ? '🎉' : '😔'}
@@ -158,13 +149,10 @@ export class EndingScreen {
           </div>
         </div>
 
-        <div style="
-          background:rgba(255,255,255,0.9);
-          border-radius:14px; padding:16px;
+        <div class="game-panel" style="
           margin-bottom:20px;
-          border:1px solid #e0eaf5;
         ">
-          <h3 style="font-size:0.95em; color:#555; margin-bottom:14px; text-align:center;">
+          <h3 style="font-size:0.95em; color:var(--game-heading); margin-bottom:14px; text-align:center; font-weight:bold;">
             選挙結果
           </h3>
           ${results.map((r, i) => `
@@ -179,37 +167,32 @@ export class EndingScreen {
                 color:#fff; font-size:0.75em; font-weight:bold;
                 flex-shrink:0;
               ">${i + 1}</div>
-              <div style="flex:1; font-size:0.88em; color:#333;">
+              <div style="flex:1; font-size:0.88em; color:var(--game-text);">
                 ${r.name}
                 ${r.candidateId === this.state.candidate ? '<span style="color:#4A90D9; font-size:0.8em;"> (支持)</span>' : ''}
               </div>
               <div style="
-                background:rgba(240,245,255,0.8);
-                border-radius:20px; padding:3px 12px;
+                background:rgba(255,255,255,0.1);
+                border:1px solid ${r.color}50;
+                border-radius:3px; padding:3px 12px;
                 font-size:0.82em; color:${r.color}; font-weight:bold;
               ">${r.votes}組</div>
             </div>
-            <div style="
-              height:8px; background:#f0f0f0;
-              border-radius:4px; overflow:hidden; margin-bottom:8px;
+            <div class="game-bar" style="
+              height:8px; margin-bottom:8px;
             ">
-              <div style="
-                height:100%;
+              <div class="game-bar-fill" style="
                 width:${(r.votes / Math.max(ORGANIZATIONS.length, 1)) * 100}%;
                 background:${r.color};
-                border-radius:4px;
               "></div>
             </div>
           `).join('')}
         </div>
 
-        <div style="
-          background:rgba(255,255,255,0.9);
-          border-radius:14px; padding:16px;
+        <div class="game-panel" style="
           margin-bottom:24px;
-          border:1px solid #e0eaf5;
         ">
-          <h3 style="font-size:0.9em; color:#555; margin-bottom:10px;">組織別投票結果</h3>
+          <h3 style="font-size:0.9em; color:var(--game-heading); margin-bottom:10px; font-weight:bold;">組織別投票結果</h3>
           ${ORGANIZATIONS.map(org => {
             const vote = getOrganizationVote(org, this.state.students);
             const sc = CANDIDATES.find(c => c.id === vote);
@@ -218,12 +201,13 @@ export class EndingScreen {
             return `
               <div style="
                 display:flex; align-items:center; gap:8px;
-                padding:6px; border-radius:8px;
-                background:${isAlly ? 'rgba(39,174,96,0.08)' : 'transparent'};
+                padding:6px; border-radius:4px;
+                background:${isAlly ? `${sc?.color ?? '#888'}18` : 'rgba(255,255,255,0.03)'};
+                border:1px solid ${isAlly ? `${sc?.color ?? '#888'}40` : 'transparent'};
                 margin-bottom:4px;
               ">
-                <div style="flex:1; font-size:0.85em; color:#333; font-weight:bold;">${org.name}</div>
-                <div style="font-size:0.75em; color:#888;">代表: ${leader?.name ?? org.leaderId}</div>
+                <div style="flex:1; font-size:0.85em; color:var(--game-text); font-weight:bold;">${org.name}</div>
+                <div style="font-size:0.75em; color:var(--game-text-dim);">代表: ${leader?.name ?? org.leaderId}</div>
                 <div style="font-size:0.8em; color:${sc?.color ?? '#888'}; font-weight:bold;">
                   ${FACTION_LABELS[vote] ?? ''}派
                 </div>
@@ -233,12 +217,9 @@ export class EndingScreen {
         </div>
 
         <div style="text-align:center;">
-          <button id="restart-btn" style="
+          <button id="restart-btn" class="game-btn game-btn-primary" style="
             padding:14px 40px;
-            background:linear-gradient(135deg,#2E5FAC,#1B3A6B);
-            color:#fff; border:none; border-radius:50px;
-            font-size:1.05em; font-weight:bold; cursor:pointer; font-family:inherit;
-            box-shadow:0 4px 16px rgba(0,0,0,0.15);
+            font-size:1.05em; font-family:var(--game-font);
           ">もう一度プレイ</button>
         </div>
       </div>

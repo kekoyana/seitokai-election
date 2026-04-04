@@ -1095,9 +1095,9 @@ export const STUDENTS: Student[] = [
     id: 'yuuki_akari',
     name: '結城あかり',
     gender: 'female',
-    className: '2-A',
+    className: '3-C',
     clubId: 'art',
-    description: '活発で行動力抜群。新しいことに挑戦するのが好きで、学園の変革を本気で目指している。SNSでの発信力が武器。',
+    description: '3年生ながら誰よりも行動力がある。新しいことに挑戦するのが好きで、最後の学園祭を最高のものにするため生徒会長選挙に立候補した。SNSでの発信力が武器。',
     hairStyle: 'ponytail' as HairStyle,
     personality: 'passionate' as Personality,
     hobbies: makeHobbies(['sns', 'fashion'], ['study']),
@@ -1233,7 +1233,7 @@ export function getCandidateLocation(candidateId: CandidateId, timeSlot: string,
   const rand = (day * 7 + candidateId.charCodeAt(0)) % 3;
   const classMap: Record<CandidateId, LocationId> = {
     conservative: 'class3a', // 鷹山: 3-A
-    progressive: 'class2a',  // 結城: 2-A
+    progressive: 'class3c',  // 結城: 3-C
     sports: 'class3d',       // 獅堂: 3-D
   };
   const classLoc = classMap[candidateId];

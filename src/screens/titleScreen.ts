@@ -35,7 +35,7 @@ export class TitleScreen {
           <div class="game-title" style="font-size:2.8em; font-weight:900; letter-spacing:0.15em; margin-bottom:8px;">
             生徒会選挙
           </div>
-          <div style="font-size:1.1em; color:var(--game-gold-dark); letter-spacing:0.2em; margin-bottom:4px;">
+          <div style="font-size:1.1em; color:var(--game-heading-accent); letter-spacing:0.2em; margin-bottom:4px;">
             〜30日間の説得戦〜
           </div>
           <div class="game-divider"></div>
@@ -53,7 +53,7 @@ export class TitleScreen {
           font-size: 0.82em;
           line-height: 1.8;
         ">
-          <div style="font-weight:bold; color:var(--game-gold); margin-bottom:8px; font-size:1.05em;">遊び方</div>
+          <div style="font-weight:bold; color:var(--game-heading); margin-bottom:8px; font-size:1.05em;">遊び方</div>
           <div style="color:var(--game-text);">・生徒を1人選んで選挙活動を開始</div>
           <div style="color:var(--game-text);">・体力の続く限り移動・会話・説得を繰り返す</div>
           <div style="color:var(--game-text);">・説得バトルでターン制の綱引きに勝てば支持を獲得</div>
@@ -76,7 +76,7 @@ export class TitleScreen {
           <span id="bgm-icon" style="cursor:pointer;">${bgm.volume > 0 ? '🔊' : '🔇'}</span>
           <input id="bgm-volume" type="range" min="0" max="100" value="${Math.round(bgm.volume * 100)}" style="
             width:100px; height:4px; cursor:pointer;
-            accent-color:var(--game-gold); vertical-align:middle;
+            accent-color:var(--game-accent); vertical-align:middle;
           "/>
         </div>
       </div>

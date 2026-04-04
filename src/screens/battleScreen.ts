@@ -65,7 +65,7 @@ export class BattleScreen {
 
     this.container.style.cssText = `
       position: fixed; inset: 0;
-      background: linear-gradient(160deg, var(--game-bg-dark) 0%, var(--game-bg-mid) 100%);
+      background: linear-gradient(160deg, #1a2840 0%, #283850 100%);
       display: flex; flex-direction: column;
       font-family: var(--game-font);
       overflow: hidden;
@@ -81,10 +81,10 @@ export class BattleScreen {
         display:flex; justify-content:space-between; align-items:flex-start;
         padding:10px 12px; pointer-events:none; z-index:10;
       ">
-        <div class="game-hud-badge" style="pointer-events:auto;">
+        <div class="game-hud-badge-dark" style="pointer-events:auto;">
           R<strong>${battle.round}</strong>/${battle.maxRounds}
         </div>
-        <div class="game-hud-badge" style="
+        <div class="game-hud-badge-dark" style="
           pointer-events:auto;
           display:flex; gap:6px; align-items:center;
         ">
@@ -265,7 +265,7 @@ export class BattleScreen {
 
     if (battle.phase === 'select_attitude') {
       return `
-        <div style="color:var(--game-gold); font-size:0.85em; margin-bottom:8px; text-align:center; font-weight:bold;">
+        <div style="color:#f0d060; font-size:0.85em; margin-bottom:8px; text-align:center; font-weight:bold;">
           【1】態度を選択
         </div>
         <div style="display:flex; flex-direction:column; gap:8px;">
@@ -315,7 +315,7 @@ export class BattleScreen {
         }).join('');
 
       return `
-        <div style="color:var(--game-gold); font-size:0.85em; margin-bottom:8px; text-align:center; font-weight:bold;">
+        <div style="color:#f0d060; font-size:0.85em; margin-bottom:8px; text-align:center; font-weight:bold;">
           【2】話題を選択
         </div>
         <div style="margin-bottom:8px;">
@@ -337,7 +337,7 @@ export class BattleScreen {
 
     if (battle.phase === 'select_stance') {
       return `
-        <div style="color:var(--game-gold); font-size:0.85em; margin-bottom:8px; text-align:center; font-weight:bold;">
+        <div style="color:#f0d060; font-size:0.85em; margin-bottom:8px; text-align:center; font-weight:bold;">
           【3】立場を選択
         </div>
         <div style="display:flex; gap:10px; margin-bottom:12px;">

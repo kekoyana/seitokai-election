@@ -34,7 +34,7 @@ export class CharacterSelectScreen {
   private render(): void {
     this.container.style.cssText = `
       position:fixed; inset:0;
-      background:linear-gradient(160deg, var(--game-bg-dark) 0%, var(--game-bg-mid) 100%);
+      background:linear-gradient(160deg, var(--game-bg-light) 0%, var(--game-bg-warm) 100%);
       display:flex; flex-direction:column;
       font-family:var(--game-font);
       overflow:hidden; box-sizing:border-box;
@@ -49,8 +49,8 @@ export class CharacterSelectScreen {
       const count = this.students.filter(s => this.getSupportFaction(s) === info.id).length;
       return `<button class="faction-tab" data-faction="${info.id}" style="
         flex:1;
-        background:${active ? info.color : 'rgba(20,30,60,0.6)'};
-        color:${active ? '#fff' : '#8090b0'};
+        background:${active ? info.color : '#e8eef5'};
+        color:${active ? '#fff' : '#6070a0'};
         border:2px solid ${active ? info.color : 'transparent'};
         border-bottom:${active ? 'none' : '2px solid var(--game-panel-border)'};
         padding:10px 8px 8px;
@@ -59,8 +59,8 @@ export class CharacterSelectScreen {
         font-size:0.85em;
         font-weight:bold;
         transition:all 0.15s;
-        border-radius:4px 4px 0 0;
-        text-shadow:${active ? '0 1px 2px rgba(0,0,0,0.5)' : 'none'};
+        border-radius:6px 6px 0 0;
+        text-shadow:${active ? '0 1px 1px rgba(0,0,0,0.3)' : 'none'};
       ">${FACTION_LABELS[info.id]}派 <span style="font-size:0.8em; opacity:0.7;">(${count})</span></button>`;
     }).join('');
 
@@ -104,7 +104,7 @@ export class CharacterSelectScreen {
           margin:0 16px 12px;
           text-align:center;
         ">
-          <div style="font-size:0.95em; color:var(--game-gold); margin-bottom:4px;">
+          <div style="font-size:0.95em; color:var(--game-heading-accent); margin-bottom:4px;">
             支持する思想を選んでください
           </div>
           <div style="font-size:0.8em; color:var(--game-text-dim); line-height:1.6;">
@@ -166,9 +166,9 @@ export class CharacterSelectScreen {
   private renderCard(s: Student): string {
     const attrsHtml = s.attributes.map(a =>
       `<span style="
-        background:rgba(74,144,217,0.2); color:#8ab0e8;
-        border:1px solid rgba(74,144,217,0.3);
-        border-radius:3px; padding:1px 7px; font-size:0.75em;
+        background:#e0ecf8; color:#3060a0;
+        border:1px solid #b0c8e0;
+        border-radius:4px; padding:1px 7px; font-size:0.75em; font-weight:700;
       ">${ATTRIBUTE_LABELS[a] ?? a}</span>`
     ).join(' ');
 
@@ -179,11 +179,11 @@ export class CharacterSelectScreen {
 
     const statsBar = (label: string, value: number, color: string) => `
       <div style="display:flex; align-items:center; gap:6px; font-size:0.75em;">
-        <span style="width:28px; color:var(--game-text-dim);">${label}</span>
-        <div style="flex:1; height:8px; background:rgba(0,0,0,0.4); border:1px solid rgba(74,96,144,0.4); border-radius:2px; overflow:hidden;">
-          <div style="width:${value}%; height:100%; background:${color}; box-shadow:inset 0 -1px 0 rgba(0,0,0,0.2);"></div>
+        <span style="width:28px; color:var(--game-text-dim); font-weight:700;">${label}</span>
+        <div style="flex:1; height:8px; background:#d8e0e8; border:1px solid #b0b8c8; border-radius:3px; overflow:hidden;">
+          <div style="width:${value}%; height:100%; background:${color}; box-shadow:inset 0 -1px 0 rgba(0,0,0,0.15); border-radius:2px;"></div>
         </div>
-        <span style="width:20px; text-align:right; color:var(--game-text);">${value}</span>
+        <span style="width:20px; text-align:right; color:var(--game-text); font-weight:700;">${value}</span>
       </div>
     `;
 
@@ -195,14 +195,14 @@ export class CharacterSelectScreen {
         cursor:pointer; text-align:left;
         font-family:var(--game-font);
       " onpointerenter="this.style.borderColor='${supportCandidate?.color ?? '#4A90D9'}';this.style.boxShadow='0 0 12px ${supportCandidate?.color ?? '#4A90D9'}40'"
-         onpointerleave="this.style.borderColor='var(--game-panel-border)';this.style.boxShadow='0 2px 6px rgba(0,0,0,0.3)'">
+         onpointerleave="this.style.borderColor='#b0c0d8';this.style.boxShadow='0 2px 4px rgba(0,0,0,0.08)'">
         <div style="display:flex; align-items:center; gap:12px; margin-bottom:10px;">
           ${s.portrait
             ? `<img src="${s.portrait}" alt="${s.name}" style="
                 width:56px; height:56px; border-radius:4px;
                 object-fit:cover; object-position:top;
-                border:2px solid ${supportCandidate?.color ?? '#4a6090'}; flex-shrink:0;
-                box-shadow:0 2px 6px rgba(0,0,0,0.4);
+                border:2px solid ${supportCandidate?.color ?? '#b0c0d8'}; flex-shrink:0;
+                box-shadow:0 2px 4px rgba(0,0,0,0.12);
               "/>`
             : renderInitialIcon(s.name, s.personality, 56, supportCandidate?.color ?? '#4a6090')
           }
@@ -213,12 +213,12 @@ export class CharacterSelectScreen {
             <div style="font-size:0.8em; color:var(--game-text-dim);">
               ${s.className}　${s.gender === 'male' ? '♂' : '♀'}　${PERSONALITY_LABELS[s.personality] ?? s.personality}
             </div>
-            <div style="font-size:0.78em; color:var(--game-gold-dark);">「${getCatchphrase(s.personality, s.attributes)}」</div>
+            <div style="font-size:0.78em; color:var(--game-heading-accent);">「${getCatchphrase(s.personality, s.attributes)}」</div>
           </div>
         </div>
 
         <div style="font-size:0.78em; color:var(--game-text-dim); line-height:1.5; margin-bottom:8px;
-          background:rgba(0,0,0,0.3); border-radius:4px; padding:8px 10px; border:1px solid rgba(74,96,144,0.3);">
+          background:var(--game-panel-inner); border-radius:6px; padding:8px 10px; border:1px solid #c8d8e8;">
           ${s.description}
         </div>
 

@@ -1162,26 +1162,27 @@ export class DailyScreen {
         border-radius:14px; padding:14px;
         border:1px solid #e0eaf5;
       ">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
-          <div style="display:flex; align-items:center; gap:12px;">
-            ${pc.portrait
-              ? `<img src="${pc.portrait}" alt="${pc.name}" style="
-                  width:60px; height:60px; border-radius:50%;
-                  object-fit:cover; object-position:top;
-                  border:3px solid ${candidateColor};
-                "/>`
-              : renderInitialIcon(pc.name, pc.personality, 60, candidateColor)
-            }
-            <div>
-              <div style="font-size:1.1em; font-weight:bold; color:#333;">${pc.name}</div>
-              <div style="font-size:0.8em; color:#888;">${pc.className}　${PERS_LABELS[pc.personality] ?? pc.personality}</div>
-              <div style="font-size:0.78em; color:${candidateColor}; font-weight:bold;">${FACTION_LABELS[this.state.candidate ?? ''] ?? ''}派</div>
-            </div>
-          </div>
+        <div style="display:flex; justify-content:flex-end; margin-bottom:8px;">
           <button id="close-player-btn" style="
             background:#ddd; border:none; border-radius:50%;
             width:28px; height:28px; cursor:pointer; font-size:1em;
           ">×</button>
+        </div>
+        ${pc.portrait
+          ? `<div style="text-align:center; margin-bottom:10px;">
+              <img src="${pc.portrait}" alt="${pc.name}" style="
+                width:120px; height:120px; border-radius:50%;
+                object-fit:cover; object-position:top;
+                border:3px solid ${candidateColor};
+                box-shadow:0 4px 12px rgba(0,0,0,0.1);
+              "/>
+            </div>`
+          : `<div style="text-align:center; margin-bottom:10px;">${renderInitialIcon(pc.name, pc.personality, 120, candidateColor)}</div>`
+        }
+        <div style="text-align:center; margin-bottom:14px;">
+          <div style="font-size:1.1em; font-weight:bold; color:#333;">${pc.name}</div>
+          <div style="font-size:0.8em; color:#888;">${pc.className}　${PERS_LABELS[pc.personality] ?? pc.personality}</div>
+          <div style="font-size:0.78em; color:${candidateColor}; font-weight:bold;">${FACTION_LABELS[this.state.candidate ?? ''] ?? ''}派</div>
         </div>
 
         <div style="margin-bottom:12px;">
@@ -1263,55 +1264,59 @@ export class DailyScreen {
 
     // backAction: 'close' → 閉じるボタン(×), 'back-to-org' → 情報パネル内の戻る(←)
     const headerHtml = backAction === 'close'
-      ? `<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
-          <div style="display:flex; align-items:center; gap:12px;">
-            ${s.portrait
-              ? `<img src="${s.portrait}" alt="${s.name}" style="
-                  width:56px; height:56px; border-radius:50%;
+      ? `<div style="margin-bottom:14px;">
+          <div style="display:flex; justify-content:flex-end; margin-bottom:8px;">
+            <button id="close-info-btn" style="
+              background:#ddd; border:none; border-radius:50%;
+              width:28px; height:28px; cursor:pointer; font-size:1em;
+            ">×</button>
+          </div>
+          ${s.portrait
+            ? `<div style="text-align:center; margin-bottom:10px;">
+                <img src="${s.portrait}" alt="${s.name}" style="
+                  width:120px; height:120px; border-radius:50%;
                   object-fit:cover; object-position:top;
                   border:3px solid ${supportCandidate?.color ?? '#d0e0f0'};
-                "/>`
-              : renderInitialIcon(s.name, s.personality, 56, supportCandidate?.color ?? '#d0e0f0')
-            }
-            <div>
-              <div style="font-size:1.1em; font-weight:bold; color:#333;">${s.name}</div>
-              <div style="display:flex; align-items:center; gap:4px; flex-wrap:wrap;">
-                <span style="font-size:0.8em; color:#888;">${s.className}</span>
-                ${renderClubBadge(s.clubId)}
-                <span style="font-size:0.75em; color:#999;">${PERS_LABELS[s.personality] ?? s.personality}</span>
-              </div>
-              <div style="display:flex; gap:4px; flex-wrap:wrap; margin-top:2px;">
-                ${renderTitleBadges(s.id)}
-              </div>
-              <div style="font-size:0.78em; color:#888; margin-top:2px;">「${getCatchphrase(s.personality, s.attributes)}」</div>
-            </div>
-          </div>
-          <button id="close-info-btn" style="
-            background:#ddd; border:none; border-radius:50%;
-            width:28px; height:28px; cursor:pointer; font-size:1em;
-          ">×</button>
-        </div>`
-      : `${this.renderInfoHeader(s.name, backAction)}
-        <div style="display:flex; align-items:center; gap:12px; margin-bottom:14px;">
-          ${s.portrait
-            ? `<img src="${s.portrait}" alt="${s.name}" style="
-                width:56px; height:56px; border-radius:50%;
-                object-fit:cover; object-position:top;
-                border:3px solid ${supportCandidate?.color ?? '#d0e0f0'};
-              "/>`
-            : renderInitialIcon(s.name, s.personality, 56, supportCandidate?.color ?? '#d0e0f0')
+                  box-shadow:0 4px 12px rgba(0,0,0,0.1);
+                "/>
+              </div>`
+            : `<div style="text-align:center; margin-bottom:10px;">${renderInitialIcon(s.name, s.personality, 120, supportCandidate?.color ?? '#d0e0f0')}</div>`
           }
-          <div>
-            <div style="display:flex; align-items:center; gap:4px; flex-wrap:wrap;">
+          <div style="text-align:center;">
+            <div style="font-size:1.1em; font-weight:bold; color:#333;">${s.name}</div>
+            <div style="display:flex; justify-content:center; align-items:center; gap:4px; flex-wrap:wrap; margin-top:2px;">
               <span style="font-size:0.8em; color:#888;">${s.className}</span>
               ${renderClubBadge(s.clubId)}
               <span style="font-size:0.75em; color:#999;">${PERS_LABELS[s.personality] ?? s.personality}</span>
             </div>
-            <div style="display:flex; gap:4px; flex-wrap:wrap; margin-top:2px;">
+            <div style="display:flex; justify-content:center; gap:4px; flex-wrap:wrap; margin-top:2px;">
               ${renderTitleBadges(s.id)}
             </div>
             <div style="font-size:0.78em; color:#888; margin-top:2px;">「${getCatchphrase(s.personality, s.attributes)}」</div>
           </div>
+        </div>`
+      : `${this.renderInfoHeader(s.name, backAction)}
+        ${s.portrait
+          ? `<div style="text-align:center; margin-bottom:10px;">
+              <img src="${s.portrait}" alt="${s.name}" style="
+                width:120px; height:120px; border-radius:50%;
+                object-fit:cover; object-position:top;
+                border:3px solid ${supportCandidate?.color ?? '#d0e0f0'};
+                box-shadow:0 4px 12px rgba(0,0,0,0.1);
+              "/>
+            </div>`
+          : `<div style="text-align:center; margin-bottom:10px;">${renderInitialIcon(s.name, s.personality, 120, supportCandidate?.color ?? '#d0e0f0')}</div>`
+        }
+        <div style="text-align:center; margin-bottom:14px;">
+          <div style="display:flex; justify-content:center; align-items:center; gap:4px; flex-wrap:wrap;">
+            <span style="font-size:0.8em; color:#888;">${s.className}</span>
+            ${renderClubBadge(s.clubId)}
+            <span style="font-size:0.75em; color:#999;">${PERS_LABELS[s.personality] ?? s.personality}</span>
+          </div>
+          <div style="display:flex; justify-content:center; gap:4px; flex-wrap:wrap; margin-top:2px;">
+            ${renderTitleBadges(s.id)}
+          </div>
+          <div style="font-size:0.78em; color:#888; margin-top:2px;">「${getCatchphrase(s.personality, s.attributes)}」</div>
         </div>`;
 
     return `

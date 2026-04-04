@@ -1,6 +1,6 @@
 import type {
   BattleState, Student, PlayerAttitude, Topic, Stance,
-  EnemyMood, HobbyTopic, CandidateId, BattleLog, Attribute
+  EnemyMood, HobbyTopic, CandidateId, BattleLog, PreferenceAttr, Gender
 } from './types';
 import { getCatchphrase } from './data';
 
@@ -77,10 +77,29 @@ function affinityMultiplier(affinity: number): number {
   return 1.0 + affinity / 200;
 }
 
-// 好き属性ボーナス（プレイヤーのlikedAttributesと相手のattributesの一致数）
-function likedAttributeMultiplier(playerLikedAttributes: Attribute[], studentAttributes: Attribute[]): number {
-  const matchCount = playerLikedAttributes.filter(a => studentAttributes.includes(a)).length;
-  return 1.0 + matchCount * 0.15;
+// 外見系属性（髪型・体型・外見）: 異性相手のとき効果が大きい
+const APPEARANCE_PREFS: Set<string> = new Set([
+  // 髪型
+  'straight', 'ponytail', 'twintail', 'braid', 'wavy', 'bun', 'bob',
+  // 体型・外見
+  'flat', 'busty', 'glasses', 'blonde', 'young', 'adult',
+]);
+
+// 好き属性ボーナス（プレイヤーのlikedAttributesと相手のattributes+hairStyleの一致数）
+// 異性の場合、外見系属性の一致ボーナスが2倍になる
+function likedAttributeMultiplier(
+  playerLikedAttributes: PreferenceAttr[],
+  studentTraits: PreferenceAttr[],
+  isOppositeGender: boolean
+): number {
+  let bonus = 0;
+  for (const a of playerLikedAttributes) {
+    if (studentTraits.includes(a)) {
+      const isAppearance = APPEARANCE_PREFS.has(a);
+      bonus += (isAppearance && isOppositeGender) ? 0.30 : 0.15;
+    }
+  }
+  return 1.0 + bonus;
 }
 
 // 候補者話題の効果を計算（バーに大きく影響）
@@ -103,19 +122,22 @@ function calcCandidateEffect(
 }
 
 // 趣味話題の効果を計算（主に機嫌変化、バーへの影響は小さい）
+// 未判明の趣味でもバトル中に話題にすると判明し、効果はフルで発揮される。
 function calcHobbyEffect(
   topic: HobbyTopic,
   stance: Stance,
   student: Student,
   moodDelta: { delta: number }
 ): number {
-  const revealed = student.revealedHobbies.has(topic);
-  const pref = revealed ? student.hobbies[topic] : 'neutral';
+  // バトル中に話題にした時点で趣味が判明する
+  student.revealedHobbies.add(topic);
+
+  const pref = student.hobbies[topic];
 
   if (pref === 'like') {
     if (stance === 'positive') {
       moodDelta.delta += 2;
-      return 3; // バーへの影響は小さい
+      return 3;
     } else {
       moodDelta.delta -= 2;
       return -3;
@@ -129,12 +151,10 @@ function calcHobbyEffect(
       return 1;
     }
   } else {
-    // 未知または普通
+    // 普通（好きでも嫌いでもない）
     if (stance === 'positive') {
-      moodDelta.delta += 0;
       return -1;
     } else {
-      moodDelta.delta += 0;
       return 1;
     }
   }
@@ -173,8 +193,9 @@ export function resolvePlayerTurn(
   topic: Topic,
   stance: Stance,
   candidateId: CandidateId,
-  playerLikedAttributes: Attribute[],
-  playerStats: PlayerStats
+  playerLikedAttributes: PreferenceAttr[],
+  playerStats: PlayerStats,
+  playerGender: Gender
 ): { newBattle: BattleState; playerEffect: number; log: BattleLog } {
   const student = battle.student;
   const moodDelta = { delta: 0 };
@@ -205,8 +226,9 @@ export function resolvePlayerTurn(
   // ステータスボーナス（弁舌/運動/知性）
   baseEffect *= calcStatMultiplier(playerStats, stance, isCandidateTopic);
 
-  // 好き属性ボーナス
-  baseEffect *= likedAttributeMultiplier(playerLikedAttributes, student.attributes);
+  // 好き属性ボーナス（属性+髪型を統合して判定、異性なら外見系2倍）
+  const isOppositeGender = playerGender !== student.gender;
+  baseEffect *= likedAttributeMultiplier(playerLikedAttributes, [...student.attributes, student.hairStyle], isOppositeGender);
 
   // 好かれ度補正
   baseEffect *= affinityMultiplier(student.affinity);

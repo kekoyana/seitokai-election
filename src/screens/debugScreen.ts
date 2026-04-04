@@ -281,8 +281,10 @@ export class DebugScreen {
       ">${ATTRIBUTE_LABELS[a] ?? a}</span>`;
     }).join(' ');
 
+    const playerAttrsStr = this.state.playerAttributes as string[];
+
     const likedHtml = s.likedAttributes.map(a => {
-      const matched = this.state.playerAttributes.includes(a);
+      const matched = playerAttrsStr.includes(a);
       return `<span style="
         color:${matched ? '#4f8' : '#888'}; font-size:0.7em;
         ${matched ? 'font-weight:bold;' : ''}
@@ -290,7 +292,7 @@ export class DebugScreen {
     }).join(' ');
 
     const dislikedHtml = s.dislikedAttributes.map(a => {
-      const matched = this.state.playerAttributes.includes(a);
+      const matched = playerAttrsStr.includes(a);
       return `<span style="
         color:${matched ? '#f66' : '#888'}; font-size:0.7em;
         ${matched ? 'font-weight:bold;' : ''}

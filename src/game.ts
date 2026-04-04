@@ -142,6 +142,7 @@ export class Game {
           playerCharacter: {
             id: selected.id,
             name: selected.name,
+            gender: selected.gender,
             className: selected.className,
             personality: selected.personality,
             hobbies: selected.hobbies,
@@ -341,11 +342,12 @@ export class Game {
 
         const playerLikedAttributes = this.state.playerCharacter?.likedAttributes ?? [];
         const playerStats = this.state.playerCharacter?.stats ?? { speech: 50, athletic: 50, intel: 50, maxHp: 100 };
+        const playerGender = this.state.playerCharacter?.gender ?? 'male';
 
         // プレイヤーターン
         const { newBattle: afterPlayer } = resolvePlayerTurn(
           this.state.battle, selectedAttitude, selectedTopic, stance, this.state.candidate,
-          playerLikedAttributes, playerStats
+          playerLikedAttributes, playerStats, playerGender
         );
 
         const checkedAfterPlayer = checkBattleEnd(afterPlayer);

@@ -68,10 +68,17 @@ export type Attribute = AppearanceAttr | VibeAttr;
 // 髪型（1つ選択）
 export type HairStyle = 'straight' | 'ponytail' | 'twintail' | 'braid' | 'wavy' | 'bun' | 'bob';
 
+// 好み・苦手に使える属性（外見+雰囲気+髪型）
+export type PreferenceAttr = Attribute | HairStyle;
+
+// 性別
+export type Gender = 'male' | 'female';
+
 // 生徒データ（候補者も含むすべてのキャラクター）
 export interface Student {
   id: string;
   name: string;
+  gender: Gender;
   className: string;
   clubId: string | null;
   description: string;
@@ -81,8 +88,8 @@ export interface Student {
   revealedHobbies: Set<HobbyTopic>;
   support: { conservative: number; progressive: number; sports: number };
   attributes: Attribute[];
-  likedAttributes: Attribute[];
-  dislikedAttributes: Attribute[];
+  likedAttributes: PreferenceAttr[];
+  dislikedAttributes: PreferenceAttr[];
   stats: { speech: number; athletic: number; intel: number; maxHp: number };
   affinity: number;
   talkCount: number;
@@ -126,12 +133,13 @@ export interface BattleState {
 export interface PlayerCharacter {
   id: string;
   name: string;
+  gender: Gender;
   className: string;
   personality: Personality;
   hobbies: Record<HobbyTopic, HobbyPreference>;
   attributes: Attribute[];
-  likedAttributes: Attribute[];
-  dislikedAttributes: Attribute[];
+  likedAttributes: PreferenceAttr[];
+  dislikedAttributes: PreferenceAttr[];
   stats: { speech: number; athletic: number; intel: number; maxHp: number };
   portrait: string | null;
 }

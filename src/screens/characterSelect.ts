@@ -17,7 +17,7 @@ export class CharacterSelectScreen {
   private container: HTMLDivElement;
   private students: Student[];
   private callbacks: CharacterSelectCallbacks;
-  private activeTab: CandidateId = 'conservative';
+  private activeTab: CandidateId | null = null;
 
   constructor(students: Student[], callbacks: CharacterSelectCallbacks) {
     this.students = students;
@@ -40,8 +40,8 @@ export class CharacterSelectScreen {
       overflow:hidden; box-sizing:border-box;
     `;
 
-    const activeInfo = CANDIDATE_INFO.find(c => c.id === this.activeTab)!;
-    const activeCandidate = CANDIDATES.find(c => c.id === this.activeTab);
+    const activeInfo = this.activeTab ? CANDIDATE_INFO.find(c => c.id === this.activeTab)! : null;
+    const activeCandidate = this.activeTab ? CANDIDATES.find(c => c.id === this.activeTab) : null;
 
     // タブ
     const tabsHtml = CANDIDATE_INFO.map(info => {
@@ -63,31 +63,54 @@ export class CharacterSelectScreen {
       ">${FACTION_LABELS[info.id]}派 <span style="font-size:0.8em; opacity:0.7;">(${count})</span></button>`;
     }).join('');
 
-    // 派閥説明
-    const descHtml = `
-      <div style="
-        background:${activeInfo.color}10;
-        border-left:4px solid ${activeInfo.color};
-        border-radius:0 8px 8px 0;
-        padding:10px 14px;
-        margin:0 16px 12px;
-      ">
-        <div style="font-weight:bold; color:${activeInfo.color}; font-size:0.9em; margin-bottom:4px;">
-          ${activeInfo.platform}
-        </div>
-        <div style="font-size:0.8em; color:#666; line-height:1.6;">
-          ${activeInfo.description}
-        </div>
-        ${activeCandidate ? `
-          <div style="font-size:0.78em; color:#888; margin-top:6px;">
-            候補者: <span style="font-weight:bold; color:${activeInfo.color};">${activeCandidate.name}</span>
+    // 派閥説明 or 未選択メッセージ
+    let descHtml: string;
+    if (activeInfo) {
+      descHtml = `
+        <div style="
+          background:${activeInfo.color}10;
+          border-left:4px solid ${activeInfo.color};
+          border-radius:0 8px 8px 0;
+          padding:10px 14px;
+          margin:0 16px 12px;
+        ">
+          <div style="font-weight:bold; color:${activeInfo.color}; font-size:0.9em; margin-bottom:4px;">
+            ${activeInfo.platform}
           </div>
-        ` : ''}
-      </div>
-    `;
+          <div style="font-size:0.8em; color:#666; line-height:1.6;">
+            ${activeInfo.description}
+          </div>
+          ${activeCandidate ? `
+            <div style="font-size:0.78em; color:#888; margin-top:6px;">
+              候補者: <span style="font-weight:bold; color:${activeInfo.color};">${activeCandidate.name}</span>
+            </div>
+          ` : ''}
+        </div>
+      `;
+    } else {
+      descHtml = `
+        <div style="
+          background:#f0f4f8;
+          border-left:4px solid #aab;
+          border-radius:0 8px 8px 0;
+          padding:14px;
+          margin:0 16px 12px;
+          text-align:center;
+        ">
+          <div style="font-size:0.95em; color:#555; margin-bottom:4px;">
+            支持する思想を選んでください
+          </div>
+          <div style="font-size:0.8em; color:#888; line-height:1.6;">
+            上のタブから派閥を選ぶと、所属する生徒の一覧が表示されます
+          </div>
+        </div>
+      `;
+    }
 
     // カード
-    const factionStudents = this.students.filter(s => this.getSupportFaction(s) === this.activeTab);
+    const factionStudents = this.activeTab
+      ? this.students.filter(s => this.getSupportFaction(s) === this.activeTab)
+      : [];
     const cardsHtml = factionStudents.map(s => this.renderCard(s)).join('');
 
     this.container.innerHTML = `
@@ -183,10 +206,15 @@ export class CharacterSelectScreen {
               <span style="font-size:1em; font-weight:bold; color:#333;">${s.name}</span>
             </div>
             <div style="font-size:0.8em; color:#888;">
-              ${s.className}　${PERSONALITY_LABELS[s.personality] ?? s.personality}
+              ${s.className}　${s.gender === 'male' ? '♂' : '♀'}　${PERSONALITY_LABELS[s.personality] ?? s.personality}
             </div>
             <div style="font-size:0.78em; color:#999;">「${getCatchphrase(s.personality, s.attributes)}」</div>
           </div>
+        </div>
+
+        <div style="font-size:0.78em; color:#666; line-height:1.5; margin-bottom:8px;
+          background:#f8f9fb; border-radius:8px; padding:8px 10px;">
+          ${s.description}
         </div>
 
         <div style="margin-bottom:8px;">

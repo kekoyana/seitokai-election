@@ -1,8 +1,7 @@
-import type { Student, HobbyTopic, Personality } from '../types';
+import type { Student, HobbyTopic, Personality, Gender } from '../types';
 import { HOBBY_LABELS } from '../data';
 import {
-  TALK_LINES, NARRATION_RESULTS, getAffinityLevel,
-  PLAYER_GREETINGS, PLAYER_HOBBY_PROMPTS, PLAYER_FAREWELLS,
+  getTalkLines, getPlayerLines, NARRATION_RESULTS, getAffinityLevel,
 } from '../data/conversationLines';
 
 export interface ConversationStep {
@@ -31,12 +30,14 @@ export function generateConversationData(
   student: Student,
   playerName: string,
   playerPortrait: string | null,
+  playerPersonality: Personality,
+  playerGender: Gender,
   revealedHobby: HobbyTopic | null,
   affinityGain: number,
 ): ConversationData {
   const steps: ConversationStep[] = [];
-  const personality: Personality = student.personality;
-  const lines = TALK_LINES[personality];
+  const studentLines = getTalkLines(student.personality, student.gender);
+  const playerLines = getPlayerLines(playerPersonality, playerGender);
   const level = getAffinityLevel(student.affinity);
 
   // 1. プレイヤーが話しかける
@@ -44,7 +45,7 @@ export function generateConversationData(
     speaker: 'player',
     name: playerName,
     portrait: playerPortrait,
-    text: `「${pick(PLAYER_GREETINGS)}」`,
+    text: `「${pick(playerLines.greeting)}」`,
   });
 
   // 2. 相手の挨拶
@@ -52,14 +53,14 @@ export function generateConversationData(
     speaker: 'student',
     name: student.name,
     portrait: student.portrait,
-    text: `「${pick(lines.greeting[level])}」`,
+    text: `「${pick(studentLines.greeting[level])}」`,
   });
 
   // 3. 趣味の話題（解禁された場合）
   if (revealedHobby) {
     const pref = student.hobbies[revealedHobby];
     const hobbyName = HOBBY_LABELS[revealedHobby] ?? revealedHobby;
-    const reactionLine = pick(lines.hobbyReaction[pref]);
+    const reactionLine = pick(studentLines.hobbyReaction[pref]);
 
     const prefColor = pref === 'like' ? '#7EC850' : pref === 'dislike' ? '#F07070' : '#999';
     const prefIcon = pref === 'like' ? '♥' : pref === 'dislike' ? '✗' : '―';
@@ -69,7 +70,7 @@ export function generateConversationData(
       speaker: 'player',
       name: playerName,
       portrait: playerPortrait,
-      text: `「${pick(PLAYER_HOBBY_PROMPTS)}」`,
+      text: `「${pick(playerLines.hobbyPrompt)}」`,
     });
 
     // 相手のリアクション
@@ -87,14 +88,14 @@ export function generateConversationData(
     speaker: 'player',
     name: playerName,
     portrait: playerPortrait,
-    text: `「${pick(PLAYER_FAREWELLS)}」`,
+    text: `「${pick(playerLines.farewell)}」`,
   });
 
   steps.push({
     speaker: 'student',
     name: student.name,
     portrait: student.portrait,
-    text: `「${pick(lines.farewell[level])}」`,
+    text: `「${pick(studentLines.farewell[level])}」`,
   });
 
   // 結果（ポップアップ用）

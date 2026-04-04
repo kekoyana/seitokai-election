@@ -251,6 +251,8 @@ export class Game {
       student,
       pc?.name ?? 'あなた',
       pc?.portrait ?? null,
+      pc?.personality ?? 'flexible',
+      pc?.gender ?? 'male',
       revealedHobby,
       affinityGain,
     );

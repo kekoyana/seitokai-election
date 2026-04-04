@@ -24,7 +24,7 @@ const MOOD_EFFECT_MULTIPLIER: Record<EnemyMood, number> = {
   upset: 0.6,
   normal: 1.0,
   favorable: 1.3,
-  devoted: 1.8,
+  devoted: 1.5,
 };
 
 // 相手の反撃倍率

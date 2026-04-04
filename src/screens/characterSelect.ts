@@ -77,7 +77,7 @@ export class CharacterSelectScreen {
         ">
           ${activeCandidate?.portrait
             ? `<img src="${activeCandidate.portrait}" alt="${activeCandidate.name}" style="
-                width:64px; height:64px; border-radius:4px;
+                width:128px; height:128px; border-radius:4px;
                 object-fit:cover; object-position:top;
                 border:2px solid ${activeInfo.color};
                 flex-shrink:0;
@@ -198,30 +198,29 @@ export class CharacterSelectScreen {
         font-family:var(--game-font);
       " onpointerenter="this.style.borderColor='${supportCandidate?.color ?? '#4A90D9'}';this.style.boxShadow='0 0 12px ${supportCandidate?.color ?? '#4A90D9'}40'"
          onpointerleave="this.style.borderColor='#b0c0d8';this.style.boxShadow='0 2px 4px rgba(0,0,0,0.08)'">
-        <div style="display:flex; align-items:center; gap:12px; margin-bottom:10px;">
+        <div style="display:flex; align-items:flex-start; gap:12px; margin-bottom:10px;">
           ${s.portrait
             ? `<img src="${s.portrait}" alt="${s.name}" style="
-                width:56px; height:56px; border-radius:4px;
+                width:112px; height:112px; border-radius:4px;
                 object-fit:cover; object-position:top;
                 border:2px solid ${supportCandidate?.color ?? '#b0c0d8'}; flex-shrink:0;
                 box-shadow:0 2px 4px rgba(0,0,0,0.12);
               "/>`
-            : renderInitialIcon(s.name, s.personality, 56, supportCandidate?.color ?? '#4a6090')
+            : renderInitialIcon(s.name, s.personality, 112, supportCandidate?.color ?? '#4a6090')
           }
-          <div style="flex:1;">
+          <div style="flex:1; min-width:0;">
             <div style="display:flex; align-items:center; gap:6px;">
               <span style="font-size:1em; font-weight:bold; color:var(--game-text);">${s.name}</span>
             </div>
             <div style="font-size:0.8em; color:var(--game-text-dim);">
               ${s.className}　${s.gender === 'male' ? '♂' : '♀'}　${PERSONALITY_LABELS[s.personality] ?? s.personality}
             </div>
-            <div style="font-size:0.78em; color:var(--game-heading-accent);">「${getCatchphrase(s.personality, s.attributes)}」</div>
+            <div style="font-size:0.78em; color:var(--game-heading-accent); margin-bottom:6px;">「${getCatchphrase(s.personality, s.attributes)}」</div>
+            <div style="font-size:0.78em; color:var(--game-text-dim); line-height:1.5;
+              background:var(--game-panel-inner); border-radius:6px; padding:6px 8px; border:1px solid #c8d8e8;">
+              ${s.description}
+            </div>
           </div>
-        </div>
-
-        <div style="font-size:0.78em; color:var(--game-text-dim); line-height:1.5; margin-bottom:8px;
-          background:var(--game-panel-inner); border-radius:6px; padding:8px 10px; border:1px solid #c8d8e8;">
-          ${s.description}
         </div>
 
         <div style="margin-bottom:8px;">

@@ -175,6 +175,7 @@ export class Game {
       onChangeFloor: (floor: Floor) => this.handleChangeFloor(floor),
       onTalk: (student: Student) => this.handleTalk(student),
       onPersuade: (student: Student) => this.handlePersuade(student),
+      onNurseRest: () => this.handleNurseRest(),
       onNextDay: () => this.handleNextDay(),
     });
     this.dailyScreen.mount(this.root);
@@ -313,6 +314,18 @@ export class Game {
     this.showBattle();
   }
 
+  private handleNurseRest(): void {
+    if (this.isTimeUp()) return;
+    if (this.state.currentLocation !== 'nurses_office') return;
+    const recovery = 40;
+    this.state = {
+      ...this.state,
+      stamina: Math.min(100, this.state.stamina + recovery),
+      currentTime: Math.min(MAX_TIME, this.state.currentTime + TIME_COST.NURSE_REST),
+      actionLogs: [...this.state.actionLogs, `保健室で1時間休憩した（体力+${recovery}）`],
+    };
+    this.dailyScreen?.update(this.state);
+  }
 
   private getPlayerClassLocation(): LocationId {
     const className = this.state.playerCharacter?.className ?? '1-B';

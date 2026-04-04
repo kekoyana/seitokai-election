@@ -3,7 +3,7 @@ import {
   LOCATIONS, CANDIDATES, FACTION_LABELS, getStudentLocation, getCandidateLocation,
   HOBBY_LABELS, ATTRIBUTE_LABELS, TIME_LABELS, getCatchphrase, renderInitialIcon,
   isCorridorLocation, getFloorFromLocation, FLOOR_ROOMS, FLOOR_ADJACENCY,
-  FLOOR_LABELS, MOVE_COST, getFloorMoveCost, renderSupportBar, MAX_TIME,
+  FLOOR_LABELS, MOVE_COST, getFloorMoveCost, renderSupportBar, MAX_TIME, TIME_COST,
 } from '../data';
 import { ORGANIZATIONS, ORGANIZATION_TYPE_LABELS, SPORTS_CLUB_IDS, CULTURE_CLUB_IDS } from '../data/organizations';
 import { getOrganizationVote, calcOrganizationSupport } from '../logic/organizationLogic';
@@ -474,8 +474,25 @@ export class DailyScreen {
 
     const orgInfoHtml = this.renderRoomOrgInfo();
 
+    // 保健室の休憩パネル
+    const isInNursesOffice = this.state.currentLocation === 'nurses_office';
+    const canNurseRest = !isOutOfStamina && this.state.currentTime + TIME_COST.NURSE_REST <= MAX_TIME;
+    const nurseRestHtml = isInNursesOffice ? `
+      <div class="game-panel" style="margin-bottom:12px; text-align:center; padding:16px;">
+        <div style="font-size:0.9em; color:var(--game-text); margin-bottom:8px;">
+          ベッドで横になって休憩できる
+        </div>
+        <button id="nurse-rest-btn" class="game-btn ${canNurseRest ? 'game-btn-primary' : 'game-btn-disabled'}" style="
+          padding:10px 24px;
+          font-size:0.9em; font-family:var(--game-font);
+        ">休憩する（体力+40 / ${TIME_COST.NURSE_REST}分）</button>
+        ${!canNurseRest && !isOutOfStamina ? '<div style="font-size:0.72em; color:#C0392B; margin-top:6px;">時間が足りない</div>' : ''}
+      </div>
+    ` : '';
+
     return `
       ${orgInfoHtml}
+      ${nurseRestHtml}
 
       <div class="game-panel" style="margin-bottom:12px;">
         <h3 style="font-size:0.9em; color:var(--game-heading); margin-bottom:10px; font-weight:bold;">この場所にいる生徒</h3>
@@ -1125,9 +1142,10 @@ export class DailyScreen {
       </div>
       ${this.renderCorridor()}
       <!-- 共用施設 + 外への出口 -->
-      <div style="display:grid; grid-template-columns:1fr 1fr 1fr auto; gap:0; border-top:1px solid #a0a8b0;">
+      <div style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr auto; gap:0; border-top:1px solid #a0a8b0;">
         <div style="border-right:1px solid #a0a8b0; padding:3px;">${this.renderRoomBtn('cafeteria', canEnter, f)}</div>
         <div style="border-right:1px solid #a0a8b0; padding:3px;">${this.renderRoomBtn('library', canEnter, f)}</div>
+        <div style="border-right:1px solid #a0a8b0; padding:3px;">${this.renderRoomBtn('nurses_office', canEnter, f)}</div>
         <div style="border-right:1px solid #a0a8b0; padding:3px;">${this.renderRoomBtn('courtyard', canEnter, f)}</div>
         <div style="padding:3px; display:flex; align-items:stretch; width:48px;">
           ${this.renderGroundExit('1f')}
@@ -1508,6 +1526,12 @@ export class DailyScreen {
       });
     });
 
+
+    // 保健室休憩ボタン
+    const nurseRestBtn = this.container.querySelector<HTMLButtonElement>('#nurse-rest-btn');
+    nurseRestBtn?.addEventListener('pointerup', () => {
+      this.callbacks.onNurseRest();
+    });
 
     // 会話ボタン
     this.container.querySelectorAll<HTMLButtonElement>('[data-action-talk]').forEach(btn => {

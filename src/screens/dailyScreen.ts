@@ -132,58 +132,70 @@ export class DailyScreen {
       overflow: hidden;
     `;
 
-    // ヘッダー
     const pc = this.state.playerCharacter;
-    const headerHtml = `
-      <div style="
-        background: linear-gradient(90deg, ${candidateColor}, ${candidateColor}CC);
-        color: #fff; padding: 10px 16px;
-        display: flex; justify-content: space-between; align-items: center;
-        flex-shrink: 0;
-      ">
-        <div style="display:flex; align-items:center; gap:8px;">
-          ${pc ? `<div id="player-icon" style="cursor:pointer;">${pc.portrait
-            ? `<img src="${pc.portrait}" alt="${pc.name}" style="
-                width:32px; height:32px; border-radius:50%;
-                object-fit:cover; object-position:top;
-                border:2px solid rgba(255,255,255,0.6);
-              "/>`
-            : renderInitialIcon(pc.name, pc.personality, 32, 'rgba(255,255,255,0.6)')
-          }</div>` : ''}
-          <div>
-            ${pc ? `<div style="font-size:0.75em; opacity:0.85;">${pc.name}</div>` : ''}
-            <div>
-              <span style="font-size:0.8em; opacity:0.85;">支持:</span>
-              <span style="font-size:0.9em; font-weight:bold; margin-left:4px;">${FACTION_LABELS[this.state.candidate ?? ''] ?? ''}派</span>
-            </div>
-          </div>
-        </div>
-        <div style="display:flex; gap:10px; font-size:0.85em; align-items:center;">
-          <span><strong>${dayToDate(this.state.day)}</strong></span>
-          <span>⚡<strong>${this.state.stamina}</strong></span>
-          <button id="bgm-toggle" style="
-            background:none; border:1px solid rgba(255,255,255,0.4);
-            border-radius:4px; padding:2px 6px;
-            color:#fff; font-size:0.85em; cursor:pointer;
-            opacity:0.8; font-family:inherit;
-          ">${bgm.enabled ? '🔊' : '🔇'}</button>
-        </div>
-      </div>
-    `;
 
-    // 支持者数（プレイヤーの候補と同じ候補を最も支持している生徒の数）
+    // 支持者数
     const playerCandidateId = this.state.candidate;
     const supporterCount = this.state.students.filter(s => {
       const maxKey = (['conservative', 'progressive', 'sports'] as const)
         .reduce((a, b) => s.support[a] >= s.support[b] ? a : b);
       return maxKey === playerCandidateId;
     }).length;
-    const supportInfo = `
+
+    // フローティングHUD（左上: プレイヤー、右上: ステータス）
+    const hudHtml = `
       <div style="
-        background:rgba(255,255,255,0.7);
-        border-bottom:1px solid #e0e8f5;
+        position:absolute; top:0; left:0; right:0;
+        display:flex; justify-content:space-between; align-items:flex-start;
+        padding:10px 12px; pointer-events:none; z-index:10;
+      ">
+        <div id="player-icon" style="
+          pointer-events:auto; cursor:pointer;
+          display:flex; align-items:center; gap:8px;
+          background:${candidateColor}DD; color:#fff;
+          border-radius:20px; padding:4px 12px 4px 4px;
+          box-shadow:0 2px 8px rgba(0,0,0,0.2);
+          font-size:0.78em;
+        ">
+          ${pc ? (pc.portrait
+            ? `<img src="${pc.portrait}" alt="${pc.name}" style="
+                width:28px; height:28px; border-radius:50%;
+                object-fit:cover; object-position:top;
+                border:2px solid rgba(255,255,255,0.5);
+              "/>`
+            : renderInitialIcon(pc.name, pc.personality, 28, 'rgba(255,255,255,0.5)')
+          ) : ''}
+          <span style="font-weight:bold;">${pc?.name ?? ''}</span>
+          <span style="opacity:0.8; font-size:0.9em;">${FACTION_LABELS[this.state.candidate ?? ''] ?? ''}派</span>
+        </div>
+        <div style="
+          pointer-events:auto;
+          display:flex; gap:6px; align-items:center;
+          background:rgba(0,0,0,0.55); color:#fff;
+          border-radius:16px; padding:5px 10px;
+          box-shadow:0 2px 8px rgba(0,0,0,0.2);
+          font-size:0.78em; backdrop-filter:blur(4px);
+        ">
+          <span><strong>${dayToDate(this.state.day)}</strong></span>
+          <span style="opacity:0.4;">|</span>
+          <span>⚡<strong>${this.state.stamina}</strong></span>
+          <span style="opacity:0.4;">|</span>
+          <button id="bgm-toggle" style="
+            background:none; border:none; padding:0;
+            color:#fff; font-size:1em; cursor:pointer;
+            line-height:1;
+          ">${bgm.enabled ? '🔊' : '🔇'}</button>
+        </div>
+      </div>
+    `;
+
+    // 下部ステータスバー
+    const bottomBar = `
+      <div style="
+        background:rgba(255,255,255,0.8); backdrop-filter:blur(4px);
+        border-top:1px solid #e0e8f5;
         padding:6px 16px;
-        display:flex; gap:16px; font-size:0.78em; color:#555;
+        display:flex; gap:16px; font-size:0.75em; color:#555;
         flex-shrink:0;
       ">
         <span>支持者: <strong style="color:${candidateColor}">${supporterCount}</strong>名</span>
@@ -207,10 +219,12 @@ export class DailyScreen {
       mainHtml = this.renderMainPanel(studentsHere, isOutOfStamina);
     }
 
-    this.container.innerHTML = headerHtml + supportInfo + `
-      <div style="flex:1; overflow-y:auto; padding:12px 16px;">
+    this.container.innerHTML = `
+      ${hudHtml}
+      <div style="flex:1; overflow-y:auto; padding:48px 16px 12px;">
         ${mainHtml}
       </div>
+      ${bottomBar}
     `;
 
     this.attachEvents();

@@ -1,5 +1,6 @@
 import type { GameState, PlayerAttitude, Topic, Stance, CandidateId, HobbyTopic } from '../types';
 import { CANDIDATES, HOBBY_LABELS, MOOD_LABELS, renderInitialIcon } from '../data';
+import { bgm } from '../bgm';
 
 export interface BattleCallbacks {
   onAttitudeSelect: (attitude: PlayerAttitude) => void;
@@ -57,27 +58,43 @@ export class BattleScreen {
     const lastLog = battle.logs[battle.logs.length - 1];
 
     this.container.innerHTML = `
-      <!-- ヘッダー -->
+      <!-- フローティングHUD -->
       <div style="
-        background:rgba(0,0,0,0.3);
-        color:#ddd; padding:8px 16px;
-        display:flex; justify-content:space-between; align-items:center;
-        flex-shrink:0; border-bottom:1px solid rgba(255,255,255,0.1);
+        position:absolute; top:0; left:0; right:0;
+        display:flex; justify-content:space-between; align-items:flex-start;
+        padding:10px 12px; pointer-events:none; z-index:10;
       ">
-        <div style="font-size:0.85em;">
-          <span style="opacity:0.7;">説得バトル</span>
-          <strong style="margin-left:8px;">${student.name}</strong>
+        <div style="
+          pointer-events:auto;
+          background:rgba(0,0,0,0.55); color:#fff;
+          border-radius:16px; padding:5px 10px;
+          box-shadow:0 2px 8px rgba(0,0,0,0.3);
+          font-size:0.78em; backdrop-filter:blur(4px);
+        ">
+          R<strong>${battle.round}</strong>/${battle.maxRounds}
         </div>
-        <div style="font-size:0.82em; opacity:0.8;">
-          ラウンド <strong>${battle.round}</strong>/${battle.maxRounds}
-          <span style="margin-left:8px;">⚡<strong>${this.state.stamina}</strong></span>
+        <div style="
+          pointer-events:auto;
+          display:flex; gap:6px; align-items:center;
+          background:rgba(0,0,0,0.55); color:#fff;
+          border-radius:16px; padding:5px 10px;
+          box-shadow:0 2px 8px rgba(0,0,0,0.3);
+          font-size:0.78em; backdrop-filter:blur(4px);
+        ">
+          <span>⚡<strong>${this.state.stamina}</strong></span>
+          <span style="opacity:0.4;">|</span>
+          <button id="bgm-toggle" style="
+            background:none; border:none; padding:0;
+            color:#fff; font-size:1em; cursor:pointer;
+            line-height:1;
+          ">${bgm.enabled ? '🔊' : '🔇'}</button>
         </div>
       </div>
 
       <!-- キャラクター表示 -->
       <div style="
         display:flex; justify-content:center; align-items:center;
-        padding:12px; gap:16px; flex-shrink:0;
+        padding:40px 12px 12px; gap:16px; flex-shrink:0;
       ">
         ${student.portrait
           ? `<img src="${student.portrait}" alt="${student.name}" style="
@@ -366,6 +383,13 @@ export class BattleScreen {
 
   private attachEvents(): void {
     const battle = this.state.battle!;
+
+    // BGMトグル
+    const bgmBtn = this.container.querySelector<HTMLButtonElement>('#bgm-toggle');
+    bgmBtn?.addEventListener('pointerup', () => {
+      bgm.toggle();
+      bgmBtn.textContent = bgm.enabled ? '🔊' : '🔇';
+    });
 
     // 態度選択
     this.container.querySelectorAll<HTMLButtonElement>('[data-attitude]').forEach(btn => {

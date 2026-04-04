@@ -1,3 +1,4 @@
+import titleBgm from '../assets/bgm/title.ogg';
 import schoolDaytimeBgm from '../assets/bgm/school_daytime.ogg';
 import settokuBgm from '../assets/bgm/settoku.ogg';
 
@@ -85,6 +86,7 @@ class BgmManager {
 export const bgm = new BgmManager();
 
 export const BGM_TRACKS = {
+  title: titleBgm,
   schoolDaytime: schoolDaytimeBgm,
   settoku: settokuBgm,
 } as const;

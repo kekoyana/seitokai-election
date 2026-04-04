@@ -107,6 +107,7 @@ export class Game {
 
   private showTitle(): void {
     this.clearScreens();
+    bgm.play(BGM_TRACKS.title);
     this.titleScreen = new TitleScreen({
       onStart: () => this.showCharacterSelect(),
     });

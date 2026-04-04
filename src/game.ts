@@ -3,8 +3,8 @@ import type {
   PlayerAttitude, Topic, Stance, HobbyTopic
 } from './types';
 import {
-  STUDENTS, getFloorFromLocation, isCorridorLocation, getCorridorForFloor,
-  FLOOR_ADJACENCY, MOVE_COST, getFloorMoveCost,
+  STUDENTS, getFloorFromLocation, getCorridorForFloor,
+  FLOOR_ADJACENCY, MOVE_COST, getFloorMoveCost, TIME_COST, MAX_TIME,
 } from './data';
 import { generateConversationData, generateTalkLogSummary } from './logic/conversationGenerator';
 import { ORGANIZATIONS } from './data/organizations';
@@ -31,9 +31,10 @@ function createInitialState(): GameState {
       revealedHobbies: new Set<HobbyTopic>(),
     })),
     day: 1,
+    currentTime: 0,
     stamina: 100,
     currentLocation: 'class1b',
-    timeSlot: 'morning',
+    timeSlot: 'afterschool',
     battle: null,
     lastBattleResult: null,
     playerCharacter: null,
@@ -179,12 +180,17 @@ export class Game {
     this.dailyScreen.mount(this.root);
   }
 
+  private isTimeUp(): boolean {
+    return this.state.currentTime >= MAX_TIME;
+  }
+
   private handleEnterRoom(locationId: LocationId): void {
-    if (this.state.stamina < MOVE_COST.ENTER_ROOM) return;
+    if (this.state.stamina < MOVE_COST.ENTER_ROOM || this.isTimeUp()) return;
     this.state = {
       ...this.state,
       currentLocation: locationId,
       stamina: this.state.stamina - MOVE_COST.ENTER_ROOM,
+      currentTime: Math.min(MAX_TIME, this.state.currentTime + TIME_COST.ENTER_ROOM),
     };
     this.dailyScreen?.update(this.state);
   }
@@ -199,20 +205,25 @@ export class Game {
   }
 
   private handleChangeFloor(targetFloor: Floor): void {
+    if (this.isTimeUp()) return;
     const currentFloor = getFloorFromLocation(this.state.currentLocation);
     if (!FLOOR_ADJACENCY[currentFloor].includes(targetFloor)) return;
     const cost = getFloorMoveCost(currentFloor, targetFloor);
     if (this.state.stamina < cost) return;
+    const timeCost = (currentFloor === '1f' && targetFloor === 'ground') ? TIME_COST.GO_OUTSIDE
+      : (currentFloor === 'ground' && targetFloor === '1f') ? TIME_COST.GO_INSIDE
+      : TIME_COST.CHANGE_FLOOR;
     this.state = {
       ...this.state,
       currentLocation: getCorridorForFloor(targetFloor),
       stamina: this.state.stamina - cost,
+      currentTime: Math.min(MAX_TIME, this.state.currentTime + timeCost),
     };
     this.dailyScreen?.update(this.state);
   }
 
   private handleTalk(student: Student): void {
-    if (this.state.stamina < 5) return;
+    if (this.state.stamina < 5 || this.isTimeUp()) return;
 
     // 趣味を解禁（会話するたびにランダムで1つ）
     const unrevealed = Object.keys(student.hobbies).filter(
@@ -242,6 +253,7 @@ export class Game {
       ...this.state,
       students: updatedStudents,
       stamina: this.state.stamina - 5,
+      currentTime: Math.min(MAX_TIME, this.state.currentTime + TIME_COST.TALK),
     };
     this.dailyScreen?.update(this.state);
 
@@ -290,7 +302,7 @@ export class Game {
   }
 
   private handlePersuade(student: Student): void {
-    if (student.talkCount === 0) return;
+    if (student.talkCount === 0 || this.isTimeUp()) return;
 
     const battle = initBattle(student);
     this.state = {
@@ -321,9 +333,10 @@ export class Game {
     this.state = {
       ...this.state,
       day: newDay,
+      currentTime: 0,
       stamina: 100,
       currentLocation: this.getPlayerClassLocation(),
-      timeSlot: 'morning',
+      timeSlot: 'afterschool',
     };
     this.showDaily();
   }
@@ -496,6 +509,9 @@ export class Game {
       return `${prefix}${log.text}`;
     });
 
+    // 説得バトルの時間消費
+    const timeAfterBattle = Math.min(MAX_TIME, this.state.currentTime + TIME_COST.PERSUADE);
+
     if (result === 'win') {
       // 成功: 相手の思想をプレイヤーの支持方向にシフト
       const newSupport = applyWinShift(student, this.state.candidate, battle.barPosition);
@@ -511,6 +527,7 @@ export class Game {
         students: updatedStudents,
         battle: null,
         lastBattleResult: { student, win: true, shiftAmount },
+        currentTime: timeAfterBattle,
         actionLogs: [...this.state.actionLogs, logEntry],
       };
       if (this.isAllOrganizationsUnified()) {
@@ -535,6 +552,7 @@ export class Game {
           playerSupport: newSupport,
           battle: null,
           lastBattleResult: { student, win: false, shiftAmount },
+          currentTime: timeAfterBattle,
           actionLogs: [...this.state.actionLogs, logEntry],
         };
         this.state = { ...this.state, students: this.syncPlayerSupport(this.state.students) };
@@ -546,6 +564,7 @@ export class Game {
           playerSupport: newSupport,
           battle: null,
           lastBattleResult: { student, win: false, shiftAmount },
+          currentTime: timeAfterBattle,
           actionLogs: [...this.state.actionLogs, logEntry],
         };
         this.state = { ...this.state, students: this.syncPlayerSupport(this.state.students) };
@@ -579,6 +598,7 @@ export class Game {
           students: updatedStudents,
           battle: null,
           lastBattleResult: { student, win: false, shiftAmount },
+          currentTime: timeAfterBattle,
           actionLogs: [...this.state.actionLogs, logEntry],
         };
         this.state = { ...this.state, students: this.syncPlayerSupport(this.state.students) };
@@ -591,6 +611,7 @@ export class Game {
           students: updatedStudents,
           battle: null,
           lastBattleResult: { student, win: battle.barPosition > 0, shiftAmount },
+          currentTime: timeAfterBattle,
           actionLogs: [...this.state.actionLogs, logEntry],
         };
         this.state = { ...this.state, students: this.syncPlayerSupport(this.state.students) };

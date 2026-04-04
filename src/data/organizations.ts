@@ -167,6 +167,11 @@ export const ORGANIZATIONS: Organization[] = [
   },
 ];
 
+/** 体育会系の部活ID */
+export const SPORTS_CLUB_IDS = new Set(['club_track', 'club_soccer', 'club_baseball', 'club_tennis']);
+/** 文化系の部活ID */
+export const CULTURE_CLUB_IDS = new Set(['club_brass', 'club_art']);
+
 export const ORGANIZATION_TYPE_LABELS: Record<string, string> = {
   dictatorship: '独裁型',
   council: '衆議型',

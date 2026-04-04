@@ -3,9 +3,9 @@ import {
   LOCATIONS, CANDIDATES, FACTION_LABELS, getStudentLocation, getCandidateLocation,
   HOBBY_LABELS, ATTRIBUTE_LABELS, TIME_LABELS, getCatchphrase, renderInitialIcon,
   isCorridorLocation, getFloorFromLocation, FLOOR_ROOMS, FLOOR_ADJACENCY,
-  FLOOR_LABELS, MOVE_COST, getFloorMoveCost, renderSupportBar,
+  FLOOR_LABELS, MOVE_COST, getFloorMoveCost, renderSupportBar, MAX_TIME,
 } from '../data';
-import { ORGANIZATIONS, ORGANIZATION_TYPE_LABELS } from '../data/organizations';
+import { ORGANIZATIONS, ORGANIZATION_TYPE_LABELS, SPORTS_CLUB_IDS, CULTURE_CLUB_IDS } from '../data/organizations';
 import { getOrganizationVote, calcOrganizationSupport } from '../logic/organizationLogic';
 import { bgm } from '../bgm';
 import dailyBg from '../../assets/backgrounds/daily.jpg';
@@ -16,6 +16,34 @@ import { ConversationOverlay } from './conversationOverlay';
 function dayToDate(day: number): string {
   const d = new Date(2025, 8, day); // month=8 → 9月
   return `${d.getMonth() + 1}/${d.getDate()}`;
+}
+
+/** currentTime（0〜240）を「15:00」形式の時刻文字列に変換 */
+function formatTime(currentTime: number): string {
+  const totalMinutes = 15 * 60 + currentTime; // 15:00基準
+  const h = Math.floor(totalMinutes / 60);
+  const m = totalMinutes % 60;
+  return `${h}:${String(m).padStart(2, '0')}`;
+}
+
+/** 時間帯に応じたオーバーレイCSS（夕焼け→夜） */
+function getTimeOverlayStyle(currentTime: number): string {
+  // 0-90分 (15:00-16:30): 通常 → なし
+  // 90-150分 (16:30-17:30): 夕焼け（オレンジ）
+  // 150-240分 (17:30-19:00): 夕暮れ→夜（暗く）
+  if (currentTime <= 90) return 'background:transparent;';
+  if (currentTime <= 150) {
+    const t = (currentTime - 90) / 60; // 0→1
+    const opacity = t * 0.3;
+    return `background:rgba(255,140,50,${opacity.toFixed(3)});`;
+  }
+  // 150-240: オレンジから暗い青紫へ
+  const t = (currentTime - 150) / 90; // 0→1
+  const r = Math.round(255 * (1 - t) + 30 * t);
+  const g = Math.round(140 * (1 - t) + 20 * t);
+  const b = Math.round(50 * (1 - t) + 80 * t);
+  const opacity = 0.3 + t * 0.25;
+  return `background:rgba(${r},${g},${b},${opacity.toFixed(3)});`;
 }
 
 const CLUB_LABELS: Record<string, string> = {
@@ -91,6 +119,7 @@ export interface DailyCallbacks {
   onChangeFloor: (targetFloor: Floor) => void;
   onTalk: (student: Student) => void;
   onPersuade: (student: Student) => void;
+  onNurseRest: () => void;
   onNextDay: () => void;
 }
 
@@ -104,6 +133,7 @@ export class DailyScreen {
   // 情報パネル: タブ + ドリルダウン（組織詳細 or 生徒一覧→生徒詳細）
   private infoPanel: {
     tab: 'class' | 'club';
+    subTab?: string;      // クラス: 'grade1'|'grade2'|'grade3', 部活: 'sports'|'culture'
     orgId?: string;       // 選択中の組織ID
     studentId?: string;   // 選択中の生徒ID（組織内の生徒詳細）
   } | null = null;
@@ -146,7 +176,8 @@ export class DailyScreen {
     const candidateColor = this.getCandidateColor();
     const studentsHere = this.getStudentsAtLocation();
     const currentLocation = LOCATIONS.find(l => l.id === this.state.currentLocation);
-    const isOutOfStamina = this.state.stamina <= 0;
+    const isTimeUp = this.state.currentTime >= MAX_TIME;
+    const isOutOfStamina = this.state.stamina <= 0 || isTimeUp;
 
     this.container.style.cssText = `
       position: fixed; inset: 0;
@@ -183,11 +214,11 @@ export class DailyScreen {
         ">
           ${pc ? (pc.portrait
             ? `<img src="${pc.portrait}" alt="${pc.name}" style="
-                width:28px; height:28px; border-radius:3px;
+                width:56px; height:56px; border-radius:3px;
                 object-fit:cover; object-position:top;
                 border:1px solid rgba(255,255,255,0.5);
               "/>`
-            : renderInitialIcon(pc.name, pc.personality, 28, 'rgba(255,255,255,0.5)')
+            : renderInitialIcon(pc.name, pc.personality, 56, 'rgba(255,255,255,0.5)')
           ) : ''}
           <span style="font-weight:bold; color:#fff;">${pc?.name ?? ''}</span>
           <span style="opacity:0.8; font-size:0.9em; color:#fff;">${FACTION_LABELS[this.state.candidate ?? ''] ?? ''}派</span>
@@ -197,6 +228,8 @@ export class DailyScreen {
           display:flex; gap:6px; align-items:center;
         ">
           <span><strong>${dayToDate(this.state.day)}</strong></span>
+          <span style="opacity:0.3;">|</span>
+          <span><strong>${formatTime(this.state.currentTime)}</strong></span>
           <span style="opacity:0.3;">|</span>
           <span>⚡<strong>${this.state.stamina}</strong></span>
           <span style="opacity:0.3;">|</span>
@@ -271,9 +304,20 @@ export class DailyScreen {
       </div>
     `;
 
+    // 時間帯オーバーレイ（夕焼け→夜）
+    const timeOverlayHtml = `
+      <div style="
+        position:absolute; inset:0;
+        ${getTimeOverlayStyle(this.state.currentTime)}
+        pointer-events:none; z-index:1;
+        transition: background 0.5s ease;
+      "></div>
+    `;
+
     this.container.innerHTML = `
+      ${timeOverlayHtml}
       ${hudHtml}
-      <div style="flex:1; overflow-y:auto; padding:48px 16px 52px;">
+      <div style="flex:1; overflow-y:auto; padding:48px 16px 52px; position:relative; z-index:2;">
         ${mainHtml}
       </div>
       ${logBoxHtml}
@@ -301,13 +345,13 @@ export class DailyScreen {
       ">
         ${c.portrait
           ? `<img src="${c.portrait}" alt="${c.name}" style="
-              width:48px; height:48px; border-radius:4px;
+              width:96px; height:96px; border-radius:4px;
               object-fit:cover; object-position:top;
               border:2px solid ${c.color};
               flex-shrink:0;
               box-shadow:0 2px 6px rgba(0,0,0,0.4);
             "/>`
-          : renderInitialIcon(c.name, c.personality, 48, c.color)
+          : renderInitialIcon(c.name, c.personality, 96, c.color)
         }
         <div style="flex:1; min-width:0;">
           <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
@@ -418,7 +462,7 @@ export class DailyScreen {
         margin-top:12px; text-align:center;
         border:2px solid #F0A030;
       ">
-        <p style="color:#888; font-size:0.85em; margin-bottom:12px;">体力が尽きました</p>
+        <p style="color:#888; font-size:0.85em; margin-bottom:12px;">${this.state.currentTime >= MAX_TIME ? 'もう遅い時間だ…今日はここまでにしよう' : '体力が尽きました'}</p>
         <button id="next-day-btn" style="
           padding:12px 32px;
           background:linear-gradient(135deg,#F0A030,#D08010);
@@ -511,13 +555,13 @@ export class DailyScreen {
       ">
         ${s.portrait
           ? `<img src="${s.portrait}" alt="${s.name}" style="
-              width:48px; height:48px; border-radius:4px;
+              width:96px; height:96px; border-radius:4px;
               object-fit:cover; object-position:top;
               border:2px solid var(--game-panel-border);
               flex-shrink:0;
               box-shadow:0 2px 6px rgba(0,0,0,0.4);
             "/>`
-          : renderInitialIcon(s.name, s.personality, 48, '#b0c0d8')
+          : renderInitialIcon(s.name, s.personality, 96, '#b0c0d8')
         }
         <div style="flex:1; min-width:0;">
           <div style="display:flex; align-items:center; gap:4px; flex-wrap:wrap;">
@@ -614,13 +658,41 @@ export class DailyScreen {
     `;
   }
 
+  private renderInfoSubTabs(tab: 'class' | 'club', activeSubTab: string): string {
+    const items = tab === 'class'
+      ? [{ key: 'grade1', label: '1年' }, { key: 'grade2', label: '2年' }, { key: 'grade3', label: '3年' }]
+      : [{ key: 'sports', label: '体育会系' }, { key: 'culture', label: '文化系' }];
+
+    const btnStyle = (active: boolean) => `
+      padding:5px 12px; border:none; border-radius:12px;
+      font-size:0.78em; font-weight:${active ? 'bold' : 'normal'}; cursor:pointer;
+      font-family:inherit;
+      background:${active ? '#4A90D9' : '#e8ecf0'};
+      color:${active ? '#fff' : '#666'};
+    `;
+    return `
+      <div style="display:flex; gap:4px; margin-bottom:10px;">
+        ${items.map(i => `<button data-info-subtab="${i.key}" style="${btnStyle(activeSubTab === i.key)}">${i.label}</button>`).join('')}
+      </div>
+    `;
+  }
+
   private renderInfoOrgList(tab: 'class' | 'club'): string {
     const candidateColor = this.getCandidateColor();
-    const orgs = tab === 'class'
+    const subTab = this.infoPanel?.subTab ?? (tab === 'class' ? 'grade1' : 'sports');
+
+    const allOrgs = tab === 'class'
       ? ORGANIZATIONS.filter(o => o.id.startsWith('class'))
       : ORGANIZATIONS.filter(o => o.id.startsWith('club_'));
 
-    const allyCount = orgs.filter(org =>
+    // サブタブでフィルタリング
+    const orgs = tab === 'class'
+      ? allOrgs.filter(o => o.id.startsWith(`class${subTab.replace('grade', '')}`))
+      : subTab === 'sports'
+        ? allOrgs.filter(o => SPORTS_CLUB_IDS.has(o.id))
+        : allOrgs.filter(o => CULTURE_CLUB_IDS.has(o.id));
+
+    const allAllyCount = allOrgs.filter(org =>
       getOrganizationVote(org, this.state.students) === this.state.candidate
     ).length;
 
@@ -642,12 +714,12 @@ export class DailyScreen {
         ">
           ${leader ? (leader.portrait
             ? `<img src="${leader.portrait}" alt="${leader.name}" style="
-                width:36px; height:36px; border-radius:50%;
+                width:72px; height:72px; border-radius:50%;
                 object-fit:cover; object-position:top;
                 border:2px solid ${voteCandidate?.color ?? '#ddd'};
                 flex-shrink:0;
               "/>`
-            : renderInitialIcon(leader.name, leader.personality, 36, voteCandidate?.color ?? '#ddd')
+            : renderInitialIcon(leader.name, leader.personality, 72, voteCandidate?.color ?? '#ddd')
           ) : ''}
           <div style="flex:1; min-width:0;">
             <div style="display:flex; align-items:center; gap:6px;">
@@ -677,13 +749,14 @@ export class DailyScreen {
       ">
         ${this.renderInfoHeader('情報')}
         ${this.renderInfoTabs(tab)}
+        ${this.renderInfoSubTabs(tab, subTab)}
 
         <div style="
           background:${candidateColor}10; border:1px solid ${candidateColor}30;
           border-radius:8px; padding:6px 12px; margin-bottom:12px;
           font-size:0.8em; color:#555; text-align:center;
         ">
-          味方: <strong style="color:${candidateColor};">${allyCount}</strong> / ${orgs.length}${tab === 'class' ? '組' : '部'}
+          味方: <strong style="color:${candidateColor};">${allAllyCount}</strong> / ${allOrgs.length}${tab === 'class' ? '組' : '部'}
         </div>
 
         ${orgRows}
@@ -717,11 +790,11 @@ export class DailyScreen {
         ">
           ${s.portrait
             ? `<img src="${s.portrait}" alt="${s.name}" style="
-                width:32px; height:32px; border-radius:50%;
+                width:64px; height:64px; border-radius:50%;
                 object-fit:cover; object-position:top;
                 border:2px solid ${sc?.color ?? '#ddd'}; flex-shrink:0;
               "/>`
-            : renderInitialIcon(s.name, s.personality, 32, sc?.color ?? '#ddd')
+            : renderInitialIcon(s.name, s.personality, 64, sc?.color ?? '#ddd')
           }
           <div style="flex:1; min-width:0;">
             <div style="display:flex; align-items:center; gap:4px;">
@@ -883,8 +956,9 @@ export class DailyScreen {
 
   private renderCorridorView(): string {
     const currentFloor = getFloorFromLocation(this.state.currentLocation);
-    const isOutOfStamina = this.state.stamina <= 0;
-    const canEnter = this.state.stamina >= MOVE_COST.ENTER_ROOM;
+    const isCorridorTimeUp = this.state.currentTime >= MAX_TIME;
+    const isOutOfStamina = this.state.stamina <= 0 || isCorridorTimeUp;
+    const canEnter = !isCorridorTimeUp && this.state.stamina >= MOVE_COST.ENTER_ROOM;
 
     const endDayHtml = isOutOfStamina ? `
       <div style="
@@ -893,7 +967,7 @@ export class DailyScreen {
         margin-top:12px; text-align:center;
         border:2px solid #F0A030;
       ">
-        <p style="color:#888; font-size:0.85em; margin-bottom:12px;">体力が尽きました</p>
+        <p style="color:#888; font-size:0.85em; margin-bottom:12px;">${this.state.currentTime >= MAX_TIME ? 'もう遅い時間だ…今日はここまでにしよう' : '体力が尽きました'}</p>
         <button id="next-day-btn" style="
           padding:12px 32px;
           background:linear-gradient(135deg,#F0A030,#D08010);
@@ -1370,6 +1444,15 @@ export class DailyScreen {
       });
     });
 
+    // 情報パネル: サブタブ切替
+    this.container.querySelectorAll<HTMLButtonElement>('[data-info-subtab]').forEach(btn => {
+      btn.addEventListener('pointerup', () => {
+        if (!this.infoPanel) return;
+        this.infoPanel = { tab: this.infoPanel.tab, subTab: btn.dataset['infoSubtab'] };
+        this.render();
+      });
+    });
+
     // 情報パネル: 組織選択
     this.container.querySelectorAll<HTMLButtonElement>('[data-info-org]').forEach(btn => {
       btn.addEventListener('pointerup', () => {
@@ -1395,9 +1478,9 @@ export class DailyScreen {
         if (action === 'close') {
           this.infoPanel = null;
         } else if (action === 'back-to-list' && this.infoPanel) {
-          this.infoPanel = { tab: this.infoPanel.tab };
+          this.infoPanel = { tab: this.infoPanel.tab, subTab: this.infoPanel.subTab };
         } else if (action === 'back-to-org' && this.infoPanel) {
-          this.infoPanel = { tab: this.infoPanel.tab, orgId: this.infoPanel.orgId };
+          this.infoPanel = { tab: this.infoPanel.tab, subTab: this.infoPanel.subTab, orgId: this.infoPanel.orgId };
         }
         this.render();
       });

@@ -17,7 +17,7 @@ export type LocationId =
   | 'class3a' | 'class3b' | 'class3c' | 'class3d'
   | 'track_field' | 'soccer_field' | 'baseball_field' | 'tennis_court'
   | 'music_room' | 'art_room'
-  | 'courtyard' | 'library' | 'cafeteria'
+  | 'courtyard' | 'library' | 'cafeteria' | 'nurses_office'
   | 'corridor_1f' | 'corridor_2f' | 'corridor_3f' | 'corridor_ground';
 
 // フロア
@@ -145,7 +145,7 @@ export interface PlayerCharacter {
 }
 
 // アクションタイプ
-export type ActionType = 'move' | 'talk' | 'persuade' | 'rest';
+export type ActionType = 'move' | 'talk' | 'persuade' | 'rest' | 'nurse_rest';
 
 // 組織タイプ
 export type OrganizationType = 'dictatorship' | 'council' | 'delegation' | 'majority';
@@ -167,6 +167,7 @@ export interface GameState {
   candidate: CandidateId | null;
   students: Student[];
   day: number; // 1〜30
+  currentTime: number; // 放課後の経過分（0=15:00, 240=19:00）
   stamina: number; // 0〜100
   currentLocation: LocationId;
   timeSlot: TimeSlot;

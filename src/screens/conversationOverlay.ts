@@ -77,7 +77,7 @@ export class ConversationOverlay {
     active: boolean,
     portraitRight: boolean = false,
   ): string {
-    const portrait = this.renderPortrait(info.portrait, info.name, 72);
+    const portrait = this.renderPortrait(info.portrait, info.name, 144);
     const opacity = active ? '1' : '0.35';
     const borderColor = active ? '#5a88c0' : '#3a5878';
     const flexDir = portraitRight ? 'row-reverse' : 'row';

@@ -98,6 +98,7 @@ export const LOCATIONS: Location[] = [
   { id: 'courtyard', name: '中庭' },
   { id: 'library', name: '図書室' },
   { id: 'cafeteria', name: '食堂' },
+  { id: 'nurses_office', name: '保健室' },
   { id: 'corridor_1f', name: '1階廊下' },
   { id: 'corridor_2f', name: '2階廊下' },
   { id: 'corridor_3f', name: '3階廊下' },
@@ -108,7 +109,7 @@ export const LOCATIONS: Location[] = [
 export const LOCATION_FLOOR_MAP: Record<LocationId, Floor> = {
   corridor_1f: '1f',
   class1a: '1f', class1b: '1f', class1c: '1f', class1d: '1f',
-  courtyard: '1f', cafeteria: '1f', library: '1f',
+  courtyard: '1f', cafeteria: '1f', library: '1f', nurses_office: '1f',
   corridor_2f: '2f',
   class2a: '2f', class2b: '2f', class2c: '2f', class2d: '2f',
   music_room: '2f', art_room: '2f',
@@ -120,7 +121,7 @@ export const LOCATION_FLOOR_MAP: Record<LocationId, Floor> = {
 };
 
 export const FLOOR_ROOMS: Record<Floor, LocationId[]> = {
-  '1f': ['class1a', 'class1b', 'class1c', 'class1d', 'courtyard', 'cafeteria', 'library'],
+  '1f': ['class1a', 'class1b', 'class1c', 'class1d', 'courtyard', 'cafeteria', 'library', 'nurses_office'],
   '2f': ['class2a', 'class2b', 'class2c', 'class2d', 'music_room', 'art_room'],
   '3f': ['class3a', 'class3b', 'class3c', 'class3d'],
   'ground': ['track_field', 'soccer_field', 'baseball_field', 'tennis_court'],
@@ -139,6 +140,20 @@ export const FLOOR_LABELS: Record<Floor, string> = {
   '3f': '3階',
   'ground': 'グラウンド',
 };
+
+// 行動ごとの時間コスト（分）
+export const TIME_COST = {
+  ENTER_ROOM: 5,
+  CHANGE_FLOOR: 10,
+  GO_OUTSIDE: 15,
+  GO_INSIDE: 10,
+  TALK: 15,
+  PERSUADE: 30,
+  NURSE_REST: 60,
+} as const;
+
+// 一日の最大時間（15:00から19:00 = 240分）
+export const MAX_TIME = 240;
 
 export const MOVE_COST = {
   ENTER_ROOM: 1,

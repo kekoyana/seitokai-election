@@ -1055,7 +1055,7 @@ export const STUDENTS: Student[] = [
     description: '野球部キャプテン。声が大きく面倒見がいい熱血漢。後輩からの信頼は厚く、試合ではチームを鼓舞する。',
     hairStyle: 'straight' as HairStyle,
     personality: 'passionate' as Personality,
-    hobbies: makeHobbies(['sports_hobby', 'cooking'], ['study']),
+    hobbies: makeHobbies(['sports_hobby', 'video'], ['study']),
     revealedHobbies: new Set<HobbyTopic>(),
     support: { conservative: 20, progressive: 25, sports: 55 },
     attributes: ['sporty', 'energetic'] as Attribute[],

@@ -585,6 +585,7 @@ export class DailyScreen {
               <span style="font-size:0.65em; background:#f0f0f5; color:#888; border-radius:4px; padding:1px 5px;">${typeLabel}</span>
             </div>
             <div style="font-size:0.72em; color:#888;">代表: ${leader?.name ?? '不明'}</div>
+            <div style="font-size:0.68em; color:#999; margin-top:2px; line-height:1.4;">${org.description}</div>
           </div>
           <div style="display:flex; align-items:center; gap:4px; flex-shrink:0;">
             <span style="
@@ -713,6 +714,7 @@ export class DailyScreen {
             ">${FACTION_LABELS[vote] ?? ''}派${isAlly ? ' ✓' : ''}</span>
           </div>
           <div style="font-size:0.72em; color:#888;">${typeDesc[org.type] ?? ''}</div>
+          <div style="font-size:0.72em; color:#666; margin-top:4px; line-height:1.5;">${org.description}</div>
         </div>
 
         <!-- メンバー一覧 -->

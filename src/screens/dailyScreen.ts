@@ -150,7 +150,7 @@ export class DailyScreen {
 
     this.container.style.cssText = `
       position: fixed; inset: 0;
-      background: linear-gradient(160deg, rgba(216,234,248,0.8) 0%, rgba(245,239,224,0.8) 100%),
+      background: linear-gradient(160deg, rgba(210,180,140,0.5) 0%, rgba(245,220,180,0.5) 100%),
         url('${dailyBg}') center/cover no-repeat;
       display: flex; flex-direction: column;
       font-family: var(--game-font);

@@ -50,7 +50,9 @@ def generate_portrait(
         sys.exit(1)
 
     out_dir = Path(output_dir)
-    raw_dir = out_dir / "raw"
+    # raw画像はsrc/raw/portraits/に保存（assets/に入れるとビルドに含まれるため）
+    project_root = Path(__file__).resolve().parent.parent
+    raw_dir = project_root / "src" / "raw" / "portraits"
     raw_dir.mkdir(parents=True, exist_ok=True)
     out_dir.mkdir(parents=True, exist_ok=True)
 

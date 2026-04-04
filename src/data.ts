@@ -43,6 +43,7 @@ import kawanoShioriPortrait from '../assets/portraits/kawano_shiori.png';
 import maedaTaigaPortrait from '../assets/portraits/maeda_taiga.png';
 import noguchiSakiPortrait from '../assets/portraits/noguchi_saki.png';
 import ishikawaYusukePortrait from '../assets/portraits/ishikawa_yusuke.png';
+import iwataDaichiPortrait from '../assets/portraits/iwata_daichi.png';
 
 // 候補者の表示情報（色・公約）
 export const CANDIDATE_INFO: CandidateInfo[] = [
@@ -1020,7 +1021,7 @@ export const STUDENTS: Student[] = [
     stats: { speech: 35, athletic: 85, intel: 20, maxHp: 100 },
     affinity: 0,
     talkCount: 0,
-    portrait: null,
+    portrait: iwataDaichiPortrait,
     candidateId: null,
     playable: false,
   },

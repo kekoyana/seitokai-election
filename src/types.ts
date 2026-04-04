@@ -41,7 +41,7 @@ export type TopicType = 'candidate' | 'hobby';
 export type CandidateTopic = 'conservative' | 'progressive' | 'sports';
 
 // 趣味話題
-export type HobbyTopic = 'love' | 'game' | 'sns' | 'sports' | 'study' | 'video' | 'music' | 'reading' | 'fashion' | 'fortune';
+export type HobbyTopic = 'love' | 'game' | 'sns' | 'sports_hobby' | 'study' | 'video' | 'music' | 'reading' | 'fashion' | 'fortune';
 
 export type Topic = CandidateTopic | HobbyTopic;
 

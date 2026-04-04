@@ -286,8 +286,9 @@ export class BattleScreen {
       const hobbyTopicsHtml = (Object.entries(HOBBY_LABELS) as [HobbyTopic, string][])
         .map(([id, label]) => {
           const isRevealed = revealedHobbies.includes(id);
-          const pref = isRevealed ? battle.student.hobbies[id] : 'neutral';
-          const prefColor = pref === 'like' ? '#7EC850' : pref === 'dislike' ? '#F07070' : 'rgba(255,255,255,0.7)';
+          const pref = isRevealed ? battle.student.hobbies[id] : null;
+          const prefColor = pref === 'like' ? '#7EC850' : pref === 'dislike' ? '#F07070' : pref === 'neutral' ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.35)';
+          const prefIcon = pref === 'like' ? ' ♥' : pref === 'dislike' ? ' ✗' : pref === 'neutral' ? ' ―' : '';
           return `
             <button data-topic="${id}" style="
               padding:8px 12px; text-align:left;
@@ -295,8 +296,7 @@ export class BattleScreen {
               border:1px solid rgba(255,255,255,0.15); border-radius:8px;
               color:${prefColor}; font-size:0.82em; cursor:pointer; font-family:inherit;
             ">
-              ${label}
-              ${isRevealed ? (pref === 'like' ? ' ♥' : pref === 'dislike' ? ' ✗' : '') : ''}
+              ${label}${prefIcon}${!isRevealed ? ' ?' : ''}
             </button>
           `;
         }).join('');

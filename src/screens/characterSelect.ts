@@ -73,18 +73,30 @@ export class CharacterSelectScreen {
           border-radius:0 8px 8px 0;
           padding:10px 14px;
           margin:0 16px 12px;
+          display:flex; align-items:center; gap:12px;
         ">
-          <div style="font-weight:bold; color:${activeInfo.color}; font-size:0.9em; margin-bottom:4px;">
-            ${activeInfo.platform}
-          </div>
-          <div style="font-size:0.8em; color:#666; line-height:1.6;">
-            ${activeInfo.description}
-          </div>
-          ${activeCandidate ? `
-            <div style="font-size:0.78em; color:#888; margin-top:6px;">
-              候補者: <span style="font-weight:bold; color:${activeInfo.color};">${activeCandidate.name}</span>
+          ${activeCandidate?.portrait
+            ? `<img src="${activeCandidate.portrait}" alt="${activeCandidate.name}" style="
+                width:64px; height:64px; border-radius:50%;
+                object-fit:cover; object-position:top;
+                border:3px solid ${activeInfo.color};
+                flex-shrink:0;
+              "/>`
+            : ''
+          }
+          <div style="flex:1;">
+            <div style="font-weight:bold; color:${activeInfo.color}; font-size:0.9em; margin-bottom:4px;">
+              ${activeInfo.platform}
             </div>
-          ` : ''}
+            <div style="font-size:0.8em; color:#666; line-height:1.6;">
+              ${activeInfo.description}
+            </div>
+            ${activeCandidate ? `
+              <div style="font-size:0.78em; color:#888; margin-top:6px;">
+                候補者: <span style="font-weight:bold; color:${activeInfo.color};">${activeCandidate.name}</span>
+              </div>
+            ` : ''}
+          </div>
         </div>
       `;
     } else {

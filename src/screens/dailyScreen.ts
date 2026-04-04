@@ -1171,13 +1171,13 @@ export class DailyScreen {
         ${pc.portrait
           ? `<div style="text-align:center; margin-bottom:10px;">
               <img src="${pc.portrait}" alt="${pc.name}" style="
-                width:120px; height:120px; border-radius:50%;
+                width:180px; height:180px; border-radius:50%;
                 object-fit:cover; object-position:top;
                 border:3px solid ${candidateColor};
                 box-shadow:0 4px 12px rgba(0,0,0,0.1);
               "/>
             </div>`
-          : `<div style="text-align:center; margin-bottom:10px;">${renderInitialIcon(pc.name, pc.personality, 120, candidateColor)}</div>`
+          : `<div style="text-align:center; margin-bottom:10px;">${renderInitialIcon(pc.name, pc.personality, 180, candidateColor)}</div>`
         }
         <div style="text-align:center; margin-bottom:14px;">
           <div style="font-size:1.1em; font-weight:bold; color:#333;">${pc.name}</div>
@@ -1274,13 +1274,13 @@ export class DailyScreen {
           ${s.portrait
             ? `<div style="text-align:center; margin-bottom:10px;">
                 <img src="${s.portrait}" alt="${s.name}" style="
-                  width:120px; height:120px; border-radius:50%;
+                  width:180px; height:180px; border-radius:50%;
                   object-fit:cover; object-position:top;
                   border:3px solid ${supportCandidate?.color ?? '#d0e0f0'};
                   box-shadow:0 4px 12px rgba(0,0,0,0.1);
                 "/>
               </div>`
-            : `<div style="text-align:center; margin-bottom:10px;">${renderInitialIcon(s.name, s.personality, 120, supportCandidate?.color ?? '#d0e0f0')}</div>`
+            : `<div style="text-align:center; margin-bottom:10px;">${renderInitialIcon(s.name, s.personality, 180, supportCandidate?.color ?? '#d0e0f0')}</div>`
           }
           <div style="text-align:center;">
             <div style="font-size:1.1em; font-weight:bold; color:#333;">${s.name}</div>
@@ -1299,13 +1299,13 @@ export class DailyScreen {
         ${s.portrait
           ? `<div style="text-align:center; margin-bottom:10px;">
               <img src="${s.portrait}" alt="${s.name}" style="
-                width:120px; height:120px; border-radius:50%;
+                width:180px; height:180px; border-radius:50%;
                 object-fit:cover; object-position:top;
                 border:3px solid ${supportCandidate?.color ?? '#d0e0f0'};
                 box-shadow:0 4px 12px rgba(0,0,0,0.1);
               "/>
             </div>`
-          : `<div style="text-align:center; margin-bottom:10px;">${renderInitialIcon(s.name, s.personality, 120, supportCandidate?.color ?? '#d0e0f0')}</div>`
+          : `<div style="text-align:center; margin-bottom:10px;">${renderInitialIcon(s.name, s.personality, 180, supportCandidate?.color ?? '#d0e0f0')}</div>`
         }
         <div style="text-align:center; margin-bottom:14px;">
           <div style="display:flex; justify-content:center; align-items:center; gap:4px; flex-wrap:wrap;">

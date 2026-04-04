@@ -13,6 +13,7 @@ export class BattleScreen {
   private container: HTMLDivElement;
   private state: GameState;
   private callbacks: BattleCallbacks;
+  private showLog: boolean = false;
 
   constructor(state: GameState, callbacks: BattleCallbacks) {
     this.state = state;
@@ -176,13 +177,22 @@ export class BattleScreen {
         </div>
       </div>
 
-      <!-- ログ -->
-      <div style="
-        flex:0 0 80px; overflow-y:auto;
-        padding:4px 16px; border-top:1px solid rgba(255,255,255,0.1);
-        border-bottom:1px solid rgba(255,255,255,0.1);
+      <!-- コマンド -->
+      <div style="flex:1; overflow-y:auto; padding:10px 14px;">
+        ${isFinished
+          ? this.renderFinished()
+          : this.renderCommands(lastLog)
+        }
+      </div>
+
+      <!-- HUD風メッセージボックス（画面下部） -->
+      <div id="battle-log-box" style="
+        ${this.showLog ? 'max-height:40vh; overflow-y:auto;' : 'max-height:3.6em; overflow:hidden;'}
+        padding:6px 16px; cursor:pointer; flex-shrink:0;
+        background:rgba(0,0,0,0.6); backdrop-filter:blur(4px);
+        border-top:1px solid rgba(255,255,255,0.1);
       ">
-        ${battle.logs.slice(-4).map(log => `
+        ${(this.showLog ? battle.logs : battle.logs.slice(-2)).map(log => `
           <div style="
             font-size:0.78em; padding:2px 0;
             color:${log.speaker === 'player' ? '#A8D8F0' : '#F0A8A8'};
@@ -190,14 +200,7 @@ export class BattleScreen {
             ${log.speaker === 'player' ? '▶' : '◀'} ${log.text}
           </div>
         `).join('')}
-      </div>
-
-      <!-- コマンド -->
-      <div style="flex:1; overflow-y:auto; padding:10px 14px;">
-        ${isFinished
-          ? this.renderFinished()
-          : this.renderCommands(lastLog)
-        }
+        ${battle.logs.length === 0 ? '<div style="font-size:0.78em; color:#888;">...</div>' : ''}
       </div>
     `;
 
@@ -404,6 +407,12 @@ export class BattleScreen {
 
   private attachEvents(): void {
     const battle = this.state.battle!;
+
+    // メッセージボックスタップで展開/折りたたみ
+    this.container.querySelector('#battle-log-box')?.addEventListener('pointerup', () => {
+      this.showLog = !this.showLog;
+      this.render();
+    });
 
     // BGM音量スライダー
     const bgmSlider = this.container.querySelector<HTMLInputElement>('#bgm-volume');

@@ -1,4 +1,5 @@
 import titleBg from '../../backgrounds/title.jpg';
+import { bgm } from '../bgm';
 
 export interface TitleCallbacks {
   onStart: () => void;
@@ -87,6 +88,17 @@ export class TitleScreen {
         ">
           ゲームスタート
         </button>
+
+        <div style="
+          display:flex; align-items:center; justify-content:center; gap:8px;
+          margin-top:16px; color:#fff; font-size:0.9em;
+        ">
+          <span id="bgm-icon" style="cursor:pointer;">${bgm.volume > 0 ? '🔊' : '🔇'}</span>
+          <input id="bgm-volume" type="range" min="0" max="100" value="${Math.round(bgm.volume * 100)}" style="
+            width:100px; height:4px; cursor:pointer;
+            accent-color:#B8D4FF; vertical-align:middle;
+          "/>
+        </div>
       </div>
     `;
 
@@ -100,6 +112,20 @@ export class TitleScreen {
     });
     btn.addEventListener('pointerleave', () => {
       btn.style.transform = 'scale(1)';
+    });
+
+    const bgmSlider = this.container.querySelector<HTMLInputElement>('#bgm-volume');
+    const bgmIcon = this.container.querySelector<HTMLElement>('#bgm-icon');
+    bgmSlider?.addEventListener('input', () => {
+      const v = parseInt(bgmSlider.value, 10) / 100;
+      bgm.setVolume(v);
+      if (bgmIcon) bgmIcon.textContent = v > 0 ? '🔊' : '🔇';
+    });
+    bgmIcon?.addEventListener('pointerup', () => {
+      const newVol = bgm.volume > 0 ? 0 : 0.3;
+      bgm.setVolume(newVol);
+      if (bgmSlider) bgmSlider.value = String(Math.round(newVol * 100));
+      if (bgmIcon) bgmIcon.textContent = newVol > 0 ? '🔊' : '🔇';
     });
   }
 

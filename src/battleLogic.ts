@@ -121,43 +121,57 @@ function calcCandidateEffect(
   return 15 + diff * 0.4;
 }
 
+// 態度ごとの機嫌変化倍率（体力を多く使うほど機嫌への影響が大きい）
+const ATTITUDE_MOOD_MULTIPLIER: Record<PlayerAttitude, number> = {
+  friendly: 0.5,
+  normal: 1.0,
+  strong: 1.5,
+};
+
 // 趣味話題の効果を計算（主に機嫌変化、バーへの影響は小さい）
 // 未判明の趣味でもバトル中に話題にすると判明し、効果はフルで発揮される。
+// attitude により機嫌変化量がスケールする（柔らかく×0.5, 普通×1.0, 情熱的に×1.5）
 function calcHobbyEffect(
   topic: HobbyTopic,
   stance: Stance,
   student: Student,
-  moodDelta: { delta: number }
+  moodDelta: { delta: number },
+  attitude: PlayerAttitude
 ): number {
   // バトル中に話題にした時点で趣味が判明する
   student.revealedHobbies.add(topic);
 
   const pref = student.hobbies[topic];
+  const moodMul = ATTITUDE_MOOD_MULTIPLIER[attitude];
+
+  let baseMood = 0;
+  let barEffect = 0;
 
   if (pref === 'like') {
     if (stance === 'positive') {
-      moodDelta.delta += 2;
-      return 3;
+      baseMood = 2;
+      barEffect = 3;
     } else {
-      moodDelta.delta -= 2;
-      return -3;
+      baseMood = -2;
+      barEffect = -3;
     }
   } else if (pref === 'dislike') {
     if (stance === 'positive') {
-      moodDelta.delta -= 1;
-      return -1;
+      baseMood = -1;
+      barEffect = -1;
     } else {
-      moodDelta.delta += 1;
-      return 1;
+      baseMood = 1;
+      barEffect = 1;
     }
   } else {
-    // 普通（好きでも嫌いでもない）
-    if (stance === 'positive') {
-      return -1;
-    } else {
-      return 1;
-    }
+    // 普通（好きでも嫌いでもない）— 情熱的に語れば機嫌が少し動く
+    baseMood = stance === 'positive' ? 1 : -1;
+    barEffect = stance === 'positive' ? -1 : 1;
   }
+
+  // 態度倍率を機嫌変化に適用（小数を四捨五入して整数段階に）
+  moodDelta.delta += Math.round(baseMood * moodMul);
+  return barEffect;
 }
 
 // プレイヤーステータス
@@ -214,7 +228,7 @@ export function resolvePlayerTurn(
       baseEffect *= 1.1;
     }
   } else {
-    baseEffect = calcHobbyEffect(topic as HobbyTopic, stance, student, moodDelta);
+    baseEffect = calcHobbyEffect(topic as HobbyTopic, stance, student, moodDelta, attitude);
   }
 
   // 態度倍率
@@ -304,9 +318,9 @@ function buildPlayerLogText(
   effect: number
 ): string {
   const attitudeLabel: Record<PlayerAttitude, string> = {
-    friendly: 'フレンドリーに',
-    normal: 'ふつうに',
-    strong: '強気で',
+    friendly: '柔らかく',
+    normal: '普通に',
+    strong: '情熱的に',
   };
   const topicLabels: Record<string, string> = {
     conservative: '保守派の政策',
@@ -495,7 +509,7 @@ export function getPlayerCandidate(
 }
 
 // 体力に応じたパス判定
-// stamina < 5: 100%パス（フレンドリーすら選べない）
+// stamina < 5: 100%パス（柔らかくすら選べない）
 // stamina 5〜30: 体力が低いほどパスしやすい
 // stamina 30+: パスなし
 export function shouldPass(stamina: number): boolean {

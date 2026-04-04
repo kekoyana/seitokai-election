@@ -4,7 +4,7 @@ import type {
 } from './types';
 import {
   STUDENTS, getFloorFromLocation, isCorridorLocation, getCorridorForFloor,
-  FLOOR_ADJACENCY, MOVE_COST, getFloorMoveCost
+  FLOOR_ADJACENCY, MOVE_COST, getFloorMoveCost, HOBBY_LABELS
 } from './data';
 import { ORGANIZATIONS } from './data/organizations';
 import {
@@ -38,6 +38,7 @@ function createInitialState(): GameState {
     playerAttributes: [],
     playerSupport: { conservative: 0, progressive: 0, sports: 0 },
     organizations: ORGANIZATIONS,
+    actionLogs: [],
   };
 }
 
@@ -216,15 +217,16 @@ export class Game {
       h => !student.revealedHobbies.has(h as HobbyTopic)
     ) as HobbyTopic[];
 
+    let revealedHobby: HobbyTopic | null = null;
+    const affinityGain = this.calcAffinityGain(student);
+
     const updatedStudents = this.state.students.map(s => {
       if (s.id !== student.id) return s;
       const newRevealed = new Set(s.revealedHobbies);
       if (unrevealed.length > 0) {
-        const pick = unrevealed[Math.floor(Math.random() * unrevealed.length)];
-        newRevealed.add(pick);
+        revealedHobby = unrevealed[Math.floor(Math.random() * unrevealed.length)];
+        newRevealed.add(revealedHobby);
       }
-      // 好感度増加
-      const affinityGain = this.calcAffinityGain(s);
       return {
         ...s,
         revealedHobbies: newRevealed,
@@ -233,10 +235,20 @@ export class Game {
       };
     });
 
+    // ログ生成
+    const logLines: string[] = [];
+    logLines.push(`${student.name}と会話した。`);
+    if (revealedHobby) {
+      logLines.push(`趣味「${HOBBY_LABELS[revealedHobby] ?? revealedHobby}」が判明！`);
+    }
+    const sign = affinityGain >= 0 ? '+' : '';
+    logLines.push(`好感度 ${sign}${affinityGain}`);
+
     this.state = {
       ...this.state,
       students: updatedStudents,
       stamina: this.state.stamina - 5,
+      actionLogs: [...this.state.actionLogs, logLines.join(' ')],
     };
     this.dailyScreen?.update(this.state);
   }
@@ -454,6 +466,12 @@ export class Game {
     const student = battle.student;
     let shiftAmount = 0;
 
+    // バトルログをアクションログに変換
+    const battleLogLines = battle.logs.map(log => {
+      const prefix = log.speaker === 'player' ? '▶ ' : '◀ ';
+      return `${prefix}${log.text}`;
+    });
+
     if (result === 'win') {
       // 成功: 相手の思想をプレイヤーの支持方向にシフト
       const newSupport = applyWinShift(student, this.state.candidate, battle.barPosition);
@@ -462,12 +480,14 @@ export class Game {
         if (s.id !== student.id) return s;
         return { ...s, support: newSupport };
       });
+      const logEntry = `【説得成功】${student.name}を説得した！\n${battleLogLines.join('\n')}\n→ 思想シフト ${shiftAmount}`;
       this.state = {
         ...this.state,
         screen: 'daily',
         students: updatedStudents,
         battle: null,
         lastBattleResult: { student, win: true, shiftAmount },
+        actionLogs: [...this.state.actionLogs, logEntry],
       };
       this.showDaily();
     } else if (result === 'lose') {
@@ -476,6 +496,7 @@ export class Game {
         this.state.playerSupport, student.support, battle.barPosition
       );
       shiftAmount = shiftPercent;
+      const logEntry = `【説得失敗】${student.name}に説得されてしまった…\n${battleLogLines.join('\n')}\n→ 自分の思想シフト ${shiftAmount}`;
 
       // プレイヤーの支持候補が変わったかチェック
       const newCandidate = getPlayerCandidate(newSupport);
@@ -486,6 +507,7 @@ export class Game {
           playerSupport: newSupport,
           battle: null,
           lastBattleResult: { student, win: false, shiftAmount },
+          actionLogs: [...this.state.actionLogs, logEntry],
         };
         this.state = { ...this.state, students: this.syncPlayerSupport(this.state.students) };
         this.showGameOver();
@@ -496,6 +518,7 @@ export class Game {
           playerSupport: newSupport,
           battle: null,
           lastBattleResult: { student, win: false, shiftAmount },
+          actionLogs: [...this.state.actionLogs, logEntry],
         };
         this.state = { ...this.state, students: this.syncPlayerSupport(this.state.students) };
         this.showDaily();
@@ -506,6 +529,8 @@ export class Game {
         student, this.state.candidate, this.state.playerSupport, battle.barPosition
       );
       shiftAmount = shiftPercent;
+      const timeoutLabel = battle.barPosition > 0 ? '時間切れ（やや優勢）' : battle.barPosition < 0 ? '時間切れ（やや劣勢）' : '時間切れ（引き分け）';
+      const logEntry = `【${timeoutLabel}】${student.name}との説得\n${battleLogLines.join('\n')}\n→ 思想シフト ${shiftAmount}`;
 
       const updatedStudents = this.state.students.map(s => {
         if (s.id !== student.id) return s;
@@ -522,6 +547,7 @@ export class Game {
           students: updatedStudents,
           battle: null,
           lastBattleResult: { student, win: false, shiftAmount },
+          actionLogs: [...this.state.actionLogs, logEntry],
         };
         this.state = { ...this.state, students: this.syncPlayerSupport(this.state.students) };
         this.showGameOver();
@@ -533,6 +559,7 @@ export class Game {
           students: updatedStudents,
           battle: null,
           lastBattleResult: { student, win: battle.barPosition > 0, shiftAmount },
+          actionLogs: [...this.state.actionLogs, logEntry],
         };
         this.state = { ...this.state, students: this.syncPlayerSupport(this.state.students) };
         this.showDaily();

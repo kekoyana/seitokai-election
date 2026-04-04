@@ -176,4 +176,5 @@ export interface GameState {
   playerAttributes: Attribute[];
   playerSupport: { conservative: number; progressive: number; sports: number };
   organizations: Organization[];
+  actionLogs: string[];
 }

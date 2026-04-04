@@ -183,7 +183,7 @@ export class CharacterSelectScreen {
 
     const statsBar = (label: string, value: number, color: string) => `
       <div style="display:flex; align-items:center; gap:6px; font-size:0.75em;">
-        <span style="width:24px; color:#888;">${label}</span>
+        <span style="width:28px; color:#888;">${label}</span>
         <div style="flex:1; height:6px; background:#e0e8f0; border-radius:3px; overflow:hidden;">
           <div style="width:${value}%; height:100%; background:${color}; border-radius:3px;"></div>
         </div>
@@ -234,9 +234,9 @@ export class CharacterSelectScreen {
         </div>
 
         <div style="display:flex; flex-direction:column; gap:3px; margin-bottom:8px;">
-          ${statsBar('弁', s.stats.speech, '#4A90D9')}
-          ${statsBar('運', s.stats.athletic, '#E74C3C')}
-          ${statsBar('知', s.stats.intel, '#27AE60')}
+          ${statsBar('弁舌', s.stats.speech, '#4A90D9')}
+          ${statsBar('運動', s.stats.athletic, '#E74C3C')}
+          ${statsBar('知性', s.stats.intel, '#27AE60')}
         </div>
 
         <div style="font-size:0.78em; color:#888;">

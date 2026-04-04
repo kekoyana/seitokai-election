@@ -2,58 +2,50 @@ import titleBgm from '../assets/bgm/title.ogg';
 import schoolDaytimeBgm from '../assets/bgm/school_daytime.ogg';
 import settokuBgm from '../assets/bgm/settoku.ogg';
 
-const STORAGE_KEY = 'seitokai_bgm_enabled';
+const STORAGE_KEY_VOLUME = 'seitokai_bgm_volume';
 
 class BgmManager {
   private audio: HTMLAudioElement | null = null;
   private currentSrc: string | null = null;
   private pendingSrc: string | null = null;
-  private pendingVolume = 0.3;
-  private _enabled: boolean;
+  private _volume: number;
 
   constructor() {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    this._enabled = stored === null ? true : stored === '1';
+    const stored = localStorage.getItem(STORAGE_KEY_VOLUME);
+    this._volume = stored !== null ? parseFloat(stored) : 0.3;
+    if (isNaN(this._volume)) this._volume = 0.3;
+  }
+
+  get volume(): number {
+    return this._volume;
   }
 
   get enabled(): boolean {
-    return this._enabled;
+    return this._volume > 0;
   }
 
-  setEnabled(on: boolean): void {
-    this._enabled = on;
-    localStorage.setItem(STORAGE_KEY, on ? '1' : '0');
-    if (on) {
-      // ミュート解除：保留中の曲があれば再生
-      if (this.pendingSrc) {
-        this.playInternal(this.pendingSrc, this.pendingVolume);
-      }
-    } else {
+  setVolume(v: number): void {
+    this._volume = Math.max(0, Math.min(1, v));
+    localStorage.setItem(STORAGE_KEY_VOLUME, this._volume.toFixed(2));
+    if (this.audio) this.audio.volume = this._volume;
+    if (this._volume > 0 && this.pendingSrc && (!this.audio || this.audio.paused)) {
+      this.playInternal(this.pendingSrc, this._volume);
+    }
+    if (this._volume === 0) {
       this.stopInternal();
     }
   }
 
-  toggle(): boolean {
-    this.setEnabled(!this._enabled);
-    return this._enabled;
-  }
-
-  play(src: string, volume = 0.3): void {
+  play(src: string): void {
     this.pendingSrc = src;
-    this.pendingVolume = volume;
-    if (!this._enabled) return;
+    if (this._volume === 0) return;
     if (this.currentSrc === src && this.audio && !this.audio.paused) return;
-    this.playInternal(src, volume);
+    this.playInternal(src, this._volume);
   }
 
   stop(): void {
     this.pendingSrc = null;
     this.stopInternal();
-  }
-
-  setVolume(volume: number): void {
-    this.pendingVolume = Math.max(0, Math.min(1, volume));
-    if (this.audio) this.audio.volume = this.pendingVolume;
   }
 
   private playInternal(src: string, volume: number): void {
@@ -64,7 +56,7 @@ class BgmManager {
     this.currentSrc = src;
     this.audio.play().catch(() => {
       const resume = () => {
-        if (this._enabled) this.audio?.play().catch(() => {});
+        if (this._volume > 0) this.audio?.play().catch(() => {});
         document.removeEventListener('pointerup', resume);
         document.removeEventListener('keydown', resume);
       };

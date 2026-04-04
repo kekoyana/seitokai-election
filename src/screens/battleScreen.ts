@@ -99,11 +99,11 @@ export class BattleScreen {
         ">
           <span>⚡<strong>${this.state.stamina}</strong></span>
           <span style="opacity:0.4;">|</span>
-          <button id="bgm-toggle" style="
-            background:none; border:none; padding:0;
-            color:#fff; font-size:1em; cursor:pointer;
-            line-height:1;
-          ">${bgm.enabled ? '🔊' : '🔇'}</button>
+          <span id="bgm-icon" style="cursor:pointer; font-size:1em; line-height:1;">${bgm.volume > 0 ? '🔊' : '🔇'}</span>
+          <input id="bgm-volume" type="range" min="0" max="100" value="${Math.round(bgm.volume * 100)}" style="
+            width:60px; height:4px; cursor:pointer;
+            accent-color:#fff; vertical-align:middle;
+          "/>
         </div>
       </div>
 
@@ -277,9 +277,9 @@ export class BattleScreen {
           【1】態度を選択
         </div>
         <div style="display:flex; flex-direction:column; gap:8px;">
-          ${this.renderAttitudeBtn('friendly', 'フレンドリー', '⚡3 / 効果×0.7', '#27AE60')}
-          ${this.renderAttitudeBtn('normal', 'ふつう', '⚡5 / 効果×1.0', '#4A90D9')}
-          ${this.renderAttitudeBtn('strong', '強気', '⚡8 / 効果×1.2', '#E07820')}
+          ${this.renderAttitudeBtn('friendly', '柔らかく', '⚡3 / 効果×0.7', '#27AE60')}
+          ${this.renderAttitudeBtn('normal', '普通に', '⚡5 / 効果×1.0', '#4A90D9')}
+          ${this.renderAttitudeBtn('strong', '情熱的に', '⚡8 / 効果×1.2', '#E07820')}
         </div>
       `;
     }
@@ -405,11 +405,19 @@ export class BattleScreen {
   private attachEvents(): void {
     const battle = this.state.battle!;
 
-    // BGMトグル
-    const bgmBtn = this.container.querySelector<HTMLButtonElement>('#bgm-toggle');
-    bgmBtn?.addEventListener('pointerup', () => {
-      bgm.toggle();
-      bgmBtn.textContent = bgm.enabled ? '🔊' : '🔇';
+    // BGM音量スライダー
+    const bgmSlider = this.container.querySelector<HTMLInputElement>('#bgm-volume');
+    const bgmIcon = this.container.querySelector<HTMLElement>('#bgm-icon');
+    bgmSlider?.addEventListener('input', () => {
+      const v = parseInt(bgmSlider.value, 10) / 100;
+      bgm.setVolume(v);
+      if (bgmIcon) bgmIcon.textContent = v > 0 ? '🔊' : '🔇';
+    });
+    bgmIcon?.addEventListener('pointerup', () => {
+      const newVol = bgm.volume > 0 ? 0 : 0.3;
+      bgm.setVolume(newVol);
+      if (bgmSlider) bgmSlider.value = String(Math.round(newVol * 100));
+      if (bgmIcon) bgmIcon.textContent = newVol > 0 ? '🔊' : '🔇';
     });
 
     // 態度選択

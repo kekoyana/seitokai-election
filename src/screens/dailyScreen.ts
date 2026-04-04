@@ -97,6 +97,7 @@ export class DailyScreen {
   private callbacks: DailyCallbacks;
   private showStudentInfo: Student | null = null;
   private showPlayerInfo: boolean = false;
+  private showLog: boolean = false;
   // 情報パネル: タブ + ドリルダウン（組織詳細 or 生徒一覧→生徒詳細）
   private infoPanel: {
     tab: 'class' | 'club';
@@ -199,11 +200,11 @@ export class DailyScreen {
           <span style="opacity:0.4;">|</span>
           <span>⚡<strong>${this.state.stamina}</strong></span>
           <span style="opacity:0.4;">|</span>
-          <button id="bgm-toggle" style="
-            background:none; border:none; padding:0;
-            color:#fff; font-size:1em; cursor:pointer;
-            line-height:1;
-          ">${bgm.enabled ? '🔊' : '🔇'}</button>
+          <span id="bgm-icon" style="cursor:pointer; font-size:1em; line-height:1;">${bgm.volume > 0 ? '🔊' : '🔇'}</span>
+          <input id="bgm-volume" type="range" min="0" max="100" value="${Math.round(bgm.volume * 100)}" style="
+            width:60px; height:4px; cursor:pointer;
+            accent-color:#fff; vertical-align:middle;
+          "/>
         </div>
       </div>
     `;
@@ -219,6 +220,11 @@ export class DailyScreen {
       ">
         <span>支持者: <strong style="color:${candidateColor}">${supporterCount}</strong>名</span>
         <span>場所: <strong>${FLOOR_LABELS[getFloorFromLocation(this.state.currentLocation)]} ${isCorridorLocation(this.state.currentLocation) ? '廊下' : currentLocation?.name ?? ''}</strong></span>
+        <button id="log-toggle" style="
+          margin-left:auto; background:none; border:1px solid #aab;
+          border-radius:4px; padding:1px 8px; cursor:pointer;
+          font-family:inherit; font-size:1em; color:#555;
+        ">ログ${this.state.actionLogs.length > 0 ? ` (${this.state.actionLogs.length})` : ''}</button>
       </div>
     `;
 
@@ -227,7 +233,10 @@ export class DailyScreen {
     const inCorridor = isCorridorLocation(this.state.currentLocation);
 
     if (this.showPlayerInfo && pc) {
-      mainHtml = this.renderPlayerInfo(pc);
+      const playerStudent = this.state.students.find(s => s.id === pc.id);
+      if (playerStudent) {
+        mainHtml = this.renderStudentDetailCard(playerStudent, 'close', true);
+      }
     } else if (this.showStudentInfo) {
       mainHtml = this.renderStudentInfo(this.showStudentInfo);
     } else if (this.infoPanel) {
@@ -238,12 +247,60 @@ export class DailyScreen {
       mainHtml = this.renderMainPanel(studentsHere, isOutOfStamina);
     }
 
+    // ログオーバーレイ
+    const logOverlayHtml = this.showLog ? `
+      <div id="log-overlay" style="
+        position:absolute; inset:0;
+        background:rgba(0,0,0,0.5);
+        display:flex; flex-direction:column;
+        z-index:100;
+      ">
+        <div style="
+          flex:1; margin:48px 12px 50px;
+          background:rgba(255,255,255,0.95);
+          border-radius:12px;
+          display:flex; flex-direction:column;
+          overflow:hidden;
+        ">
+          <div style="
+            display:flex; align-items:center; justify-content:space-between;
+            padding:10px 14px; border-bottom:1px solid #e0e8f0;
+            flex-shrink:0;
+          ">
+            <span style="font-weight:bold; font-size:0.9em; color:#333;">行動ログ</span>
+            <button id="log-close" style="
+              background:#ddd; border:none; border-radius:50%;
+              width:28px; height:28px; cursor:pointer; font-size:1em;
+            ">×</button>
+          </div>
+          <div style="flex:1; overflow-y:auto; padding:10px 14px;">
+            ${this.state.actionLogs.length === 0
+              ? '<div style="color:#999; font-size:0.85em; text-align:center; margin-top:20px;">まだ行動ログがありません</div>'
+              : [...this.state.actionLogs].reverse().map((log, i) => `
+                <div style="
+                  padding:8px 0;
+                  border-bottom:1px solid #f0f0f0;
+                  font-size:0.82em; color:#444;
+                  line-height:1.6;
+                  white-space:pre-line;
+                ">
+                  <span style="color:#aaa; font-size:0.8em;">#${this.state.actionLogs.length - i}</span>
+                  ${log}
+                </div>
+              `).join('')
+            }
+          </div>
+        </div>
+      </div>
+    ` : '';
+
     this.container.innerHTML = `
       ${hudHtml}
       <div style="flex:1; overflow-y:auto; padding:48px 16px 12px;">
         ${mainHtml}
       </div>
       ${bottomBar}
+      ${logOverlayHtml}
     `;
 
     this.attachEvents();
@@ -1118,23 +1175,25 @@ export class DailyScreen {
     `;
   }
 
-  private renderPlayerInfo(pc: import('../types').PlayerCharacter): string {
+  private renderStudentInfo(s: Student): string {
+    return this.renderStudentDetailCard(s, 'close');
+  }
+
+  /** 生徒詳細カード（情報パネル・部屋内情報ボタン共通、プレイヤー自身にも対応） */
+  private renderStudentDetailCard(s: Student, backAction: string, isPlayer = false): string {
     const PERS_LABELS: Record<string, string> = {
       passionate: '熱血', cautious: '慎重', stubborn: '頑固', flexible: '柔軟', cunning: '狡猾',
     };
-    const ps = this.state.playerSupport;
-    const candidateColor = this.getCandidateColor();
-    const candidate = CANDIDATES.find(c => c.id === this.state.candidate);
+    const borderColor = isPlayer
+      ? this.getCandidateColor()
+      : (CANDIDATES.find(c => c.id === Object.entries(s.support).sort((a, b) => b[1] - a[1])[0][0])?.color ?? '#d0e0f0');
 
-    const attrsHtml = pc.attributes.map(a =>
-      `<span style="
-        background:#e8f0fa; color:#3a5080;
-        border-radius:12px; padding:2px 8px; font-size:0.75em;
-      ">${ATTRIBUTE_LABELS[a] ?? a}</span>`
+    const attrsHtml = s.attributes.map(a =>
+      `<span style="background:#e8f0fa; color:#3a5080; border-radius:12px; padding:2px 8px; font-size:0.75em;">${ATTRIBUTE_LABELS[a] ?? a}</span>`
     ).join(' ');
 
-    const hobbies = Object.entries(pc.hobbies) as [string, string][];
-    const hobbiesHtml = hobbies.map(([hobby, pref]) => {
+    const hobbiesHtml = Object.entries(s.hobbies).map(([hobby, pref]) => {
+      const isRevealed = isPlayer || s.revealedHobbies.has(hobby as import('../types').HobbyTopic);
       const prefColor = pref === 'like' ? '#27AE60' : pref === 'dislike' ? '#C0392B' : '#888';
       const prefLabel = pref === 'like' ? '好き' : pref === 'dislike' ? '嫌い' : '普通';
       return `
@@ -1145,23 +1204,19 @@ export class DailyScreen {
           font-size:0.8em; color:#333;
         ">
           <span>${HOBBY_LABELS[hobby] ?? hobby}</span>
-          <span style="color:${prefColor};">${prefLabel}</span>
+          ${isRevealed
+            ? `<span style="color:${prefColor};">${prefLabel}</span>`
+            : `<span style="color:#bbb;">???</span>`
+          }
         </div>
       `;
     }).join('');
 
-    const likedHtml = pc.likedAttributes.map(a =>
-      `<span style="
-        background:rgba(39,174,96,0.1); color:#27AE60;
-        border-radius:10px; padding:2px 7px; font-size:0.75em;
-      ">${ATTRIBUTE_LABELS[a] ?? a}</span>`
+    const likedHtml = s.likedAttributes.map(a =>
+      `<span style="background:rgba(39,174,96,0.1); color:#27AE60; border-radius:10px; padding:2px 7px; font-size:0.75em;">${ATTRIBUTE_LABELS[a] ?? a}</span>`
     ).join(' ');
-
-    const dislikedHtml = pc.dislikedAttributes.map(a =>
-      `<span style="
-        background:rgba(192,57,43,0.1); color:#C0392B;
-        border-radius:10px; padding:2px 7px; font-size:0.75em;
-      ">${ATTRIBUTE_LABELS[a] ?? a}</span>`
+    const dislikedHtml = s.dislikedAttributes.map(a =>
+      `<span style="background:rgba(192,57,43,0.1); color:#C0392B; border-radius:10px; padding:2px 7px; font-size:0.75em;">${ATTRIBUTE_LABELS[a] ?? a}</span>`
     ).join(' ');
 
     const statsBar = (label: string, value: number, color: string) => `
@@ -1174,50 +1229,93 @@ export class DailyScreen {
       </div>
     `;
 
+    // ヘッダー部（ポートレート + 名前 + 所属情報）
+    const closeBtnId = isPlayer ? 'close-player-btn' : 'close-info-btn';
+    const portraitHtml = s.portrait
+      ? `<div style="text-align:center; margin-bottom:10px;">
+          <img src="${s.portrait}" alt="${s.name}" style="
+            width:180px; height:180px; border-radius:50%;
+            object-fit:cover; object-position:top;
+            border:3px solid ${borderColor};
+            box-shadow:0 4px 12px rgba(0,0,0,0.1);
+          "/>
+        </div>`
+      : `<div style="text-align:center; margin-bottom:10px;">${renderInitialIcon(s.name, s.personality, 180, borderColor)}</div>`;
+
+    const infoLineHtml = `
+      <div style="text-align:center;">
+        <div style="font-size:1.1em; font-weight:bold; color:#333;">${s.name}</div>
+        <div style="display:flex; justify-content:center; align-items:center; gap:4px; flex-wrap:wrap; margin-top:2px; font-size:0.8em; color:#888;">
+          ${renderStudentAffiliation(s.id, s.className, s.clubId)}
+          <span style="font-size:0.94em; color:#999;">${PERS_LABELS[s.personality] ?? s.personality}</span>
+        </div>
+        ${isPlayer
+          ? `<div style="font-size:0.78em; color:${borderColor}; font-weight:bold; margin-top:2px;">${FACTION_LABELS[this.state.candidate ?? ''] ?? ''}派</div>`
+          : ''
+        }
+        <div style="font-size:0.78em; color:#888; margin-top:2px;">「${getCatchphrase(s.personality, s.attributes)}」</div>
+        <div style="font-size:0.75em; color:#666; margin-top:6px; line-height:1.5; background:#f8f9fb; border-radius:8px; padding:6px 10px; text-align:left;">${s.description}</div>
+      </div>`;
+
+    const headerHtml = backAction === 'close'
+      ? `<div style="margin-bottom:14px;">
+          <div style="display:flex; justify-content:flex-end; margin-bottom:8px;">
+            <button id="${closeBtnId}" style="
+              background:#ddd; border:none; border-radius:50%;
+              width:28px; height:28px; cursor:pointer; font-size:1em;
+            ">×</button>
+          </div>
+          ${portraitHtml}
+          ${infoLineHtml}
+        </div>`
+      : `${this.renderInfoHeader(s.name, backAction)}
+        ${portraitHtml}
+        <div style="margin-bottom:14px;">${infoLineHtml}</div>`;
+
+    // プレイヤー用: スタミナ + 思想（playerSupport）
+    // 生徒用: 好感度 + 会話回数 + 思想（student.support）
+    const supportData = isPlayer ? this.state.playerSupport : s.support;
+    const statusGridHtml = isPlayer
+      ? `<div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:8px;">
+          <div style="background:rgba(240,245,255,0.8); border-radius:8px; padding:6px; font-size:0.78em;">
+            <div style="color:#888;">スタミナ</div>
+            <div style="font-weight:bold;">${this.state.stamina} / 100</div>
+          </div>
+          <div style="background:rgba(240,245,255,0.8); border-radius:8px; padding:6px; font-size:0.78em;">
+            <div style="color:#888;">会話</div>
+            <div style="font-weight:bold;">${s.talkCount}回</div>
+          </div>
+        </div>`
+      : `<div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:8px;">
+          <div style="background:rgba(240,245,255,0.8); border-radius:8px; padding:6px; font-size:0.78em;">
+            <div style="color:#888;">好感度</div>
+            <div style="font-weight:bold; color:${s.affinity >= 0 ? '#27AE60' : '#C0392B'};">${s.affinity > 0 ? '+' : ''}${s.affinity}</div>
+          </div>
+          <div style="background:rgba(240,245,255,0.8); border-radius:8px; padding:6px; font-size:0.78em;">
+            <div style="color:#888;">会話</div>
+            <div style="font-weight:bold;">${s.talkCount}回</div>
+          </div>
+        </div>`;
+
     return `
       <div style="
         background:rgba(255,255,255,0.9);
         border-radius:14px; padding:14px;
         border:1px solid #e0eaf5;
       ">
-        <div style="display:flex; justify-content:flex-end; margin-bottom:8px;">
-          <button id="close-player-btn" style="
-            background:#ddd; border:none; border-radius:50%;
-            width:28px; height:28px; cursor:pointer; font-size:1em;
-          ">×</button>
-        </div>
-        ${pc.portrait
-          ? `<div style="text-align:center; margin-bottom:10px;">
-              <img src="${pc.portrait}" alt="${pc.name}" style="
-                width:180px; height:180px; border-radius:50%;
-                object-fit:cover; object-position:top;
-                border:3px solid ${candidateColor};
-                box-shadow:0 4px 12px rgba(0,0,0,0.1);
-              "/>
-            </div>`
-          : `<div style="text-align:center; margin-bottom:10px;">${renderInitialIcon(pc.name, pc.personality, 180, candidateColor)}</div>`
-        }
-        <div style="text-align:center; margin-bottom:14px;">
-          <div style="font-size:1.1em; font-weight:bold; color:#333;">${pc.name}</div>
-          <div style="font-size:0.8em; color:#888;">${pc.className}　${PERS_LABELS[pc.personality] ?? pc.personality}</div>
-          <div style="font-size:0.78em; color:${candidateColor}; font-weight:bold;">${FACTION_LABELS[this.state.candidate ?? ''] ?? ''}派</div>
-        </div>
+        ${headerHtml}
 
-        <div style="margin-bottom:12px;">
-          <div style="background:rgba(240,245,255,0.8); border-radius:8px; padding:8px; font-size:0.8em; margin-bottom:6px;">
-            <div style="color:#888; margin-bottom:4px;">思想</div>
-            ${renderSupportBar(ps)}
-          </div>
-          <div style="background:rgba(240,245,255,0.8); border-radius:8px; padding:8px; font-size:0.8em;">
-            <div style="color:#888; margin-bottom:4px;">スタミナ</div>
-            <div style="font-weight:bold;">${this.state.stamina} / 100</div>
-          </div>
+        ${statusGridHtml}
+
+        <div style="background:rgba(240,245,255,0.8); border-radius:8px; padding:6px; margin-bottom:12px; font-size:0.78em;">
+          <div style="color:#888; margin-bottom:3px;">思想</div>
+          ${renderSupportBar(supportData, 12)}
         </div>
 
         <div style="display:flex; flex-direction:column; gap:4px; margin-bottom:12px;">
-          ${statsBar('弁舌', pc.stats.speech, '#4A90D9')}
-          ${statsBar('運動', pc.stats.athletic, '#E74C3C')}
-          ${statsBar('知性', pc.stats.intel, '#27AE60')}
+          ${statsBar('弁舌', s.stats.speech, '#4A90D9')}
+          ${statsBar('運動', s.stats.athletic, '#E74C3C')}
+          ${statsBar('知性', s.stats.intel, '#27AE60')}
         </div>
 
         <div style="margin-bottom:12px;">
@@ -1244,134 +1342,37 @@ export class DailyScreen {
     `;
   }
 
-  private renderStudentInfo(s: Student): string {
-    return this.renderStudentDetailCard(s, 'close');
-  }
-
-  /** 生徒詳細カード（情報パネル・部屋内情報ボタン共通） */
-  private renderStudentDetailCard(s: Student, backAction: string): string {
-    const PERS_LABELS: Record<string, string> = {
-      passionate: '熱血', cautious: '慎重', stubborn: '頑固', flexible: '柔軟', cunning: '狡猾',
-    };
-    const supportCandidate = CANDIDATES.find(c =>
-      c.id === Object.entries(s.support).sort((a, b) => b[1] - a[1])[0][0]
-    );
-    const attrsHtml = s.attributes.map(a =>
-      `<span style="background:#e8f0fa; color:#3a5080; border-radius:12px; padding:2px 8px; font-size:0.75em;">${ATTRIBUTE_LABELS[a] ?? a}</span>`
-    ).join(' ');
-
-    const hobbiesHtml = Object.entries(s.hobbies).map(([hobby, pref]) => {
-      const isRevealed = s.revealedHobbies.has(hobby as import('../types').HobbyTopic);
-      const prefColor = pref === 'like' ? '#27AE60' : pref === 'dislike' ? '#C0392B' : '#888';
-      const prefLabel = pref === 'like' ? '好き' : pref === 'dislike' ? '嫌い' : '普通';
-      return `
-        <div style="
-          display:flex; justify-content:space-between;
-          padding:4px 8px; border-radius:6px;
-          background:rgba(255,255,255,0.5);
-          font-size:0.8em; color:#333;
-        ">
-          <span>${HOBBY_LABELS[hobby] ?? hobby}</span>
-          ${isRevealed
-            ? `<span style="color:${prefColor};">${prefLabel}</span>`
-            : `<span style="color:#bbb;">???</span>`
-          }
-        </div>
-      `;
-    }).join('');
-
-    // backAction: 'close' → 閉じるボタン(×), 'back-to-org' → 情報パネル内の戻る(←)
-    const headerHtml = backAction === 'close'
-      ? `<div style="margin-bottom:14px;">
-          <div style="display:flex; justify-content:flex-end; margin-bottom:8px;">
-            <button id="close-info-btn" style="
-              background:#ddd; border:none; border-radius:50%;
-              width:28px; height:28px; cursor:pointer; font-size:1em;
-            ">×</button>
-          </div>
-          ${s.portrait
-            ? `<div style="text-align:center; margin-bottom:10px;">
-                <img src="${s.portrait}" alt="${s.name}" style="
-                  width:180px; height:180px; border-radius:50%;
-                  object-fit:cover; object-position:top;
-                  border:3px solid ${supportCandidate?.color ?? '#d0e0f0'};
-                  box-shadow:0 4px 12px rgba(0,0,0,0.1);
-                "/>
-              </div>`
-            : `<div style="text-align:center; margin-bottom:10px;">${renderInitialIcon(s.name, s.personality, 180, supportCandidate?.color ?? '#d0e0f0')}</div>`
-          }
-          <div style="text-align:center;">
-            <div style="font-size:1.1em; font-weight:bold; color:#333;">${s.name}</div>
-            <div style="display:flex; justify-content:center; align-items:center; gap:4px; flex-wrap:wrap; margin-top:2px; font-size:0.8em; color:#888;">
-              ${renderStudentAffiliation(s.id, s.className, s.clubId)}
-              <span style="font-size:0.94em; color:#999;">${PERS_LABELS[s.personality] ?? s.personality}</span>
-            </div>
-            <div style="font-size:0.78em; color:#888; margin-top:2px;">「${getCatchphrase(s.personality, s.attributes)}」</div>
-          </div>
-        </div>`
-      : `${this.renderInfoHeader(s.name, backAction)}
-        ${s.portrait
-          ? `<div style="text-align:center; margin-bottom:10px;">
-              <img src="${s.portrait}" alt="${s.name}" style="
-                width:180px; height:180px; border-radius:50%;
-                object-fit:cover; object-position:top;
-                border:3px solid ${supportCandidate?.color ?? '#d0e0f0'};
-                box-shadow:0 4px 12px rgba(0,0,0,0.1);
-              "/>
-            </div>`
-          : `<div style="text-align:center; margin-bottom:10px;">${renderInitialIcon(s.name, s.personality, 180, supportCandidate?.color ?? '#d0e0f0')}</div>`
-        }
-        <div style="text-align:center; margin-bottom:14px;">
-          <div style="display:flex; justify-content:center; align-items:center; gap:4px; flex-wrap:wrap; font-size:0.8em; color:#888;">
-            ${renderStudentAffiliation(s.id, s.className, s.clubId)}
-            <span style="font-size:0.94em; color:#999;">${PERS_LABELS[s.personality] ?? s.personality}</span>
-          </div>
-          <div style="font-size:0.78em; color:#888; margin-top:2px;">「${getCatchphrase(s.personality, s.attributes)}」</div>
-        </div>`;
-
-    return `
-      <div style="
-        background:rgba(255,255,255,0.9);
-        border-radius:14px; padding:14px;
-        border:1px solid #e0eaf5;
-      ">
-        ${headerHtml}
-
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:8px;">
-          <div style="background:rgba(240,245,255,0.8); border-radius:8px; padding:6px; font-size:0.78em;">
-            <div style="color:#888;">好感度</div>
-            <div style="font-weight:bold; color:${s.affinity >= 0 ? '#27AE60' : '#C0392B'};">${s.affinity > 0 ? '+' : ''}${s.affinity}</div>
-          </div>
-          <div style="background:rgba(240,245,255,0.8); border-radius:8px; padding:6px; font-size:0.78em;">
-            <div style="color:#888;">会話</div>
-            <div style="font-weight:bold;">${s.talkCount}回</div>
-          </div>
-        </div>
-
-        <div style="background:rgba(240,245,255,0.8); border-radius:8px; padding:6px; margin-bottom:12px; font-size:0.78em;">
-          <div style="color:#888; margin-bottom:3px;">思想</div>
-          ${renderSupportBar(s.support, 12)}
-        </div>
-
-        <div style="margin-bottom:12px;">
-          <div style="font-size:0.8em; color:#888; margin-bottom:6px;">属性</div>
-          <div style="display:flex; flex-wrap:wrap; gap:4px;">${attrsHtml}</div>
-        </div>
-
-        <div>
-          <div style="font-size:0.8em; color:#888; margin-bottom:6px;">趣味</div>
-          <div style="display:grid; grid-template-columns:1fr 1fr; gap:4px;">${hobbiesHtml}</div>
-        </div>
-      </div>
-    `;
-  }
-
   private attachEvents(): void {
-    // BGMトグル
-    const bgmBtn = this.container.querySelector<HTMLButtonElement>('#bgm-toggle');
-    bgmBtn?.addEventListener('pointerup', () => {
-      bgm.toggle();
-      bgmBtn.textContent = bgm.enabled ? '🔊' : '🔇';
+    // BGM音量スライダー
+    const bgmSlider = this.container.querySelector<HTMLInputElement>('#bgm-volume');
+    const bgmIcon = this.container.querySelector<HTMLElement>('#bgm-icon');
+    bgmSlider?.addEventListener('input', () => {
+      const v = parseInt(bgmSlider.value, 10) / 100;
+      bgm.setVolume(v);
+      if (bgmIcon) bgmIcon.textContent = v > 0 ? '🔊' : '🔇';
+    });
+    bgmIcon?.addEventListener('pointerup', () => {
+      const newVol = bgm.volume > 0 ? 0 : 0.3;
+      bgm.setVolume(newVol);
+      if (bgmSlider) bgmSlider.value = String(Math.round(newVol * 100));
+      if (bgmIcon) bgmIcon.textContent = newVol > 0 ? '🔊' : '🔇';
+    });
+
+    // ログトグル
+    this.container.querySelector('#log-toggle')?.addEventListener('pointerup', () => {
+      this.showLog = !this.showLog;
+      this.render();
+    });
+    this.container.querySelector('#log-close')?.addEventListener('pointerup', () => {
+      this.showLog = false;
+      this.render();
+    });
+    // ログオーバーレイ背景クリックで閉じる
+    this.container.querySelector('#log-overlay')?.addEventListener('pointerup', (e) => {
+      if ((e.target as HTMLElement).id === 'log-overlay') {
+        this.showLog = false;
+        this.render();
+      }
     });
 
     // プレイヤーアイコン

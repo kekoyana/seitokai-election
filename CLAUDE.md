@@ -29,6 +29,7 @@ src/
   data/
     organizations.ts    # 組織データ（クラス・部活）
   logic/
+    activistLogic.ts     # 活動家（NPC説得）選出・行動ロジック
     organizationLogic.ts # 組織票計算ロジック
   screens/
     titleScreen.ts      # タイトル画面
@@ -39,12 +40,15 @@ src/
     endingScreen.ts     # エンディング・ゲームオーバー
 docs/
   game-spec.md          # ゲーム企画書
+  activist-spec.md      # 活動家（NPC説得）仕様
   student-params.md     # 生徒パラメータ仕様
   characters.md         # キャラクター設定・画像プロンプト
   glossary.md           # 用語集
   worldview.md          # 世界観・トーン設定（ログ文面のルール）
   design-guide.md       # UIデザインガイド（色・フォント・コンポーネント）
   portrait-config.md    # ComfyUI画像生成設定
+  exploration-events.md # 探索イベント仕様（落とし物・情報収集・おつかい）
+  compatibility-analysis.md # 相性の非対称性分析（片思いペア一覧）
 assets/
   portraits/            # キャラクターポートレート画像（Vite importで使用）
     raw/                # 生成元の生画像（gitignore対象）

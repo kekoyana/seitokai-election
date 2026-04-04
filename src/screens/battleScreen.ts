@@ -137,11 +137,11 @@ export class BattleScreen {
           display:flex; justify-content:space-between;
           font-size:0.72em; color:rgba(255,255,255,0.6); margin-bottom:4px;
         ">
-          <span>失敗 (-70)</span>
+          <span>${battle.isDefending ? '成功 (-70)' : '失敗 (-70)'}</span>
           <span style="font-size:1.1em; font-weight:bold; color:${battle.barPosition >= 0 ? '#7EC8F0' : '#F07070'};">
             ${battle.barPosition > 0 ? '+' : ''}${battle.barPosition}
           </span>
-          <span>成功 (+70)</span>
+          <span>${battle.isDefending ? '失敗 (+70)' : '成功 (+70)'}</span>
         </div>
         <div class="game-bar" style="
           height:16px; position:relative;
@@ -205,28 +205,38 @@ export class BattleScreen {
     const isTimeout = result === 'timeout';
 
     let emoji = '💧';
-    let title = '説得失敗...';
+    let title = battle.isDefending ? '防衛失敗...' : '説得失敗...';
     let color = '#F07070';
-    let message = `${battle.student.name}は納得しませんでした`;
+    let message = battle.isDefending
+      ? `${battle.student.name}の主張に押されてしまった`
+      : `${battle.student.name}は納得しませんでした`;
     let btnColor = '#555';
 
     if (isWin) {
       emoji = '✨';
-      title = '説得成功！';
+      title = battle.isDefending ? '防衛成功！' : '説得成功！';
       color = '#7EC8F0';
-      message = `${battle.student.name}はあなたの候補者を支持します！`;
+      message = battle.isDefending
+        ? `${battle.student.name}の説得を跳ね返した！`
+        : `${battle.student.name}はあなたの候補者を支持します！`;
       btnColor = '#2E5FAC';
     } else if (isTimeout) {
       emoji = '⏰';
-      if (battle.barPosition > 0) {
+      // 防御時はバーの意味が反転（バー>0は劣勢、バー<0は優勢）
+      const effectiveBar = battle.isDefending ? -battle.barPosition : battle.barPosition;
+      if (effectiveBar > 0) {
         title = '時間切れ（やや優勢）';
         color = '#B0D8F0';
-        message = `${battle.student.name}の心は少し動いたようです`;
+        message = battle.isDefending
+          ? `${battle.student.name}の説得をなんとかかわした`
+          : `${battle.student.name}の心は少し動いたようです`;
         btnColor = '#4A6A9A';
-      } else if (battle.barPosition < 0) {
+      } else if (effectiveBar < 0) {
         title = '時間切れ（やや劣勢）';
         color = '#F0B0A0';
-        message = `相手の主張に少し押されてしまいました`;
+        message = battle.isDefending
+          ? `${battle.student.name}の主張に少し押されてしまった`
+          : `相手の主張に少し押されてしまいました`;
         btnColor = '#8A5A50';
       } else {
         title = '時間切れ（引き分け）';

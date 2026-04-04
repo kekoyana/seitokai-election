@@ -87,6 +87,8 @@ export interface Student {
   personality: Personality;
   hobbies: Record<HobbyTopic, HobbyPreference>;
   revealedHobbies: Set<HobbyTopic>;
+  revealedLikes: PreferenceAttr[];    // 判明済みの好み属性
+  revealedDislikes: PreferenceAttr[]; // 判明済みの苦手属性
   support: { conservative: number; progressive: number; sports: number };
   attributes: Attribute[];
   likedAttributes: PreferenceAttr[];
@@ -128,6 +130,7 @@ export interface BattleState {
   selectedAttitude: PlayerAttitude | null;
   selectedTopic: Topic | null;
   result: 'win' | 'lose' | 'timeout' | null;
+  isDefending: boolean; // 活動家から説得されている場合true（勝敗反転）
 }
 
 // プレイヤーキャラクター
@@ -179,4 +182,9 @@ export interface GameState {
   playerSupport: { conservative: number; progressive: number; sports: number };
   organizations: Organization[];
   actionLogs: string[];
+  activists: string[];  // 活動家の生徒IDリスト
+  pendingActivistBattle: { activistId: string; candidate: CandidateId } | null;
+  // 探索イベント
+  lostItem: { itemName: string; hint: string; ownerId: string } | null;
+  errand: { fromId: string; toId: string; itemName: string } | null;
 }

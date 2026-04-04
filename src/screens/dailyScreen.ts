@@ -121,6 +121,8 @@ export interface DailyCallbacks {
   onPersuade: (student: Student) => void;
   onNurseRest: () => void;
   onTrain: (stat: 'speech' | 'athletic' | 'intel') => void;
+  onDeliverLostItem: () => void;
+  onDeliverErrand: () => void;
   onNextDay: () => void;
 }
 

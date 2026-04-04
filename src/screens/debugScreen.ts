@@ -1,7 +1,8 @@
 import type { GameState, Student, Attribute, CandidateId } from '../types';
-import { CANDIDATES, CANDIDATE_INFO, FACTION_LABELS, HAIRSTYLE_LABELS, HOBBY_LABELS, ATTRIBUTE_LABELS, getCatchphrase, getCandidateInfo, renderInitialIcon, renderSupportBar } from '../data';
+import { CANDIDATES, FACTION_LABELS, HAIRSTYLE_LABELS, HOBBY_LABELS, ATTRIBUTE_LABELS, getCatchphrase, getCandidateInfo, renderInitialIcon, renderSupportBar, getStudentLocation } from '../data';
 import { ORGANIZATIONS, ORGANIZATION_TYPE_LABELS } from '../data/organizations';
 import { getOrganizationVote } from '../logic/organizationLogic';
+import { getStudentFaction } from '../logic/activistLogic';
 
 function dayToDate(day: number): string {
   const d = new Date(2025, 8, day);
@@ -34,6 +35,7 @@ export class DebugScreen {
   private state: GameState;
   private callbacks: DebugCallbacks;
   private activeTab: 'player' | 'students' | 'organizations' = 'player';
+  private studentFilter: string = 'all'; // 'all' | '1年' | '2年' | '3年' | 'candidate' | 'activist'
 
   constructor(state: GameState, callbacks: DebugCallbacks) {
     this.state = state;
@@ -97,7 +99,9 @@ export class DebugScreen {
             <span style="color:#f88; font-weight:bold; font-size:0.9em;">DEBUG</span>
           </div>
           <div style="display:flex; gap:12px; align-items:center; font-size:0.8em;">
-            <span>${dayToDate(this.state.day)}</span>
+            <span>${dayToDate(this.state.day)} (${this.state.day}日目)</span>
+            <span>⚡${this.state.stamina}</span>
+            <span>活動家${this.state.activists.length}名</span>
             <div style="width:120px;">${renderSupportBar(this.state.playerSupport, 12, true)}</div>
             <button id="debug-close" style="
               background:#c44; color:#fff; border:none; border-radius:6px;
@@ -116,13 +120,38 @@ export class DebugScreen {
     } else if (this.activeTab === 'students') {
       const playerId = this.state.playerCharacter?.id;
       const allStudents = this.state.students.filter(s => s.id !== playerId);
+      const factionFilters: string[] = ['conservative', 'progressive', 'sports'];
+      const filtered = this.studentFilter === 'all' ? allStudents
+        : this.studentFilter === 'candidate' ? allStudents.filter(s => s.candidateId !== null)
+        : this.studentFilter === 'activist' ? allStudents.filter(s => this.state.activists.includes(s.id))
+        : factionFilters.includes(this.studentFilter) ? allStudents.filter(s => getStudentFaction(s) === this.studentFilter)
+        : allStudents.filter(s => s.className.startsWith(this.studentFilter.charAt(0)));
+
+      const filterBtns = ['all', '1年', '2年', '3年', 'conservative', 'progressive', 'sports', 'candidate', 'activist'].map(key => {
+        const active = this.studentFilter === key;
+        const label = key === 'all' ? '全員' : key === 'candidate' ? '候補者' : key === 'activist' ? '活動家'
+          : key === 'conservative' ? '保守' : key === 'progressive' ? '革新' : key === 'sports' ? '体育' : key;
+        return `<button class="debug-student-filter" data-filter="${key}" style="
+          padding:3px 10px; border:none; border-radius:10px;
+          font-size:0.72em; cursor:pointer; font-family:inherit;
+          background:${active ? '#f88' : 'rgba(255,255,255,0.1)'};
+          color:${active ? '#1a1a2a' : '#aaa'};
+          font-weight:${active ? 'bold' : 'normal'};
+        ">${label}</button>`;
+      }).join('');
+
       contentHtml = `
         <div style="
           font-size:0.8em; color:#888; margin-bottom:8px;
           border-bottom:1px solid rgba(255,255,255,0.1);
           padding-bottom:6px;
-        ">生徒一覧（${allStudents.length}名）</div>
-        ${allStudents.map(s => this.renderStudentRow(s)).join('')}
+        ">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span>生徒一覧（${filtered.length}/${allStudents.length}名）</span>
+          </div>
+          <div style="display:flex; gap:4px; margin-top:6px; flex-wrap:wrap;">${filterBtns}</div>
+        </div>
+        ${filtered.map(s => this.renderStudentRow(s)).join('')}
       `;
     } else {
       contentHtml = `
@@ -150,6 +179,16 @@ export class DebugScreen {
         const tab = (btn as HTMLElement).dataset.tab as typeof this.activeTab;
         if (tab && tab !== this.activeTab) {
           this.activeTab = tab;
+          this.render();
+        }
+      });
+    });
+
+    this.container.querySelectorAll('.debug-student-filter').forEach(btn => {
+      btn.addEventListener('pointerup', () => {
+        const filter = (btn as HTMLElement).dataset.filter;
+        if (filter && filter !== this.studentFilter) {
+          this.studentFilter = filter;
           this.render();
         }
       });
@@ -258,7 +297,12 @@ export class DebugScreen {
     const sup = this.getSupportCandidate(s);
     const isAlly = sup.id === this.state.candidate;
     const isCandidate = s.candidateId !== null;
+    const isActivist = this.state.activists.includes(s.id);
     const candidateColor = isCandidate ? (getCandidateInfo(s.candidateId!).color) : null;
+    const faction = getStudentFaction(s);
+    const factionCandidate = CANDIDATES.find(c => c.id === faction);
+    const loc = getStudentLocation(s.id, this.state.timeSlot, this.state.day, this.state.currentTime);
+    const locLabel = loc ?? '不明';
 
     const compatColor = compat.score > 0 ? '#4f8' : compat.score < 0 ? '#f66' : '#888';
     const compatSign = compat.score > 0 ? '+' : '';
@@ -319,15 +363,16 @@ export class DebugScreen {
             : renderInitialIcon(s.name, s.personality, 48, borderColor)
           }
           <div style="flex:1; min-width:0;">
-            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+            <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
               <span style="font-weight:bold; font-size:0.95em;">${s.name}</span>
-              <span style="font-size:0.75em; color:#888;">${s.className}</span>
+              <span style="font-size:0.7em; color:#888;">（${s.nickname}）</span>
+              <span style="font-size:0.72em; color:#888;">${s.className}</span>
               ${s.clubId ? `<span style="
                 font-size:0.65em; background:rgba(255,255,255,0.08);
                 border-radius:4px; padding:1px 5px; color:#aaa;
               ">${CLUB_LABELS[s.clubId] ?? s.clubId}</span>` : ''}
               <span style="
-                font-size:0.7em; background:rgba(255,255,255,0.08);
+                font-size:0.68em; background:rgba(255,255,255,0.08);
                 border-radius:6px; padding:1px 6px; color:#bbb;
               ">${PERSONALITY_LABELS[s.personality] ?? s.personality}</span>
               ${isCandidate ? `<span style="
@@ -335,10 +380,12 @@ export class DebugScreen {
                 border-radius:4px; padding:1px 5px;
                 border:1px solid ${candidateColor}60;
               ">${FACTION_LABELS[s.candidateId!] ?? ''}派候補</span>` : ''}
-              ${s.playable ? '' : `<span style="
-                font-size:0.65em; background:rgba(255,255,255,0.08);
-                border-radius:4px; padding:1px 5px; color:#888;
-              ">選択不可</span>`}
+              ${isActivist ? `<span style="
+                font-size:0.65em; background:${factionCandidate?.color ?? '#888'}30; color:${factionCandidate?.color ?? '#f88'};
+                border-radius:4px; padding:1px 5px;
+                border:1px solid ${factionCandidate?.color ?? '#888'}60;
+                font-weight:bold;
+              ">活動家</span>` : ''}
             </div>
             <div style="font-size:0.72em; color:#777; margin-top:2px;">
               ${s.description}
@@ -361,18 +408,17 @@ export class DebugScreen {
             ${renderSupportBar(s.support, 10)}
           </div>
         </div>
-        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px; margin-bottom:8px; font-size:0.75em;">
-          <div style="background:rgba(255,255,255,0.05); border-radius:6px; padding:4px 6px;">
-            <div style="color:#888;">能力</div>
-            <div>弁${s.stats.speech} 運${s.stats.athletic} 知${s.stats.intel}</div>
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:4px; margin-bottom:6px; font-size:0.72em;">
+          <div style="background:rgba(255,255,255,0.05); border-radius:6px; padding:3px 6px;">
+            <span style="color:#888;">能力</span> 弁${s.stats.speech} 運${s.stats.athletic} 知${s.stats.intel}
           </div>
-          <div style="background:rgba(255,255,255,0.05); border-radius:6px; padding:4px 6px;">
-            <div style="color:#888;">好感度</div>
-            <div style="color:${s.affinity >= 0 ? '#4f8' : '#f66'};">${s.affinity > 0 ? '+' : ''}${s.affinity}</div>
+          <div style="background:rgba(255,255,255,0.05); border-radius:6px; padding:3px 6px;">
+            <span style="color:#888;">好感度</span> <span style="color:${s.affinity >= 0 ? '#4f8' : '#f66'};">${s.affinity > 0 ? '+' : ''}${s.affinity}</span>
+            <span style="color:#888; margin-left:4px;">相性</span> <span style="color:${compatColor}; font-weight:bold;">${compatSign}${compat.score}</span>
           </div>
-          <div style="background:rgba(255,255,255,0.05); border-radius:6px; padding:4px 6px;">
-            <div style="color:#888;">相性</div>
-            <div style="color:${compatColor}; font-weight:bold;">${compatSign}${compat.score}</div>
+          <div style="background:rgba(255,255,255,0.05); border-radius:6px; padding:3px 6px;">
+            <span style="color:#888;">会話</span> ${s.talkCount}回
+            <span style="color:#888; margin-left:4px;">場所</span> ${locLabel}
           </div>
         </div>
 

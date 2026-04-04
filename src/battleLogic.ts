@@ -56,8 +56,8 @@ function affinityBarBonus(affinity: number): number {
   return Math.round(affinity / 10);
 }
 
-export function initBattle(student: Student): BattleState {
-  const barBonus = affinityBarBonus(student.affinity);
+export function initBattle(student: Student, isDefending: boolean = false): BattleState {
+  const barBonus = isDefending ? 0 : affinityBarBonus(student.affinity);
   return {
     student,
     round: 1,
@@ -69,6 +69,7 @@ export function initBattle(student: Student): BattleState {
     selectedAttitude: null,
     selectedTopic: null,
     result: null,
+    isDefending,
   };
 }
 
@@ -307,10 +308,13 @@ export function resolveEnemyTurn(battle: BattleState): { newBattle: BattleState;
 
 // バトル終了チェック
 export function checkBattleEnd(battle: BattleState): BattleState {
-  if (battle.barPosition >= 70) {
+  // 防御時は勝敗の判定を反転（バー+70で負け、-70で勝ち）
+  const winThreshold = battle.isDefending ? -70 : 70;
+  const loseThreshold = battle.isDefending ? 70 : -70;
+  if (battle.isDefending ? battle.barPosition <= winThreshold : battle.barPosition >= winThreshold) {
     return { ...battle, phase: 'finished', result: 'win' };
   }
-  if (battle.barPosition <= -70) {
+  if (battle.isDefending ? battle.barPosition >= loseThreshold : battle.barPosition <= loseThreshold) {
     return { ...battle, phase: 'finished', result: 'lose' };
   }
   if (battle.round > battle.maxRounds) {

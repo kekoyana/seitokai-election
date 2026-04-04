@@ -8,6 +8,7 @@ import {
   getStudentLocation,
 } from './data';
 import { generateConversationData, generateTalkLogSummary, generateChitchatData } from './logic/conversationGenerator';
+import { electActivists, processOneActivist, FACTION_LABELS as ACTIVIST_FACTION_LABELS } from './logic/activistLogic';
 import { ORGANIZATIONS } from './data/organizations';
 import { getOrganizationVote } from './logic/organizationLogic';
 import {
@@ -30,6 +31,8 @@ function createInitialState(): GameState {
     students: STUDENTS.map(s => ({
       ...s,
       revealedHobbies: new Set<HobbyTopic>(),
+      revealedLikes: [] as import('./types').PreferenceAttr[],
+      revealedDislikes: [] as import('./types').PreferenceAttr[],
     })),
     day: 1,
     currentTime: 0,
@@ -43,6 +46,10 @@ function createInitialState(): GameState {
     playerSupport: { conservative: 0, progressive: 0, sports: 0 },
     organizations: ORGANIZATIONS,
     actionLogs: [],
+    activists: [],
+    pendingActivistBattle: null,
+    lostItem: null,
+    errand: null,
   };
 }
 
@@ -160,6 +167,11 @@ export class Game {
           playerAttributes: [...selected.attributes],
           playerSupport: { ...selected.support },
         };
+        // 初日の活動家選出
+        this.state = {
+          ...this.state,
+          activists: electActivists(this.state.students, selected.id, candidateId),
+        };
         this.showDaily();
       },
     });
@@ -178,6 +190,8 @@ export class Game {
       onPersuade: (student: Student) => this.handlePersuade(student),
       onNurseRest: () => this.handleNurseRest(),
       onTrain: (stat: 'speech' | 'athletic' | 'intel') => this.handleTrain(stat),
+      onDeliverLostItem: () => this.handleDeliverLostItem(),
+      onDeliverErrand: () => this.handleDeliverErrand(),
       onNextDay: () => this.handleNextDay(),
     });
     this.dailyScreen.mount(this.root);
@@ -196,7 +210,8 @@ export class Game {
       currentTime: Math.min(MAX_TIME, this.state.currentTime + TIME_COST.ENTER_ROOM),
     };
     this.dailyScreen?.update(this.state);
-    this.tryChitchat();
+    if (this.tryLostItem()) return;
+    if (!this.tryActivistAction()) this.tryChitchat();
   }
 
   private handleExitRoom(): void {
@@ -224,7 +239,83 @@ export class Game {
       currentTime: Math.min(MAX_TIME, this.state.currentTime + timeCost),
     };
     this.dailyScreen?.update(this.state);
-    this.tryChitchat();
+    if (!this.tryActivistAction()) this.tryChitchat();
+  }
+
+  /** 移動後に活動家の行動を1人分処理する。イベント発生時はtrueを返す */
+  private tryActivistAction(): boolean {
+    const pc = this.state.playerCharacter;
+    if (!pc || this.state.activists.length === 0) return false;
+
+    // ランダムに1人の活動家を選ぶ
+    const activistId = this.state.activists[Math.floor(Math.random() * this.state.activists.length)];
+
+    const result = processOneActivist(
+      activistId,
+      this.state.students,
+      this.state.activists,
+      pc.id,
+    );
+
+    // NPC同士の説得結果を反映
+    if (result.log) {
+      this.state = {
+        ...this.state,
+        students: result.updatedStudents,
+        actionLogs: [...this.state.actionLogs, result.log],
+      };
+      this.dailyScreen?.update(this.state);
+    }
+
+    // プレイヤーがターゲットにされた場合 → 呼び止め会話 → バトル
+    if (result.playerTargetedBy) {
+      const activist = result.playerTargetedBy;
+      const faction = result.playerTargetedCandidate!;
+      this.showActivistApproach(activist, faction);
+      return true;
+    }
+
+    return false;
+  }
+
+  /** 活動家がプレイヤーに近づいてくる演出（会話→バトル） */
+  private showActivistApproach(activist: Student, faction: CandidateId): void {
+    const pc = this.state.playerCharacter;
+    if (!pc) return;
+
+    const factionLabel = ACTIVIST_FACTION_LABELS[faction];
+    const openerLines: Record<string, string[]> = {
+      passionate: ['おい、ちょっと待てよ！話があるんだ！', 'よう！逃がさないぜ、聞いてくれ！'],
+      cautious: ['すみません…少しお時間いただけますか？大事な話があって。', 'あの…どうしても伝えたいことがあるんです。'],
+      stubborn: ['……止まれ。話がある。', '少し付き合え。大事な話だ。'],
+      flexible: ['ねぇねぇ、ちょっといい？聞いてほしいことがあってさ！', 'あっ、ちょうどよかった！ちょっと話聞いてくれない？'],
+      cunning: ['やあ、偶然だね…いや、実は待ってたんだ。', 'ふふ、見つけた。少し話をしようじゃないか。'],
+    };
+    const lines = openerLines[activist.personality] ?? openerLines['flexible'];
+    const text = lines[Math.floor(Math.random() * lines.length)];
+
+    const steps = [
+      {
+        speaker: 'student' as const,
+        name: activist.name,
+        portrait: activist.portrait,
+        text: `「${text}」`,
+      },
+      {
+        speaker: 'student' as const,
+        name: activist.name,
+        portrait: activist.portrait,
+        text: `「${factionLabel}派の良さをわかってもらいたいんだ！」`,
+      },
+    ];
+    const result = {
+      text: `${activist.name}（${factionLabel}派）が説得を仕掛けてきた！`,
+      effectHtml: '<span style="color:#E74C3C; font-weight:bold;">説得バトル開始！</span>',
+    };
+
+    this.dailyScreen?.showConversation(steps, result, () => {
+      this.startActivistBattle(activist, faction);
+    });
   }
 
   /** 移動後に一定確率で雑談イベントを発生させる */
@@ -267,6 +358,122 @@ export class Game {
         actionLogs: [...this.state.actionLogs, `${student.name}が話しかけてきた。 <span style="color:#7EC850;">好感度+${affinityGain}</span>`],
       };
       this.dailyScreen?.update(this.state);
+    });
+  }
+
+  /** 落とし物イベント（部屋に入った時 15% で発生） */
+  private tryLostItem(): boolean {
+    if (this.state.lostItem) return false; // 既に所持中
+    if (Math.random() > 0.15) return false;
+
+    const pc = this.state.playerCharacter;
+    if (!pc) return false;
+
+    // 持ち主候補: プレイヤー以外の一般生徒
+    const candidates = this.state.students.filter(s => s.id !== pc.id && !s.candidateId);
+    if (candidates.length === 0) return false;
+
+    const owner = candidates[Math.floor(Math.random() * candidates.length)];
+
+    const items: { name: string; hint: (s: Student) => string }[] = [
+      { name: '手帳', hint: (s) => `${s.name}と名前が書いてある` },
+      { name: 'ハンカチ', hint: (s) => `「${s.name.charAt(0)}」のイニシャル入り` },
+      { name: 'お守り', hint: (s) => s.clubId ? `${s.clubId}部のマークが付いている` : `${s.className}のシールが貼ってある` },
+      { name: 'ペンケース', hint: (s) => `${s.className}のシールが貼ってある` },
+    ];
+    const item = items[Math.floor(Math.random() * items.length)];
+
+    this.state = {
+      ...this.state,
+      lostItem: { itemName: item.name, hint: item.hint(owner), ownerId: owner.id },
+    };
+    this.dailyScreen?.update(this.state);
+    this.dailyScreen?.showLostItemFound(item.name, item.hint(owner));
+    return true;
+  }
+
+  /** 落とし物を届ける */
+  private handleDeliverLostItem(): void {
+    const li = this.state.lostItem;
+    if (!li) return;
+
+    const owner = this.state.students.find(s => s.id === li.ownerId);
+    if (!owner) return;
+
+    const AFFINITY_GAIN = 15;
+    this.state = {
+      ...this.state,
+      students: this.state.students.map(s =>
+        s.id === li.ownerId ? { ...s, affinity: Math.min(100, s.affinity + AFFINITY_GAIN) } : s
+      ),
+      lostItem: null,
+      actionLogs: [...this.state.actionLogs, `${owner.name}に${li.itemName}を届けた。<span style="color:#7EC850;">好感度+${AFFINITY_GAIN}</span>`],
+    };
+    this.dailyScreen?.update(this.state);
+  }
+
+  /** おつかいを届ける */
+  private handleDeliverErrand(): void {
+    const er = this.state.errand;
+    if (!er) return;
+
+    const from = this.state.students.find(s => s.id === er.fromId);
+    const to = this.state.students.find(s => s.id === er.toId);
+    if (!from || !to) return;
+
+    const AFFINITY_GAIN = 8;
+    this.state = {
+      ...this.state,
+      students: this.state.students.map(s => {
+        if (s.id === er.fromId || s.id === er.toId) {
+          return { ...s, affinity: Math.min(100, s.affinity + AFFINITY_GAIN) };
+        }
+        return s;
+      }),
+      errand: null,
+      currentTime: Math.min(MAX_TIME, this.state.currentTime + 5),
+      actionLogs: [...this.state.actionLogs, `${from.name}の${er.itemName}を${to.name}に届けた。<span style="color:#7EC850;">双方の好感度+${AFFINITY_GAIN}</span>`],
+    };
+    this.dailyScreen?.update(this.state);
+  }
+
+  /** おつかいイベント発生（会話後 20%） */
+  private tryErrand(student: Student): void {
+    if (this.state.errand) return; // 既に受注中
+    if (student.affinity < 10) return;
+    if (Math.random() > 0.20) return;
+
+    const pc = this.state.playerCharacter;
+    if (!pc) return;
+
+    // 届け先: 同じクラスまたは同じ部活で、異なるフロアにいる生徒を優先
+    const possibleTargets = this.state.students.filter(s =>
+      s.id !== pc.id && s.id !== student.id && !s.candidateId &&
+      (s.className === student.className || (s.clubId && s.clubId === student.clubId))
+    );
+    if (possibleTargets.length === 0) return;
+
+    const currentFloor = getFloorFromLocation(this.state.currentLocation);
+    const diffFloor = possibleTargets.filter(s => {
+      const loc = getStudentLocation(s.id, this.state.timeSlot, this.state.day, this.state.currentTime);
+      if (!loc) return false;
+      return getFloorFromLocation(loc) !== currentFloor;
+    });
+    const pool = diffFloor.length > 0 ? diffFloor : possibleTargets;
+    const target = pool[Math.floor(Math.random() * pool.length)];
+
+    const errandItems = ['手紙', 'ノート', 'お弁当箱', '伝言'];
+    const itemName = errandItems[Math.floor(Math.random() * errandItems.length)];
+
+    this.dailyScreen?.showErrandRequest(student, target, itemName, (accepted) => {
+      if (accepted) {
+        this.state = {
+          ...this.state,
+          errand: { fromId: student.id, toId: target.id, itemName },
+          actionLogs: [...this.state.actionLogs, `${student.name}から${target.name}への${itemName}を預かった。`],
+        };
+        this.dailyScreen?.update(this.state);
+      }
     });
   }
 
@@ -324,6 +531,9 @@ export class Game {
         actionLogs: [...this.state.actionLogs, logSummary],
       };
       this.dailyScreen?.update(this.state);
+      // おつかいイベント発生判定
+      const updatedStudent = this.state.students.find(s => s.id === student.id);
+      if (updatedStudent) this.tryErrand(updatedStudent);
     });
   }
 
@@ -434,6 +644,14 @@ export class Game {
       return;
     }
     const newDay = this.state.day + 1;
+
+    // 活動家の再選出（毎日）
+    const activists = electActivists(
+      this.state.students,
+      this.state.playerCharacter?.id ?? '',
+      this.state.candidate ?? 'conservative',
+    );
+
     this.state = {
       ...this.state,
       day: newDay,
@@ -441,8 +659,23 @@ export class Game {
       stamina: 100,
       currentLocation: this.getPlayerClassLocation(),
       timeSlot: 'afterschool',
+      activists,
+      actionLogs: [],
+      pendingActivistBattle: null,
     };
+
     this.showDaily();
+  }
+
+  /** 活動家からの強制説得バトルを開始 */
+  private startActivistBattle(activist: Student, _activistCandidate: CandidateId): void {
+    const battle = initBattle(activist, true); // isDefending = true
+    this.state = {
+      ...this.state,
+      battle,
+      pendingActivistBattle: null,
+    };
+    this.showBattle();
   }
 
   private showBattle(): void {
@@ -613,8 +846,10 @@ export class Game {
       return `${prefix}${log.text}`;
     });
 
-    // 説得バトルの時間消費
-    const timeAfterBattle = Math.min(MAX_TIME, this.state.currentTime + TIME_COST.PERSUADE);
+    // 説得バトルの時間消費（防御バトルは時間消費なし）
+    const timeAfterBattle = battle.isDefending
+      ? this.state.currentTime
+      : Math.min(MAX_TIME, this.state.currentTime + TIME_COST.PERSUADE);
 
     if (result === 'win') {
       // 成功: 相手の思想をプレイヤーの支持方向にシフト
@@ -624,7 +859,9 @@ export class Game {
         if (s.id !== student.id) return s;
         return { ...s, support: newSupport };
       });
-      const logEntry = `【説得成功】${student.name}を説得した！\n${battleLogLines.join('\n')}\n→ 思想シフト ${shiftAmount}`;
+      const logEntry = battle.isDefending
+        ? `【防衛成功】${student.name}の説得を跳ね返した！\n${battleLogLines.join('\n')}\n→ 相手の思想シフト ${shiftAmount}`
+        : `【説得成功】${student.name}を説得した！\n${battleLogLines.join('\n')}\n→ 思想シフト ${shiftAmount}`;
       this.state = {
         ...this.state,
         screen: 'daily',
@@ -645,7 +882,9 @@ export class Game {
         this.state.playerSupport, student.support, battle.barPosition
       );
       shiftAmount = shiftPercent;
-      const logEntry = `【説得失敗】${student.name}に説得されてしまった…\n${battleLogLines.join('\n')}\n→ 自分の思想シフト ${shiftAmount}`;
+      const logEntry = battle.isDefending
+        ? `【防衛失敗】${student.name}に押されてしまった…\n${battleLogLines.join('\n')}\n→ 自分の思想シフト ${shiftAmount}`
+        : `【説得失敗】${student.name}に説得されてしまった…\n${battleLogLines.join('\n')}\n→ 自分の思想シフト ${shiftAmount}`;
 
       // プレイヤーの支持候補が変わったかチェック
       const newCandidate = getPlayerCandidate(newSupport);

@@ -28,10 +28,11 @@ interface GameStateJSON {
   activists: string[];
   lostItem: GameState['lostItem'];
   errand: GameState['errand'];
+  tutorial: GameState['tutorial'];
   version: number;
 }
 
-const SAVE_VERSION = 2;
+const SAVE_VERSION = 3;
 
 /** GameState を localStorage に保存 */
 export function saveGame(state: GameState): void {
@@ -56,6 +57,7 @@ export function saveGame(state: GameState): void {
     activists: [...state.activists],
     lostItem: state.lostItem,
     errand: state.errand,
+    tutorial: { ...state.tutorial },
     version: SAVE_VERSION,
   };
   localStorage.setItem(SAVE_KEY, JSON.stringify(json));
@@ -95,6 +97,7 @@ export function loadGame(): GameState | null {
       pendingActivistBattle: null,
       lostItem: json.lostItem,
       errand: json.errand,
+      tutorial: json.tutorial,
     };
     return state;
   } catch {

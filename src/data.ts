@@ -1227,6 +1227,19 @@ export const STUDENTS: Student[] = [
   },
 ];
 
+/** チュートリアル対戦相手（渡辺あおい） */
+export function getTutorialOpponent(): Student {
+  const s = STUDENTS.find(s => s.id === 'watanabe_aoi')!;
+  return {
+    ...s,
+    revealedHobbies: new Set<HobbyTopic>(['sns', 'sports_hobby']),
+    revealedLikes: [],
+    revealedDislikes: [],
+    affinity: 10,  // 好感度少しあり（チュートリアルで初期バーが少し有利に）
+    talkCount: 1,
+  };
+}
+
 // クラス名からLocationIdを返す
 const CLASS_LOCATION_MAP: Record<string, LocationId> = {
   '1-A': 'class1a',

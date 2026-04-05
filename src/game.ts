@@ -23,6 +23,8 @@ import { DailyScreen } from './screens/dailyScreen';
 import { BattleScreen } from './screens/battleScreen';
 import { EndingScreen } from './screens/endingScreen';
 import { DebugScreen } from './screens/debugScreen';
+import { PrologueScreen } from './screens/prologueScreen';
+import { PersuadeTutorial } from './screens/persuadeTutorial';
 import { showInfoDialog } from './ui/gameDialog';
 import { bgm, BGM_TRACKS } from './bgm';
 import { saveGame, loadGame, deleteSaveData } from './saveLoad';
@@ -53,6 +55,11 @@ function createInitialState(): GameState {
     pendingActivistBattle: null,
     lostItem: null,
     errand: null,
+    tutorial: {
+      seenPrologue: false,
+      seenMove: false,
+      seenTalk: false,
+    },
   };
 }
 
@@ -66,6 +73,8 @@ export class Game {
   private battleScreenInst: BattleScreen | null = null;
   private endingScreen: EndingScreen | null = null;
   private debugScreen: DebugScreen | null = null;
+  private prologueScreen: PrologueScreen | null = null;
+  private persuadeTutorial: PersuadeTutorial | null = null;
   private previousScreen: GameState['screen'] | null = null;
 
   constructor(root: HTMLElement) {
@@ -107,12 +116,14 @@ export class Game {
 
   private clearScreens(): void {
     this.titleScreen?.unmount();
+    this.prologueScreen?.unmount();
     this.characterScreen?.unmount();
     this.dailyScreen?.unmount();
     this.battleScreenInst?.unmount();
     this.endingScreen?.unmount();
     this.debugScreen?.unmount();
     this.titleScreen = null;
+    this.prologueScreen = null;
     this.characterScreen = null;
     this.dailyScreen = null;
     this.battleScreenInst = null;
@@ -126,9 +137,10 @@ export class Game {
     this.titleScreen = new TitleScreen({
       onStart: () => {
         deleteSaveData();
-        this.showCharacterSelect();
+        this.showPrologue();
       },
       onContinue: () => this.continueGame(),
+      onPersuadeTutorial: () => this.showPersuadeTutorial('title'),
     });
     this.titleScreen.mount(this.root);
   }
@@ -139,6 +151,31 @@ export class Game {
     this.state = saved;
     this.state.screen = 'daily';
     this.showDaily();
+  }
+
+  private showPersuadeTutorial(returnTo: 'title' | 'daily'): void {
+    bgm.play(BGM_TRACKS.settoku);
+    this.persuadeTutorial = new PersuadeTutorial({
+      onFinish: () => {
+        this.persuadeTutorial?.unmount();
+        this.persuadeTutorial = null;
+        // 元の画面のBGMに戻す
+        bgm.play(returnTo === 'title' ? BGM_TRACKS.title : BGM_TRACKS.schoolDaytime);
+      },
+    });
+    this.persuadeTutorial.mount(this.root);
+  }
+
+  private showPrologue(): void {
+    this.clearScreens();
+    this.state = { ...this.state, screen: 'prologue' };
+    this.prologueScreen = new PrologueScreen({
+      onFinish: () => {
+        this.state = { ...this.state, tutorial: { ...this.state.tutorial, seenPrologue: true } };
+        this.showCharacterSelect();
+      },
+    });
+    this.prologueScreen.mount(this.root);
   }
 
   private showCharacterSelect(): void {
@@ -211,8 +248,19 @@ export class Game {
       onDeliverLostItem: () => this.handleDeliverLostItem(),
       onDeliverErrand: () => this.handleDeliverErrand(),
       onNextDay: () => this.handleNextDay(),
+      onPersuadeTutorial: () => this.showPersuadeTutorial('daily'),
     });
     this.dailyScreen.mount(this.root);
+
+    // チュートリアル: 初日に移動ヒント
+    if (!this.state.tutorial.seenMove && this.state.day === 1) {
+      this.state = { ...this.state, tutorial: { ...this.state.tutorial, seenMove: true } };
+      showInfoDialog(this.root, {
+        title: 'はじめに',
+        message: '学園を探索してみよう。<br>廊下のマップから教室や部室に移動できる。<br>体力（スタミナ）に気をつけて！',
+      });
+      saveGame(this.state);
+    }
   }
 
   private isTimeUp(): boolean {
@@ -228,6 +276,17 @@ export class Game {
       currentTime: Math.min(MAX_TIME, this.state.currentTime + TIME_COST.ENTER_ROOM),
     };
     this.dailyScreen?.update(this.state);
+
+    // チュートリアル: 初めて部屋に入った時
+    if (!this.state.tutorial.seenTalk) {
+      this.state = { ...this.state, tutorial: { ...this.state.tutorial, seenTalk: true } };
+      showInfoDialog(this.root, {
+        title: 'ヒント',
+        message: '生徒に話しかけてみよう。<br>雑談で趣味や好みを知ることができる。<br>仲良くなると説得が有利になるかも？',
+      });
+      saveGame(this.state);
+    }
+
     if (this.tryLostItem()) return;
     if (!this.tryActivistAction()) this.tryChitchat();
   }

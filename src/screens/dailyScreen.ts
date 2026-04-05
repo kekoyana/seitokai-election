@@ -126,6 +126,7 @@ export interface DailyCallbacks {
   onDeliverLostItem: () => void;
   onDeliverErrand: () => void;
   onNextDay: () => void;
+  onPersuadeTutorial: () => void;
 }
 
 export class DailyScreen {
@@ -564,7 +565,16 @@ export class DailyScreen {
       </button>
     ` : '';
 
-    return `${exitBtnHtml}${infoBtnHtml}${nextDayBtnHtml}`;
+    const tutorialBtnHtml = !isOverlay ? `
+      <button id="sidebar-tutorial-btn" style="
+        width:100%; padding:8px 12px;
+        background:none; border:1px solid rgba(255,255,255,0.2); border-radius:8px;
+        color:var(--game-text-dim); font-size:0.78em; cursor:pointer;
+        font-family:var(--game-font); text-align:center;
+      ">説得の遊び方</button>
+    ` : '';
+
+    return `${exitBtnHtml}${infoBtnHtml}${nextDayBtnHtml}${tutorialBtnHtml}`;
   }
 
   private renderMainPanel(studentsHere: Student[], isOutOfStamina: boolean): string {
@@ -652,6 +662,12 @@ export class DailyScreen {
               <div style="font-size:0.75em; opacity:0.85;">${dayToDate(this.state.day)}</div>
             </button>
           </div>
+          <button id="mobile-tutorial-btn" style="
+            width:100%; margin-top:8px; padding:6px;
+            background:none; border:1px solid rgba(0,0,0,0.1); border-radius:6px;
+            color:var(--game-text-dim); font-size:0.75em; cursor:pointer;
+            font-family:var(--game-font);
+          ">説得の遊び方</button>
         </div>
       </div>
 
@@ -1645,6 +1661,14 @@ export class DailyScreen {
     // PC用サイドバー: 翌日ボタン
     this.container.querySelector<HTMLButtonElement>('#sidebar-next-day-btn')?.addEventListener('pointerup', () => {
       this.showNextDayConfirm();
+    });
+
+    // 説得チュートリアルボタン（PC / モバイル共通）
+    this.container.querySelector('#sidebar-tutorial-btn')?.addEventListener('pointerup', () => {
+      this.callbacks.onPersuadeTutorial();
+    });
+    this.container.querySelector('#mobile-tutorial-btn')?.addEventListener('pointerup', () => {
+      this.callbacks.onPersuadeTutorial();
     });
 
     // 部屋に入る

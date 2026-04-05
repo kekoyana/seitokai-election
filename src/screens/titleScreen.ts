@@ -5,12 +5,14 @@ import { hasSaveData } from '../saveLoad';
 export interface TitleCallbacks {
   onStart: () => void;
   onContinue: () => void;
+  onPersuadeTutorial: () => void;
 }
 
 export class TitleScreen {
   private container: HTMLDivElement;
   private callbacks: TitleCallbacks;
   private showVolumeDialog: boolean = false;
+  private showNewGameConfirm: boolean = false;
 
   constructor(callbacks: TitleCallbacks) {
     this.callbacks = callbacks;
@@ -74,7 +76,7 @@ export class TitleScreen {
           つづきから
         </button>
         ` : ''}
-        <button id="start-btn" class="game-btn ${hasSaveData() ? '' : 'game-btn-primary'}" style="
+        <button id="start-btn" class="game-btn game-btn-primary" style="
           padding: ${hasSaveData() ? '12px 48px' : '16px 48px'};
           font-size: ${hasSaveData() ? '1.0em' : '1.2em'};
           letter-spacing: 0.15em;
@@ -83,14 +85,56 @@ export class TitleScreen {
           ${hasSaveData() ? 'はじめから' : 'ゲームスタート'}
         </button>
 
+        <div style="margin-top:16px;">
+          <button id="persuade-tutorial-btn" style="
+            background:none; border:none; color:var(--game-text-dim);
+            font-size:0.82em; cursor:pointer; padding:6px 12px;
+            font-family:var(--game-font);
+            text-decoration:underline; text-underline-offset:3px;
+          ">説得バトルの遊び方</button>
+        </div>
+
         <div style="
           display:flex; align-items:center; justify-content:center; gap:8px;
-          margin-top:16px; color:var(--game-text); font-size:0.9em;
+          margin-top:12px; color:var(--game-text); font-size:0.9em;
         ">
           <span id="bgm-icon" style="cursor:pointer; padding:4px;">${bgm.volume > 0 ? '🔊' : '🔇'}</span>
         </div>
       </div>
     `;
+
+    // はじめから確認ダイアログ
+    if (this.showNewGameConfirm) {
+      const confirmHtml = `
+        <div class="game-dialog-overlay" style="
+          position:absolute; inset:0; z-index:200;
+          background:rgba(0,0,20,0.4);
+          display:flex; align-items:center; justify-content:center;
+          animation: fadeIn 0.2s ease;
+        ">
+          <div class="game-panel" style="width:280px; padding:24px; text-align:center;">
+            <div style="font-weight:bold; margin-bottom:12px; color:var(--game-text);">確認</div>
+            <p style="color:var(--game-text); font-size:0.9em; margin-bottom:20px; line-height:1.6;">
+              セーブデータを削除して<br>最初から始めますか？
+            </p>
+            <div style="display:flex; gap:12px; justify-content:center;">
+              <button id="confirm-newgame-cancel" class="game-btn game-btn-primary" style="padding:10px 24px;">やめる</button>
+              <button id="confirm-newgame-ok" class="game-btn game-btn-danger" style="padding:10px 24px;">はじめから</button>
+            </div>
+          </div>
+        </div>
+      `;
+      this.container.insertAdjacentHTML('beforeend', confirmHtml);
+
+      this.container.querySelector('#confirm-newgame-cancel')?.addEventListener('pointerup', () => {
+        this.showNewGameConfirm = false;
+        this.render();
+      });
+      this.container.querySelector('#confirm-newgame-ok')?.addEventListener('pointerup', () => {
+        this.showNewGameConfirm = false;
+        this.callbacks.onStart();
+      });
+    }
 
     // 音量ダイアログ
     if (this.showVolumeDialog) {
@@ -139,10 +183,20 @@ export class TitleScreen {
     });
     btn.addEventListener('pointerup', () => {
       btn.style.transform = 'scale(1)';
-      this.callbacks.onStart();
+      if (hasSaveData()) {
+        this.showNewGameConfirm = true;
+        this.render();
+      } else {
+        this.callbacks.onStart();
+      }
     });
     btn.addEventListener('pointerleave', () => {
       btn.style.transform = 'scale(1)';
+    });
+
+    // 説得チュートリアルボタン
+    this.container.querySelector('#persuade-tutorial-btn')?.addEventListener('pointerup', () => {
+      this.callbacks.onPersuadeTutorial();
     });
 
     // BGM音量アイコン -> ダイアログ表示

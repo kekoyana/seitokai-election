@@ -158,7 +158,7 @@ export interface Organization {
 
 // ゲーム全体状態
 export interface GameState {
-  screen: 'title' | 'faction_select' | 'daily' | 'battle' | 'battle_result' | 'ending' | 'gameover';
+  screen: 'title' | 'prologue' | 'faction_select' | 'daily' | 'battle' | 'battle_result' | 'ending' | 'gameover';
   faction: FactionId | null;
   students: Student[];
   day: number; // 1〜30
@@ -178,4 +178,9 @@ export interface GameState {
   // 探索イベント
   lostItem: { itemName: string; hint: string; ownerId: string } | null;
   errand: { fromId: string; toId: string; itemName: string } | null;
+  tutorial: {
+    seenPrologue: boolean;
+    seenMove: boolean;
+    seenTalk: boolean;
+  };
 }

@@ -5,7 +5,7 @@ import {
   isCorridorLocation, getFloorFromLocation, FLOOR_ROOMS, FLOOR_ADJACENCY,
   FLOOR_LABELS, MOVE_COST, getFloorMoveCost, renderSupportBar, MAX_TIME, TIME_COST,
 } from '../data';
-import { ORGANIZATIONS, ORGANIZATION_TYPE_LABELS, SPORTS_CLUB_IDS, CULTURE_CLUB_IDS } from '../data/organizations';
+import { ORGANIZATIONS, SPORTS_CLUB_IDS, CULTURE_CLUB_IDS } from '../data/organizations';
 import { getOrganizationVote, calcOrganizationSupport } from '../logic/organizationLogic';
 import { bgm } from '../bgm';
 import dailyBg from '../../assets/backgrounds/daily.jpg';
@@ -354,11 +354,36 @@ export class DailyScreen {
       </div>
     ` : '';
 
+    // PC用サイドバー（情報・翌日ボタン）
+    const sidebarHtml = this.renderSidebar();
+
     this.container.innerHTML = `
+      <style>
+        .daily-sidebar { display:none; }
+        .daily-mobile-actions { display:block; }
+        @media (min-width: 768px) {
+          .daily-sidebar {
+            display:flex; flex-direction:column; gap:8px;
+            width:200px; flex-shrink:0;
+            padding:52px 12px 52px 0;
+            z-index:2; position:relative;
+            overflow-y:auto;
+          }
+          .daily-mobile-actions { display:none; }
+          .daily-main-area {
+            flex:1; min-width:0;
+          }
+        }
+      </style>
       ${timeOverlayHtml}
       ${hudHtml}
-      <div style="flex:1; overflow-y:auto; padding:48px 16px 52px; position:relative; z-index:2;">
-        ${mainHtml}
+      <div style="flex:1; display:flex; overflow:hidden; position:relative; z-index:2;">
+        <div class="daily-main-area" style="flex:1; overflow-y:auto; padding:48px 16px 52px;">
+          ${mainHtml}
+        </div>
+        <div class="daily-sidebar">
+          ${sidebarHtml}
+        </div>
       </div>
       ${logBoxHtml}
       ${bottomBar}
@@ -437,14 +462,6 @@ export class DailyScreen {
     const vote = getOrganizationVote(org, this.state.students);
     const voteCandidate = CANDIDATES.find(c => c.id === vote);
     const isAlly = vote === this.state.candidate;
-    const typeLabel = ORGANIZATION_TYPE_LABELS[org.type] ?? org.type;
-
-    const typeDesc: Record<string, string> = {
-      dictatorship: '代表の意向が強く反映',
-      council: '代表と副代表が合議',
-      delegation: '副代表に権限を委任',
-      majority: '全員の多数決',
-    };
 
     const leader = this.state.students.find(s => s.id === org.leaderId);
     const allMemberIds = [org.leaderId, ...org.subLeaderIds, ...org.memberIds];
@@ -455,7 +472,6 @@ export class DailyScreen {
 
     return `
       <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
-        <span style="font-size:0.75em; background:var(--game-panel-inner); color:var(--game-text-dim); border-radius:4px; padding:2px 6px;">${typeLabel}</span>
         <span style="
           font-size:0.75em; padding:2px 8px; border-radius:4px;
           background:${(voteCandidate?.color ?? '#888')}30;
@@ -465,8 +481,6 @@ export class DailyScreen {
         ">${FACTION_LABELS[vote] ?? ''}派${isAlly ? ' ✓' : ''}</span>
       </div>
       <div style="display:flex; align-items:center; gap:6px; margin-bottom:4px; font-size:0.72em; color:var(--game-text-dim);">
-        <span>決定方式: ${typeDesc[org.type] ?? ''}</span>
-        <span style="opacity:0.4;">|</span>
         <span>代表: <strong style="color:var(--game-text);">${leader?.name ?? '?'}</strong></span>
         <span style="opacity:0.4;">|</span>
         <span>${totalMembers}名</span>
@@ -542,6 +556,51 @@ export class DailyScreen {
     `;
   }
 
+  /** PC用サイドバー: 廊下へ・情報・翌日ボタン */
+  private renderSidebar(): string {
+    const inCorridor = isCorridorLocation(this.state.currentLocation);
+    const isOverlay = this.showPlayerInfo || this.showStudentInfo || this.infoPanel;
+
+    const exitBtnHtml = !inCorridor && !isOverlay ? `
+      <button id="sidebar-exit-room-btn" class="game-btn game-btn-primary" style="
+        padding:10px 12px; width:100%;
+        background:#4A90D9;
+        color:#fff; border:none; border-radius:10px;
+        font-size:0.85em; cursor:pointer;
+        text-align:left; font-family:inherit;
+      ">
+        <div style="font-weight:bold;">← ${getFloorFromLocation(this.state.currentLocation) === 'ground' ? 'グラウンドへ' : '廊下へ'}</div>
+        <div style="font-size:0.75em; opacity:0.85;">フロア移動</div>
+      </button>
+    ` : '';
+
+    const infoBtnHtml = !isOverlay ? `
+      <button id="sidebar-info-btn" class="game-btn" style="
+        padding:10px 12px; width:100%;
+        background:linear-gradient(180deg,#8E6BAD,#6E4B8D);
+        border-color:#a080c0;
+        font-size:0.85em;
+        text-align:left; font-family:var(--game-font);
+      ">
+        <div style="font-weight:bold;">情報</div>
+        <div style="font-size:0.75em; opacity:0.85;">クラス・部活</div>
+      </button>
+    ` : '';
+
+    const nextDayBtnHtml = `
+      <button id="sidebar-next-day-btn" class="game-btn game-btn-warning" style="
+        padding:10px 12px; width:100%;
+        font-size:0.85em;
+        text-align:left; font-family:var(--game-font);
+      ">
+        <div style="font-weight:bold;">翌日へ</div>
+        <div style="font-size:0.75em; opacity:0.85;">${dayToDate(this.state.day)}</div>
+      </button>
+    `;
+
+    return `${exitBtnHtml}${infoBtnHtml}${nextDayBtnHtml}`;
+  }
+
   private renderMainPanel(studentsHere: Student[], isOutOfStamina: boolean): string {
     const candidatesHere = this.getCandidatesAtLocation();
     const candidatesHtml = candidatesHere.map(c => this.renderCandidateCard(c)).join('');
@@ -599,36 +658,38 @@ export class DailyScreen {
         ${studentsHtml}
       </div>
 
-      <div class="game-panel" style="margin-bottom:12px;">
-        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px;">
-          <button id="exit-room-btn" class="game-btn game-btn-primary" style="
-            padding:10px 12px;
-            background:#4A90D9;
-            color:#fff; border:none; border-radius:10px;
-            font-size:0.85em; cursor:pointer;
-            text-align:left; font-family:inherit;
-          ">
-            <div style="font-weight:bold;">← ${getFloorFromLocation(this.state.currentLocation) === 'ground' ? 'グラウンドへ' : '廊下へ'}</div>
-            <div style="font-size:0.75em; opacity:0.85;">フロア移動</div>
-          </button>
-          <button id="info-btn" class="game-btn" style="
-            padding:10px 12px;
-            background:linear-gradient(180deg,#8E6BAD,#6E4B8D);
-            border-color:#a080c0;
-            font-size:0.85em;
-            text-align:left; font-family:var(--game-font);
-          ">
-            <div style="font-weight:bold;">情報</div>
-            <div style="font-size:0.75em; opacity:0.85;">クラス・部活</div>
-          </button>
-          <button id="next-day-btn-always" class="game-btn game-btn-warning" style="
-            padding:10px 12px;
-            font-size:0.85em;
-            text-align:left; font-family:var(--game-font);
-          ">
-            <div style="font-weight:bold;">翌日へ</div>
-            <div style="font-size:0.75em; opacity:0.85;">${dayToDate(this.state.day)}</div>
-          </button>
+      <div class="daily-mobile-actions">
+        <div class="game-panel" style="margin-bottom:12px;">
+          <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px;">
+            <button id="exit-room-btn" class="game-btn game-btn-primary" style="
+              padding:10px 12px;
+              background:#4A90D9;
+              color:#fff; border:none; border-radius:10px;
+              font-size:0.85em; cursor:pointer;
+              text-align:left; font-family:inherit;
+            ">
+              <div style="font-weight:bold;">← ${getFloorFromLocation(this.state.currentLocation) === 'ground' ? 'グラウンドへ' : '廊下へ'}</div>
+              <div style="font-size:0.75em; opacity:0.85;">フロア移動</div>
+            </button>
+            <button id="info-btn" class="game-btn" style="
+              padding:10px 12px;
+              background:linear-gradient(180deg,#8E6BAD,#6E4B8D);
+              border-color:#a080c0;
+              font-size:0.85em;
+              text-align:left; font-family:var(--game-font);
+            ">
+              <div style="font-weight:bold;">情報</div>
+              <div style="font-size:0.75em; opacity:0.85;">クラス・部活</div>
+            </button>
+            <button id="next-day-btn-always" class="game-btn game-btn-warning" style="
+              padding:10px 12px;
+              font-size:0.85em;
+              text-align:left; font-family:var(--game-font);
+            ">
+              <div style="font-weight:bold;">翌日へ</div>
+              <div style="font-size:0.75em; opacity:0.85;">${dayToDate(this.state.day)}</div>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -818,7 +879,6 @@ export class DailyScreen {
       const voteCandidate = CANDIDATES.find(c => c.id === vote);
       const isAlly = vote === this.state.candidate;
       const leader = this.state.students.find(s => s.id === org.leaderId);
-      const typeLabel = ORGANIZATION_TYPE_LABELS[org.type] ?? org.type;
 
       return `
         <button data-info-org="${org.id}" style="
@@ -841,7 +901,6 @@ export class DailyScreen {
           <div style="flex:1; min-width:0;">
             <div style="display:flex; align-items:center; gap:6px;">
               <span style="font-size:0.88em; font-weight:bold; color:#333;">${org.name}</span>
-              <span style="font-size:0.65em; background:#f0f0f5; color:#888; border-radius:4px; padding:1px 5px;">${typeLabel}</span>
             </div>
             <div style="font-size:0.72em; color:#888;">代表: ${leader?.name ?? '不明'}</div>
             <div style="font-size:0.68em; color:#999; margin-top:2px; line-height:1.4;">${org.description}</div>
@@ -1102,28 +1161,30 @@ export class DailyScreen {
         ${this.renderFloorPlan(currentFloor, canEnter)}
       </div>
 
-      <div class="game-panel" style="
-        padding:12px 14px; margin-bottom:12px;
-      ">
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
-          <button id="info-btn" class="game-btn" style="
-            padding:10px 12px;
-            background:linear-gradient(180deg,#8E6BAD,#6E4B8D);
-            border-color:#a080c0;
-            font-size:0.85em;
-            text-align:left; font-family:var(--game-font);
-          ">
-            <div style="font-weight:bold;">情報</div>
-            <div style="font-size:0.75em; opacity:0.85;">クラス・部活</div>
-          </button>
-          <button id="next-day-btn-always" class="game-btn game-btn-warning" style="
-            padding:10px 12px;
-            font-size:0.85em;
-            text-align:left; font-family:var(--game-font);
-          ">
-            <div style="font-weight:bold;">翌日へ</div>
-            <div style="font-size:0.75em; opacity:0.85;">${dayToDate(this.state.day)}</div>
-          </button>
+      <div class="daily-mobile-actions">
+        <div class="game-panel" style="
+          padding:12px 14px; margin-bottom:12px;
+        ">
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+            <button id="info-btn" class="game-btn" style="
+              padding:10px 12px;
+              background:linear-gradient(180deg,#8E6BAD,#6E4B8D);
+              border-color:#a080c0;
+              font-size:0.85em;
+              text-align:left; font-family:var(--game-font);
+            ">
+              <div style="font-weight:bold;">情報</div>
+              <div style="font-size:0.75em; opacity:0.85;">クラス・部活</div>
+            </button>
+            <button id="next-day-btn-always" class="game-btn game-btn-warning" style="
+              padding:10px 12px;
+              font-size:0.85em;
+              text-align:left; font-family:var(--game-font);
+            ">
+              <div style="font-weight:bold;">翌日へ</div>
+              <div style="font-size:0.75em; opacity:0.85;">${dayToDate(this.state.day)}</div>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -1617,6 +1678,24 @@ export class DailyScreen {
     const exitRoomBtn = this.container.querySelector<HTMLButtonElement>('#exit-room-btn');
     exitRoomBtn?.addEventListener('pointerup', () => {
       this.callbacks.onExitRoom();
+    });
+
+    // PC用サイドバー: 廊下に出る
+    this.container.querySelector<HTMLButtonElement>('#sidebar-exit-room-btn')?.addEventListener('pointerup', () => {
+      this.callbacks.onExitRoom();
+    });
+
+    // PC用サイドバー: 情報ボタン
+    this.container.querySelector<HTMLButtonElement>('#sidebar-info-btn')?.addEventListener('pointerup', () => {
+      this.infoPanel = { tab: 'class' };
+      this.showStudentInfo = null;
+      this.showPlayerInfo = false;
+      this.render();
+    });
+
+    // PC用サイドバー: 翌日ボタン
+    this.container.querySelector<HTMLButtonElement>('#sidebar-next-day-btn')?.addEventListener('pointerup', () => {
+      this.showNextDayConfirm();
     });
 
     // 部屋に入る

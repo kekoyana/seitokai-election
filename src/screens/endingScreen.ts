@@ -2,6 +2,7 @@ import type { GameState, FactionId } from '../types';
 import { FACTION_INFO, FACTION_LABELS, renderSupportBar, ALL_FACTION_IDS } from '../data';
 import { ORGANIZATIONS } from '../data/organizations';
 import { getOrganizationVote } from '../logic/organizationLogic';
+import type { Screen } from './Screen';
 
 const WINNER_MESSAGES: Record<FactionId, string> = {
   conservative: '伝統を守り抜く。それが、この学園の誇りだ。',
@@ -13,7 +14,7 @@ export interface EndingCallbacks {
   onRestart: () => void;
 }
 
-export class EndingScreen {
+export class EndingScreen implements Screen {
   private container: HTMLDivElement;
   private state: GameState;
   private callbacks: EndingCallbacks;

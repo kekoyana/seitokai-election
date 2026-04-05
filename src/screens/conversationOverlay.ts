@@ -1,8 +1,9 @@
 import type { ConversationStep, ConversationResult } from '../logic/conversationGenerator';
 import { renderInitialIcon } from '../data';
 import { showInfoDialog } from '../ui/gameDialog';
+import type { Screen } from './Screen';
 
-export class ConversationOverlay {
+export class ConversationOverlay implements Screen {
   private container: HTMLDivElement;
   private steps: ConversationStep[];
   private result: ConversationResult;

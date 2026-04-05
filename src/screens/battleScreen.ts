@@ -2,6 +2,7 @@ import type { GameState, PlayerAttitude, Topic, Stance, FactionId, HobbyTopic } 
 import { FACTION_INFO, HOBBY_LABELS, MOOD_LABELS, renderInitialIcon, renderSupportBar } from '../data';
 import { bgm } from '../bgm';
 import battleBg from '../../assets/backgrounds/battle.jpg';
+import type { Screen } from './Screen';
 
 export interface BattleCallbacks {
   onAttitudeSelect: (attitude: PlayerAttitude) => void;
@@ -10,7 +11,7 @@ export interface BattleCallbacks {
   onCancel: (phase: 'select_topic' | 'select_stance') => void;
 }
 
-export class BattleScreen {
+export class BattleScreen implements Screen {
   private container: HTMLDivElement;
   private state: GameState;
   private callbacks: BattleCallbacks;

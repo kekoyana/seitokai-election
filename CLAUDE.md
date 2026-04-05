@@ -24,18 +24,32 @@ src/
   main.ts               # エントリ
   game.ts               # 状態マシン（画面遷移管理）
   types.ts              # 型定義
-  data.ts               # 生徒・派閥・場所データ
+  data.ts               # バレルファイル（各dataモジュールの再エクスポート）
   battleLogic.ts        # 説得バトル判定ロジック
   catchphrase.ts        # 性格別キャッチフレーズ（battleLogicから参照）
   data/
+    students.ts         # 生徒データ・ポートレート・位置ロジック
+    factions.ts         # 派閥情報（色・方針・ラベル）
+    locations.ts        # 場所・フロア・移動コスト
+    constants.ts        # 時間コスト定数
+    labels.ts           # 各種ラベル・日付変換・性格アイコン色
+    render.ts           # 支持バー・イニシャルアイコンHTML生成
     organizations.ts    # 組織データ（クラス・部活）
+    conversationLines.ts # 会話テキストデータ
   logic/
     activistLogic.ts     # 活動家（NPC説得）選出・行動ロジック
     organizationLogic.ts # 組織票計算ロジック
+  ui/
+    dom.ts              # DOM操作ヘルパー（$, on, onDataAttr）
+    gameDialog.ts       # ダイアログUI（確認・情報）
   screens/
+    Screen.ts           # 画面インターフェース（mount/unmount）
     titleScreen.ts      # タイトル画面
     characterSelect.ts  # プレイヤーキャラ選択
     dailyScreen.ts      # 日常パート（メイン画面）
+    daily/
+      mapRenderer.ts    # マップ描画（フロア・部屋ボタン・階段）
+      infoPanel.ts      # 情報パネル（クラス・部活・生徒一覧）
     battleScreen.ts     # 説得バトル
     debugScreen.ts      # デバッグ画面（F2）
     endingScreen.ts     # エンディング・ゲームオーバー

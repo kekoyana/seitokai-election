@@ -1,6 +1,7 @@
 import titleBg from '../../assets/backgrounds/title.jpg';
 import { bgm } from '../bgm';
 import { hasSaveData } from '../saveLoad';
+import type { Screen } from './Screen';
 
 export interface TitleCallbacks {
   onStart: () => void;
@@ -8,7 +9,7 @@ export interface TitleCallbacks {
   onPersuadeTutorial: () => void;
 }
 
-export class TitleScreen {
+export class TitleScreen implements Screen {
   private container: HTMLDivElement;
   private callbacks: TitleCallbacks;
   private showVolumeDialog: boolean = false;

@@ -1,20 +1,13 @@
 import type { Student, FactionId } from '../types';
 import { FACTION_INFO, FACTION_LABELS, getCatchphrase, renderInitialIcon, ALL_FACTION_IDS } from '../data';
 import dailyBg from '../../assets/backgrounds/daily.jpg';
-
-const PERSONALITY_LABELS: Record<string, string> = {
-  passionate: '熱血',
-  cautious: '慎重',
-  stubborn: '頑固',
-  flexible: '柔軟',
-  cunning: '狡猾',
-};
+import type { Screen } from './Screen';
 
 export interface CharacterSelectCallbacks {
   onSelect: (student: Student) => void;
 }
 
-export class CharacterSelectScreen {
+export class CharacterSelectScreen implements Screen {
   private container: HTMLDivElement;
   private students: Student[];
   private callbacks: CharacterSelectCallbacks;

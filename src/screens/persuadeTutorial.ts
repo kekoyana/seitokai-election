@@ -6,6 +6,7 @@ import {
   initBattle, resolvePlayerTurn, resolveEnemyTurn,
   getAttitudeCost,
 } from '../battleLogic';
+import type { Screen } from './Screen';
 
 interface PersuadeTutorialCallbacks {
   onFinish: () => void;
@@ -56,7 +57,7 @@ const GUIDE_MESSAGES: Record<TutorialStep, { title: string; text: string; btn: s
   },
 };
 
-export class PersuadeTutorial {
+export class PersuadeTutorial implements Screen {
   private container: HTMLDivElement;
   private battleScreen: BattleScreen | null = null;
   private tutorialState: GameState;

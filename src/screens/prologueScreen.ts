@@ -1,5 +1,6 @@
 import titleBg from '../../assets/backgrounds/title.jpg';
 import { FACTION_INFO } from '../data';
+import type { Screen } from './Screen';
 
 interface PrologueCallbacks {
   onFinish: () => void;
@@ -9,7 +10,7 @@ interface ProloguePage {
   html: string;
 }
 
-export class PrologueScreen {
+export class PrologueScreen implements Screen {
   private container: HTMLDivElement;
   private callbacks: PrologueCallbacks;
   private currentPage = 0;

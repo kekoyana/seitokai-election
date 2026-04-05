@@ -1,36 +1,16 @@
 import type { GameState, Student, PreferenceAttr, FactionId } from '../types';
-import { FACTION_INFO, FACTION_LABELS, HAIRSTYLE_LABELS, HOBBY_LABELS, ATTRIBUTE_LABELS, getCatchphrase, renderInitialIcon, renderSupportBar, getStudentLocation, ALL_FACTION_IDS } from '../data';
+import { FACTION_INFO, FACTION_LABELS, HAIRSTYLE_LABELS, HOBBY_LABELS, ATTRIBUTE_LABELS, getCatchphrase, renderInitialIcon, renderSupportBar, getStudentLocation, ALL_FACTION_IDS, CLUB_LABELS, PERSONALITY_LABELS, dayToDate } from '../data';
 import { ORGANIZATIONS, ORGANIZATION_TYPE_LABELS } from '../data/organizations';
 import { getOrganizationVote } from '../logic/organizationLogic';
 import { getStudentFaction } from '../logic/activistLogic';
+import type { Screen } from './Screen';
 
-function dayToDate(day: number): string {
-  const d = new Date(2025, 8, day);
-  return `${d.getMonth() + 1}/${d.getDate()}`;
-}
-
-const CLUB_LABELS: Record<string, string> = {
-  soccer: 'サッカー部',
-  track: '陸上部',
-  tennis: 'テニス部',
-  art: '美術部',
-  baseball: '野球部',
-  brass: '吹奏楽部',
-};
-
-const PERSONALITY_LABELS: Record<string, string> = {
-  passionate: '熱血',
-  cautious: '慎重',
-  stubborn: '頑固',
-  flexible: '柔軟',
-  cunning: '狡猾',
-};
 
 export interface DebugCallbacks {
   onClose: () => void;
 }
 
-export class DebugScreen {
+export class DebugScreen implements Screen {
   private container: HTMLDivElement;
   private state: GameState;
   private callbacks: DebugCallbacks;

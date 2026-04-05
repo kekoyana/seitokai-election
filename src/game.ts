@@ -83,6 +83,11 @@ export class Game {
     this.showTitle();
   }
 
+  /** 状態を部分更新し、現在の画面に反映する */
+  private updateState(patch: Partial<GameState>): void {
+    this.state = { ...this.state, ...patch };
+  }
+
   private setupDebugKey(): void {
     window.addEventListener('keydown', (e) => {
       if (e.key === 'F2') {
@@ -167,10 +172,10 @@ export class Game {
 
   private showPrologue(): void {
     this.clearScreens();
-    this.state = { ...this.state, screen: 'prologue' };
+    this.updateState({ screen: 'prologue' });
     this.prologueScreen = new PrologueScreen({
       onFinish: () => {
-        this.state = { ...this.state, tutorial: { ...this.state.tutorial, seenPrologue: true } };
+        this.updateState({ tutorial: { ...this.state.tutorial, seenPrologue: true } });
         this.showCharacterSelect();
       },
     });
@@ -214,10 +219,9 @@ export class Game {
           playerSupport: { ...selected.support },
         };
         // 初日の活動家選出
-        this.state = {
-          ...this.state,
+        this.updateState({
           activists: electActivists(this.state.students, selected.id, factionId),
-        };
+        });
         // 初日セーブ
         saveGame(this.state);
         this.showDaily();
@@ -229,7 +233,7 @@ export class Game {
   private showDaily(): void {
     this.clearScreens();
     bgm.play(BGM_TRACKS.schoolDaytime);
-    this.state = { ...this.state, screen: 'daily' };
+    this.updateState({ screen: 'daily' });
     this.dailyScreen = new DailyScreen(this.state, {
       onEnterRoom: (locationId: LocationId) => this.handleEnterRoom(locationId),
       onExitRoom: () => this.handleExitRoom(),
@@ -262,7 +266,7 @@ export class Game {
 
     // チュートリアル: 初日に移動ヒント
     if (!this.state.tutorial.seenMove && this.state.day === 1) {
-      this.state = { ...this.state, tutorial: { ...this.state.tutorial, seenMove: true } };
+      this.updateState({ tutorial: { ...this.state.tutorial, seenMove: true } });
       showInfoDialog(this.root, {
         title: 'はじめに',
         message: '学園を探索してみよう。<br>廊下のマップから教室や部室に移動できる。<br>体力（スタミナ）に気をつけて！',
@@ -277,17 +281,16 @@ export class Game {
 
   private handleEnterRoom(locationId: LocationId): void {
     if (this.state.stamina < MOVE_COST.ENTER_ROOM || this.isTimeUp()) return;
-    this.state = {
-      ...this.state,
+    this.updateState({
       currentLocation: locationId,
       stamina: this.state.stamina - MOVE_COST.ENTER_ROOM,
       currentTime: Math.min(MAX_TIME, this.state.currentTime + TIME_COST.ENTER_ROOM),
-    };
+    });
     this.dailyScreen?.update(this.state);
 
     // チュートリアル: 初めて部屋に入った時
     if (!this.state.tutorial.seenTalk) {
-      this.state = { ...this.state, tutorial: { ...this.state.tutorial, seenTalk: true } };
+      this.updateState({ tutorial: { ...this.state.tutorial, seenTalk: true } });
       showInfoDialog(this.root, {
         title: 'ヒント',
         message: '生徒に話しかけてみよう。<br>雑談で趣味や好みを知ることができる。<br>仲良くなると説得が有利になるかも？',
@@ -301,10 +304,9 @@ export class Game {
 
   private handleExitRoom(): void {
     const currentFloor = getFloorFromLocation(this.state.currentLocation);
-    this.state = {
-      ...this.state,
+    this.updateState({
       currentLocation: getCorridorForFloor(currentFloor),
-    };
+    });
     this.dailyScreen?.update(this.state);
   }
 
@@ -317,12 +319,11 @@ export class Game {
     const timeCost = (currentFloor === '1f' && targetFloor === 'ground') ? TIME_COST.GO_OUTSIDE
       : (currentFloor === 'ground' && targetFloor === '1f') ? TIME_COST.GO_INSIDE
       : TIME_COST.CHANGE_FLOOR;
-    this.state = {
-      ...this.state,
+    this.updateState({
       currentLocation: getCorridorForFloor(targetFloor),
       stamina: this.state.stamina - cost,
       currentTime: Math.min(MAX_TIME, this.state.currentTime + timeCost),
-    };
+    });
     this.dailyScreen?.update(this.state);
     if (!this.tryActivistAction()) this.tryChitchat();
   }
@@ -344,11 +345,10 @@ export class Game {
 
     // NPC同士の説得結果を反映
     if (result.log) {
-      this.state = {
-        ...this.state,
+      this.updateState({
         students: result.updatedStudents,
         actionLogs: [...this.state.actionLogs, result.log],
-      };
+      });
       this.dailyScreen?.update(this.state);
     }
 
@@ -446,13 +446,12 @@ export class Game {
         ? { ...s, affinity: Math.min(100, s.affinity + affinityGain), revealedHobbies: newRevealed }
         : s
     );
-    this.state = { ...this.state, students: updatedStudents };
+    this.updateState({ students: updatedStudents });
 
     this.dailyScreen?.showConversation(convData.steps, convData.result, () => {
-      this.state = {
-        ...this.state,
+      this.updateState({
         actionLogs: [...this.state.actionLogs, `${student.name}が話しかけてきた。 <span style="color:#7EC850;">好感度+${affinityGain}</span>`],
-      };
+      });
       this.dailyScreen?.update(this.state);
     });
   }
@@ -479,14 +478,13 @@ export class Game {
     ];
     const item = items[Math.floor(Math.random() * items.length)];
 
-    this.state = {
-      ...this.state,
+    this.updateState({
       lostItem: { itemName: item.name, hint: item.hint(owner), ownerId: owner.id },
-    };
+    });
     this.dailyScreen?.update(this.state);
     this.dailyScreen?.showLostItemFound(item.name, item.hint(owner), (picked) => {
       if (!picked) {
-        this.state = { ...this.state, lostItem: null };
+        this.updateState({ lostItem: null });
         this.dailyScreen?.update(this.state);
       }
     });
@@ -502,14 +500,13 @@ export class Game {
     if (!owner) return;
 
     const AFFINITY_GAIN = 15;
-    this.state = {
-      ...this.state,
+    this.updateState({
       students: this.state.students.map(s =>
         s.id === li.ownerId ? { ...s, affinity: Math.min(100, s.affinity + AFFINITY_GAIN) } : s
       ),
       lostItem: null,
       actionLogs: [...this.state.actionLogs, `${owner.name}に${li.itemName}を届けた。<span style="color:#7EC850;">好感度+${AFFINITY_GAIN}</span>`],
-    };
+    });
     this.dailyScreen?.update(this.state);
   }
 
@@ -523,8 +520,7 @@ export class Game {
     if (!from || !to) return;
 
     const AFFINITY_GAIN = 8;
-    this.state = {
-      ...this.state,
+    this.updateState({
       students: this.state.students.map(s => {
         if (s.id === er.fromId || s.id === er.toId) {
           return { ...s, affinity: Math.min(100, s.affinity + AFFINITY_GAIN) };
@@ -534,7 +530,7 @@ export class Game {
       errand: null,
       currentTime: Math.min(MAX_TIME, this.state.currentTime + 5),
       actionLogs: [...this.state.actionLogs, `${from.name}の${er.itemName}を${to.name}に届けた。<span style="color:#7EC850;">双方の好感度+${AFFINITY_GAIN}</span>`],
-    };
+    });
     this.dailyScreen?.update(this.state);
   }
 
@@ -568,11 +564,10 @@ export class Game {
 
     this.dailyScreen?.showErrandRequest(student, target, itemName, (accepted) => {
       if (accepted) {
-        this.state = {
-          ...this.state,
+        this.updateState({
           errand: { fromId: student.id, toId: target.id, itemName },
           actionLogs: [...this.state.actionLogs, `${student.name}から${target.name}への${itemName}を預かった。`],
-        };
+        });
         this.dailyScreen?.update(this.state);
       }
     });
@@ -605,12 +600,11 @@ export class Game {
     });
 
     // 状態更新（会話演出前にデータだけ反映）
-    this.state = {
-      ...this.state,
+    this.updateState({
       students: updatedStudents,
       stamina: this.state.stamina - 5,
       currentTime: Math.min(MAX_TIME, this.state.currentTime + TIME_COST.TALK),
-    };
+    });
     this.dailyScreen?.update(this.state);
 
     // 会話ウィンドウ表示
@@ -627,10 +621,9 @@ export class Game {
     this.dailyScreen?.showConversation(convData.steps, convData.result, () => {
       // 会話終了: 要約ログを追加
       const logSummary = generateTalkLogSummary(student, revealedHobby, affinityGain);
-      this.state = {
-        ...this.state,
+      this.updateState({
         actionLogs: [...this.state.actionLogs, logSummary],
-      };
+      });
       this.dailyScreen?.update(this.state);
       // おつかいイベント発生判定
       const updatedStudent = this.state.students.find(s => s.id === student.id);
@@ -652,12 +645,11 @@ export class Game {
         text: `${student.name}はあまり教えてくれなかった`,
         effectHtml: '<span style="color:#999;">情報なし</span>',
       };
-      this.state = {
-        ...this.state,
+      this.updateState({
         stamina: this.state.stamina - 5,
         currentTime: Math.min(MAX_TIME, this.state.currentTime + TIME_COST.TALK),
         actionLogs: [...this.state.actionLogs, `${student.name}に噂話を聞いたが、教えてもらえなかった。`],
-      };
+      });
       this.dailyScreen?.update(this.state);
       this.dailyScreen?.showConversation(refuseSteps, refuseResult, () => {});
       return;
@@ -718,13 +710,12 @@ export class Game {
         if (s.id !== student.id) return s;
         return { ...s, talkCount: s.talkCount + 1, affinity: Math.max(-100, Math.min(100, s.affinity + affinityGain)) };
       });
-      this.state = {
-        ...this.state,
+      this.updateState({
         students: updatedStudents,
         stamina: this.state.stamina - 5,
         currentTime: Math.min(MAX_TIME, this.state.currentTime + TIME_COST.TALK),
         actionLogs: [...this.state.actionLogs, `${student.name}に噂話を聞いたが、新しい情報はなかった。`],
-      };
+      });
       this.dailyScreen?.update(this.state);
       return;
     }
@@ -748,12 +739,11 @@ export class Game {
       return s;
     });
 
-    this.state = {
-      ...this.state,
+    this.updateState({
       students: updatedStudents,
       stamina: this.state.stamina - 5,
       currentTime: Math.min(MAX_TIME, this.state.currentTime + TIME_COST.TALK),
-    };
+    });
     this.dailyScreen?.update(this.state);
 
     // 会話ウィンドウ表示
@@ -769,10 +759,9 @@ export class Game {
     );
     this.dailyScreen?.showConversation(convData.steps, convData.result, () => {
       const logSummary = generateGossipLogSummary(student, reveal, affinityGain);
-      this.state = {
-        ...this.state,
+      this.updateState({
         actionLogs: [...this.state.actionLogs, logSummary],
-      };
+      });
       this.dailyScreen?.update(this.state);
     });
   }
@@ -805,11 +794,10 @@ export class Game {
     const playerGender = this.state.playerCharacter?.gender;
     const playerAttrs = this.state.playerAttributes;
     const battle = initBattle(student, false, playerGender, playerAttrs);
-    this.state = {
-      ...this.state,
+    this.updateState({
       screen: 'battle',
       battle,
-    };
+    });
     this.showBattle();
   }
 
@@ -817,12 +805,11 @@ export class Game {
     if (this.isTimeUp()) return;
     if (this.state.currentLocation !== 'nurses_office') return;
     const recovery = 40;
-    this.state = {
-      ...this.state,
+    this.updateState({
       stamina: Math.min(100, this.state.stamina + recovery),
       currentTime: Math.min(MAX_TIME, this.state.currentTime + TIME_COST.NURSE_REST),
       actionLogs: [...this.state.actionLogs, `保健室で1時間休憩した（体力+${recovery}）`],
-    };
+    });
     this.dailyScreen?.update(this.state);
   }
 
@@ -851,8 +838,7 @@ export class Game {
     const newValue = newStats[stat];
 
     const playerId = this.state.playerCharacter.id;
-    this.state = {
-      ...this.state,
+    this.updateState({
       playerCharacter: {
         ...this.state.playerCharacter,
         stats: newStats,
@@ -863,7 +849,7 @@ export class Game {
       stamina: this.state.stamina - 10,
       currentTime: Math.min(MAX_TIME, this.state.currentTime + TIME_COST.TRAINING),
       actionLogs: [...this.state.actionLogs, `${locationLabels[stat]}をした（${statLabels[stat]}${TRAIN_AMOUNT > 0 ? `+${TRAIN_AMOUNT}` : '変化なし'}）`],
-    };
+    });
     this.dailyScreen?.update(this.state);
     this.dailyScreen?.showTrainingResult(
       statIcons[stat], statLabels[stat], oldValue, newValue, statColors[stat]
@@ -889,8 +875,7 @@ export class Game {
       this.state.faction ?? 'conservative',
     );
 
-    this.state = {
-      ...this.state,
+    this.updateState({
       day: newDay,
       currentTime: 0,
       stamina: 100,
@@ -900,7 +885,7 @@ export class Game {
       actionLogs: [],
         lostItem: null,
       errand: null,
-    };
+    });
 
     // オートセーブ
     saveGame(this.state);
@@ -913,10 +898,9 @@ export class Game {
     const playerGender = this.state.playerCharacter?.gender;
     const playerAttrs = this.state.playerAttributes;
     const battle = initBattle(activist, true, playerGender, playerAttrs); // isDefending = true
-    this.state = {
-      ...this.state,
+    this.updateState({
       battle,
-      };
+      });
     this.showBattle();
   }
 
@@ -930,27 +914,25 @@ export class Game {
         if (!this.state.battle) return;
         const cost = getAttitudeCost(attitude);
         if (this.state.stamina < cost) return;
-        this.state = {
-          ...this.state,
+        this.updateState({
           stamina: this.state.stamina - cost,
           battle: {
             ...this.state.battle,
             selectedAttitude: attitude,
             phase: 'select_topic',
           },
-        };
+        });
         this.battleScreenInst?.update(this.state);
       },
       onTopicSelect: (topic: Topic) => {
         if (!this.state.battle) return;
-        this.state = {
-          ...this.state,
+        this.updateState({
           battle: {
             ...this.state.battle,
             selectedTopic: topic,
             phase: 'select_stance',
           },
-        };
+        });
         this.battleScreenInst?.update(this.state);
       },
       onStanceSelect: (stance: Stance) => {
@@ -971,20 +953,20 @@ export class Game {
         const checkedAfterPlayer = checkBattleEnd(afterPlayer);
 
         if (checkedAfterPlayer.phase === 'finished') {
-          this.state = { ...this.state, battle: checkedAfterPlayer };
+          this.updateState({ battle: checkedAfterPlayer });
           this.battleScreenInst?.update(this.state);
           return;
         }
 
         // 相手ターン
-        this.state = { ...this.state, battle: { ...checkedAfterPlayer, phase: 'resolving' } };
+        this.updateState({ battle: { ...checkedAfterPlayer, phase: 'resolving' } });
         this.battleScreenInst?.update(this.state);
 
         setTimeout(() => {
           if (!this.state.battle) return;
           const { newBattle: afterEnemy } = resolveEnemyTurn(this.state.battle);
           const finalBattle = checkBattleEnd(afterEnemy);
-          this.state = { ...this.state, battle: finalBattle };
+          this.updateState({ battle: finalBattle });
           this.battleScreenInst?.update(this.state);
 
           // 次のラウンドのパス判定
@@ -999,25 +981,23 @@ export class Game {
           // 態度選択に戻る（スタミナを返還）
           const refund = this.state.battle.selectedAttitude
             ? getAttitudeCost(this.state.battle.selectedAttitude) : 0;
-          this.state = {
-            ...this.state,
+          this.updateState({
             stamina: this.state.stamina + refund,
             battle: {
               ...this.state.battle,
               selectedAttitude: null,
               phase: 'select_attitude',
             },
-          };
+          });
         } else if (phase === 'select_stance') {
           // 話題選択に戻る
-          this.state = {
-            ...this.state,
+          this.updateState({
             battle: {
               ...this.state.battle,
               selectedTopic: null,
               phase: 'select_topic',
             },
-          };
+          });
         }
         this.battleScreenInst?.update(this.state);
       },
@@ -1049,22 +1029,21 @@ export class Game {
     const passText = passFlavors[Math.floor(Math.random() * passFlavors.length)]
       + ` <span style="color:#7EC850;">少し息を整えた（体力+${recovery}）</span>`;
     const passLog = { speaker: 'player' as const, text: passText, effect: 0 };
-    this.state = {
-      ...this.state,
+    this.updateState({
       stamina: Math.min(100, this.state.stamina + recovery),
       battle: {
         ...this.state.battle,
         logs: [...this.state.battle.logs, passLog],
         phase: 'resolving',
       },
-    };
+    });
     this.battleScreenInst?.update(this.state);
 
     setTimeout(() => {
       if (!this.state.battle) return;
       const { newBattle: afterEnemy } = resolveEnemyTurn(this.state.battle);
       const finalBattle = checkBattleEnd(afterEnemy);
-      this.state = { ...this.state, battle: finalBattle };
+      this.updateState({ battle: finalBattle });
       this.battleScreenInst?.update(this.state);
 
       // 次のラウンドもパス判定
@@ -1127,8 +1106,7 @@ export class Game {
       const logEntry = battle.isDefending
         ? `【防衛成功】${student.name}の説得を跳ね返した！（${describeShift(this.state.faction, shiftAmount)}）`
         : `【説得成功】${student.name}を説得した！（${describeShift(this.state.faction, shiftAmount)}）`;
-      this.state = {
-        ...this.state,
+      this.updateState({
         screen: 'daily',
         students: updatedStudents,
         playerSupport: playerSup,
@@ -1136,8 +1114,8 @@ export class Game {
         lastBattleResult: { student, win: true, shiftAmount },
         currentTime: timeAfterBattle,
         actionLogs: [...this.state.actionLogs, logEntry],
-      };
-      this.state = { ...this.state, students: this.syncPlayerSupport(this.state.students) };
+      });
+      this.updateState({ students: this.syncPlayerSupport(this.state.students) });
       this.appendOrgChangeLogsAndProceed(oldStudents);
     } else if (result === 'lose') {
       // 失敗: プレイヤーの思想が相手方向にシフト
@@ -1154,28 +1132,26 @@ export class Game {
       // プレイヤーの支持候補が変わったかチェック
       const newCandidate = getPlayerFaction(newSupport);
       if (newCandidate !== this.state.faction) {
-        this.state = {
-          ...this.state,
+        this.updateState({
           screen: 'gameover',
           playerSupport: newSupport,
           battle: null,
           lastBattleResult: { student, win: false, shiftAmount },
           currentTime: timeAfterBattle,
           actionLogs: [...this.state.actionLogs, logEntry],
-        };
-        this.state = { ...this.state, students: this.syncPlayerSupport(this.state.students) };
+        });
+        this.updateState({ students: this.syncPlayerSupport(this.state.students) });
         this.showGameOver();
       } else {
-        this.state = {
-          ...this.state,
+        this.updateState({
           screen: 'daily',
           playerSupport: newSupport,
           battle: null,
           lastBattleResult: { student, win: false, shiftAmount },
           currentTime: timeAfterBattle,
           actionLogs: [...this.state.actionLogs, logEntry],
-        };
-        this.state = { ...this.state, students: this.syncPlayerSupport(this.state.students) };
+        });
+        this.updateState({ students: this.syncPlayerSupport(this.state.students) });
         this.appendOrgChangeLogsAndProceed(oldStudents);
       }
     } else if (result === 'timeout') {
@@ -1198,8 +1174,7 @@ export class Game {
       // プレイヤーの支持候補が変わったかチェック
       const newCandidate = getPlayerFaction(playerNewSupport);
       if (newCandidate !== this.state.faction) {
-        this.state = {
-          ...this.state,
+        this.updateState({
           screen: 'gameover',
           playerSupport: playerNewSupport,
           students: updatedStudents,
@@ -1207,12 +1182,11 @@ export class Game {
           lastBattleResult: { student, win: false, shiftAmount },
           currentTime: timeAfterBattle,
           actionLogs: [...this.state.actionLogs, logEntry],
-        };
-        this.state = { ...this.state, students: this.syncPlayerSupport(this.state.students) };
+        });
+        this.updateState({ students: this.syncPlayerSupport(this.state.students) });
         this.showGameOver();
       } else {
-        this.state = {
-          ...this.state,
+        this.updateState({
           screen: 'daily',
           playerSupport: playerNewSupport,
           students: updatedStudents,
@@ -1220,8 +1194,8 @@ export class Game {
           lastBattleResult: { student, win: battle.barPosition > 0, shiftAmount },
           currentTime: timeAfterBattle,
           actionLogs: [...this.state.actionLogs, logEntry],
-        };
-        this.state = { ...this.state, students: this.syncPlayerSupport(this.state.students) };
+        });
+        this.updateState({ students: this.syncPlayerSupport(this.state.students) });
         this.appendOrgChangeLogsAndProceed(oldStudents);
       }
     }
@@ -1231,7 +1205,7 @@ export class Game {
   private appendOrgChangeLogsAndProceed(oldStudents: Student[]): void {
     const orgChanges = this.detectOrgVoteChanges(oldStudents, this.state.students);
     if (orgChanges.length > 0) {
-      this.state = { ...this.state, actionLogs: [...this.state.actionLogs, ...orgChanges] };
+      this.updateState({ actionLogs: [...this.state.actionLogs, ...orgChanges] });
       // 変化をダイアログで順次表示してから遷移
       this.showOrgChangeDialogs(orgChanges, 0);
     } else if (this.isAllOrganizationsUnified()) {
@@ -1316,7 +1290,7 @@ export class Game {
   private transitionToEnding(): void {
     this.clearScreens();
     deleteSaveData();
-    this.state = { ...this.state, screen: 'ending' };
+    this.updateState({ screen: 'ending' });
     this.endingScreen = new EndingScreen(this.state, {
       onRestart: () => {
         this.state = createInitialState();

@@ -89,7 +89,9 @@ export class ConversationOverlay {
     const textAlign = portraitRight ? 'right' : 'left';
 
     return `
-      <div class="game-panel" style="
+      <div style="
+        background: var(--game-panel-inner);
+        border-radius: 8px;
         padding: 12px 14px;
         display: flex; gap: 12px; align-items: flex-start;
         flex-direction: ${flexDir};
@@ -138,25 +140,31 @@ export class ConversationOverlay {
       <!-- 背景 -->
       <div style="
         position: absolute; inset: 0;
-        background: rgba(0, 0, 20, 0.4);
+        background: rgba(0, 0, 20, 0.6);
       "></div>
 
-      <!-- 上: プレイヤー / 下: 相手 -->
+      <!-- ボード -->
       <div style="
         position: relative; height: 100%;
-        display: flex; flex-direction: column;
-        justify-content: flex-start;
-        padding: 16px 12px;
-        gap: 10px;
+        display: flex; align-items: flex-start; justify-content: center;
+        padding: 12px;
       ">
-        ${playerWindow}
-        ${studentWindow}
+        <div class="game-panel" style="
+          width: 100%; max-width: 480px;
+          margin-top: 8px;
+          padding: 16px 14px;
+          display: flex; flex-direction: column;
+          gap: 10px;
+        ">
+          ${playerWindow}
+          ${studentWindow}
 
-        <!-- 進行ヒント -->
-        <div class="game-pulse" style="
-          text-align: center; padding: 4px;
-          color: var(--game-text-dim); font-size: 0.72em;
-        ">▼</div>
+          <!-- 進行ヒント -->
+          <div class="game-pulse" style="
+            text-align: center; padding: 4px;
+            color: var(--game-text-dim); font-size: 0.72em;
+          ">▼</div>
+        </div>
       </div>
     `;
   }

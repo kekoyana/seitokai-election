@@ -555,6 +555,28 @@ export class Game {
   private handleGossip(student: Student): void {
     if (this.state.stamina < 5 || this.isTimeUp()) return;
 
+    // 親しくない（好感度 < 20）場合は情報を得られない
+    if (student.affinity < 20) {
+      const pc = this.state.playerCharacter;
+      const refuseSteps: import('./logic/conversationGenerator').ConversationStep[] = [
+        { speaker: 'player', name: pc?.name ?? 'あなた', portrait: pc?.portrait ?? null, text: '「周りの人について何か知ってる？」' },
+        { speaker: 'student', name: student.name, portrait: student.portrait, text: '「うーん、特にないかなぁ…」' },
+      ];
+      const refuseResult: import('./logic/conversationGenerator').ConversationResult = {
+        text: `${student.name}はあまり教えてくれなかった`,
+        effectHtml: '<span style="color:#999;">情報なし</span>',
+      };
+      this.state = {
+        ...this.state,
+        stamina: this.state.stamina - 5,
+        currentTime: Math.min(MAX_TIME, this.state.currentTime + TIME_COST.TALK),
+        actionLogs: [...this.state.actionLogs, `${student.name}に噂話を聞いたが、教えてもらえなかった。`],
+      };
+      this.dailyScreen?.update(this.state);
+      this.dailyScreen?.showConversation(refuseSteps, refuseResult, () => {});
+      return;
+    }
+
     // 会話相手と同じクラス・部活のメンバーを集める
     const sameOrgs = ORGANIZATIONS.filter(org => {
       const allIds = [org.leaderId, ...org.subLeaderIds, ...org.memberIds];

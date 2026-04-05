@@ -224,6 +224,8 @@ export class DailyScreen {
           pointer-events:auto;
           display:flex; gap:6px; align-items:center;
         ">
+          <span style="font-size:0.85em;">${isCorridorLocation(this.state.currentLocation) ? `${FLOOR_LABELS[getFloorFromLocation(this.state.currentLocation)]} 廊下` : currentLocation?.name ?? ''}</span>
+          <span style="opacity:0.3;">|</span>
           <span><strong>${dayToDate(this.state.day)}</strong></span>
           <span style="opacity:0.3;">|</span>
           <span><strong>${formatTime(this.state.currentTime)}</strong></span>

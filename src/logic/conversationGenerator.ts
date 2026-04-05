@@ -116,7 +116,7 @@ export function generateConversationData(
 
   const result: ConversationResult = {
     text: pick(NARRATION_RESULTS[resultType]),
-    effectHtml: resultEffectParts.join('　'),
+    effectHtml: resultEffectParts.join('<br>'),
   };
 
   return { steps, result };
@@ -201,7 +201,7 @@ export function generateChitchatData(
 
   const result: ConversationResult = {
     text: pick(CHITCHAT_NARRATIONS),
-    effectHtml: resultEffectParts.join('　'),
+    effectHtml: resultEffectParts.join('<br>'),
   };
 
   return { steps, result };
@@ -271,20 +271,7 @@ export function generateGossipData(
     text: `「${pick(askLines)}」`,
   });
 
-  // 2. 相手が対象の名前を出す
-  const introLines = [
-    `${reveal.targetName}のことなら少し知ってるよ`,
-    `${reveal.targetName}の話？いいよ`,
-    `そうだなぁ…${reveal.targetName}のことなら`,
-  ];
-  steps.push({
-    speaker: 'student',
-    name: student.name,
-    portrait: student.portrait,
-    text: `「${pick(introLines)}」`,
-  });
-
-  // 3. 噂の内容
+  // 2. 噂の内容
   const revealParts: string[] = [];
   if (reveal.hobby) {
     const hobbyName = HOBBY_LABELS[reveal.hobby.topic] ?? reveal.hobby.topic;
@@ -360,7 +347,7 @@ export function generateGossipData(
     steps,
     result: {
       text: `${student.name}から${reveal.targetName}の噂を聞いた`,
-      effectHtml: effectParts.join('　'),
+      effectHtml: effectParts.join('<br>'),
     },
   };
 }

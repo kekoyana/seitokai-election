@@ -118,6 +118,56 @@
 - `border-bottom-color` を暗くして立体感を出す
 - `:active` で `translateY(2px)` の押し込みエフェクト
 
+### ダイアログ（`src/ui/gameDialog.ts`）
+
+ゲーム内で確認やお知らせを表示するモーダルダイアログ。
+browser の `confirm()` / `alert()` は使わず、必ずこのコンポーネントを使う。
+
+#### 種類
+
+| 関数 | 用途 | 戻り値 |
+|------|------|--------|
+| `showConfirmDialog(parent, options)` | ユーザーに Yes/No を問う | `Promise<boolean>` |
+| `showInfoDialog(parent, options)` | 情報を伝えてOKで閉じる | `Promise<void>` |
+
+#### 使用ルール
+
+- **翌日確認** → `showConfirmDialog`（okStyle: `'warning'`）
+- **組織の支持変動通知** → `showInfoDialog`（title: `'支持変動'`）
+- **全組織統一メッセージ** → `showInfoDialog`（title: `'思想統一'`）
+- **その他のお知らせ** → `showInfoDialog`
+- 独自のオーバーレイ (`position:fixed; inset:0`) を手書きしない。必ずダイアログ関数を使うこと
+
+#### デザイン仕様
+
+- **タイトルバー**: 青グラデーション（`#4898e0` → `#2868b0`）、白文字、パワプロ風
+- **本体**: `.game-panel-bg` 背景、`--game-panel-border` 枠（3px）、角丸8px
+- **ボタン**: `.game-btn` + `.game-btn-{style}`、`font-family: var(--game-font)`
+- **オーバーレイ**: `rgba(0,0,20,0.4)` 半透明背景、`position:absolute; inset:0; z-index:200`
+- **アニメーション**: `game-slide-up 0.2s ease`（ボックス）、`fadeIn 0.2s ease`（オーバーレイ）
+- **重複防止**: オーバーレイに `.game-dialog-overlay` クラスを付与。表示前に `querySelector('.game-dialog-overlay')` で既存ダイアログを検出可能
+
+#### オプション
+
+```typescript
+// 確認ダイアログ
+showConfirmDialog(parent, {
+  title?: string,       // デフォルト: '確認'
+  message: string,      // 本文（HTMLも可）
+  okLabel?: string,     // デフォルト: 'OK'
+  cancelLabel?: string, // デフォルト: 'やめる'
+  okStyle?: 'primary' | 'danger' | 'warning' | 'success',
+});
+
+// インフォメーションダイアログ
+showInfoDialog(parent, {
+  title?: string,       // デフォルト: 'お知らせ'
+  message: string,      // 本文（HTMLも可）
+  okLabel?: string,     // デフォルト: 'OK'
+  okStyle?: 'primary' | 'danger' | 'warning' | 'success',
+});
+```
+
 ### HUDバッジ
 
 | クラス | 用途 |

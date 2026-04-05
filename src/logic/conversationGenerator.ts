@@ -1,5 +1,5 @@
-import type { Student, HobbyTopic, Personality, Gender } from '../types';
-import { HOBBY_LABELS } from '../data';
+import type { Student, HobbyTopic, Personality, Gender, PreferenceAttr } from '../types';
+import { HOBBY_LABELS, ATTRIBUTE_LABELS } from '../data';
 import {
   getTalkLines, getPlayerLines, NARRATION_RESULTS, getAffinityLevel,
   getChitchatLines, CHITCHAT_NARRATIONS,
@@ -223,6 +223,173 @@ export function generateTalkLogSummary(
     const prefIcon = pref === 'like' ? '♥' : pref === 'dislike' ? '✗' : '―';
     parts.push(`<span style="color:${prefColor};">${prefIcon}${hobbyName}</span>`);
   }
+
+  const affinityColor = affinityGain > 0 ? '#7EC850' : affinityGain < 0 ? '#F07070' : '#999';
+  const affinitySign = affinityGain >= 0 ? '+' : '';
+  parts.push(`<span style="color:${affinityColor};">好感度${affinitySign}${affinityGain}</span>`);
+
+  return parts.join(' ');
+}
+
+/** 噂話で判明した情報 */
+export interface GossipReveal {
+  targetId: string;
+  targetName: string;
+  hobby?: { topic: HobbyTopic; pref: 'like' | 'dislike' | 'neutral' };
+  likedAttr?: PreferenceAttr;
+  dislikedAttr?: PreferenceAttr;
+}
+
+/**
+ * 噂話データを生成
+ * 会話相手と同じクラス・部活の生徒について情報を聞き出す
+ */
+export function generateGossipData(
+  student: Student,
+  playerName: string,
+  playerPortrait: string | null,
+  playerPersonality: Personality,
+  playerGender: Gender,
+  reveal: GossipReveal,
+  affinityGain: number,
+): ConversationData {
+  const steps: ConversationStep[] = [];
+  const studentLines = getTalkLines(student.personality, student.gender);
+  const playerLines = getPlayerLines(playerPersonality, playerGender);
+  const level = getAffinityLevel(student.affinity);
+
+  // 1. プレイヤーが話しかける
+  const askLines = [
+    '誰か他の人のこと、教えてくれない？',
+    'クラスメイトとかの話、聞かせてよ',
+    '周りの人について何か知ってる？',
+  ];
+  steps.push({
+    speaker: 'player',
+    name: playerName,
+    portrait: playerPortrait,
+    text: `「${pick(askLines)}」`,
+  });
+
+  // 2. 相手が対象の名前を出す
+  const introLines = [
+    `${reveal.targetName}のことなら少し知ってるよ`,
+    `${reveal.targetName}の話？いいよ`,
+    `そうだなぁ…${reveal.targetName}のことなら`,
+  ];
+  steps.push({
+    speaker: 'student',
+    name: student.name,
+    portrait: student.portrait,
+    text: `「${pick(introLines)}」`,
+  });
+
+  // 3. 噂の内容
+  const revealParts: string[] = [];
+  if (reveal.hobby) {
+    const hobbyName = HOBBY_LABELS[reveal.hobby.topic] ?? reveal.hobby.topic;
+    const prefLabel = reveal.hobby.pref === 'like' ? '好き' : reveal.hobby.pref === 'dislike' ? '嫌い' : '普通';
+    const gossipLines = [
+      `${reveal.targetName}は${hobbyName}が${prefLabel}みたいだよ`,
+      `${reveal.targetName}って${hobbyName}${prefLabel}らしいよ`,
+      `${hobbyName}のこと？${reveal.targetName}は${prefLabel}って言ってたかな`,
+    ];
+    steps.push({
+      speaker: 'student',
+      name: student.name,
+      portrait: student.portrait,
+      text: `「${pick(gossipLines)}」`,
+    });
+    const prefColor = reveal.hobby.pref === 'like' ? '#7EC850' : reveal.hobby.pref === 'dislike' ? '#F07070' : '#999';
+    const prefIcon = reveal.hobby.pref === 'like' ? '♥' : reveal.hobby.pref === 'dislike' ? '✗' : '―';
+    revealParts.push(`<span style="color:${prefColor};">${prefIcon}${hobbyName}</span>`);
+  }
+  if (reveal.likedAttr) {
+    const attrName = ATTRIBUTE_LABELS[reveal.likedAttr] ?? reveal.likedAttr;
+    const gossipLines = [
+      `あと、${reveal.targetName}は${attrName}な感じの人が好みらしいよ`,
+      `${reveal.targetName}って${attrName}系が好きなんだって`,
+    ];
+    steps.push({
+      speaker: 'student',
+      name: student.name,
+      portrait: student.portrait,
+      text: `「${pick(gossipLines)}」`,
+    });
+    revealParts.push(`<span style="color:#27AE60;">好み: ${attrName}</span>`);
+  }
+  if (reveal.dislikedAttr) {
+    const attrName = ATTRIBUTE_LABELS[reveal.dislikedAttr] ?? reveal.dislikedAttr;
+    const gossipLines = [
+      `${reveal.targetName}は${attrName}な感じはちょっと苦手みたい`,
+      `${attrName}系は${reveal.targetName}にはウケ悪いかもね`,
+    ];
+    steps.push({
+      speaker: 'student',
+      name: student.name,
+      portrait: student.portrait,
+      text: `「${pick(gossipLines)}」`,
+    });
+    revealParts.push(`<span style="color:#C0392B;">苦手: ${attrName}</span>`);
+  }
+
+  // 4. お礼
+  steps.push({
+    speaker: 'player',
+    name: playerName,
+    portrait: playerPortrait,
+    text: `「ありがとう、参考になるよ」`,
+  });
+
+  steps.push({
+    speaker: 'student',
+    name: student.name,
+    portrait: student.portrait,
+    text: `「${pick(studentLines.farewell[level])}」`,
+  });
+
+  // 結果
+  const affinityColor = affinityGain > 0 ? '#7EC850' : affinityGain < 0 ? '#F07070' : '#999';
+  const affinitySign = affinityGain >= 0 ? '+' : '';
+  const effectParts = [
+    `${reveal.targetName}の情報: ${revealParts.join(' ')}`,
+    `<span style="color:${affinityColor};">好感度${affinitySign}${affinityGain}</span>`,
+  ];
+
+  return {
+    steps,
+    result: {
+      text: `${student.name}から${reveal.targetName}の噂を聞いた`,
+      effectHtml: effectParts.join('　'),
+    },
+  };
+}
+
+/** 噂話のログ要約 */
+export function generateGossipLogSummary(
+  student: Student,
+  reveal: GossipReveal,
+  affinityGain: number,
+): string {
+  const parts: string[] = [];
+  parts.push(`${student.name}から${reveal.targetName}の噂を聞いた。`);
+
+  const infoParts: string[] = [];
+  if (reveal.hobby) {
+    const hobbyName = HOBBY_LABELS[reveal.hobby.topic] ?? reveal.hobby.topic;
+    const prefColor = reveal.hobby.pref === 'like' ? '#7EC850' : reveal.hobby.pref === 'dislike' ? '#F07070' : '#999';
+    const prefIcon = reveal.hobby.pref === 'like' ? '♥' : reveal.hobby.pref === 'dislike' ? '✗' : '―';
+    infoParts.push(`<span style="color:${prefColor};">${prefIcon}${hobbyName}</span>`);
+  }
+  if (reveal.likedAttr) {
+    const attrName = ATTRIBUTE_LABELS[reveal.likedAttr] ?? reveal.likedAttr;
+    infoParts.push(`<span style="color:#27AE60;">好み:${attrName}</span>`);
+  }
+  if (reveal.dislikedAttr) {
+    const attrName = ATTRIBUTE_LABELS[reveal.dislikedAttr] ?? reveal.dislikedAttr;
+    infoParts.push(`<span style="color:#C0392B;">苦手:${attrName}</span>`);
+  }
+  if (infoParts.length > 0) parts.push(infoParts.join(' '));
 
   const affinityColor = affinityGain > 0 ? '#7EC850' : affinityGain < 0 ? '#F07070' : '#999';
   const affinitySign = affinityGain >= 0 ? '+' : '';

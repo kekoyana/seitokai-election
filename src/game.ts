@@ -7,7 +7,8 @@ import {
   FLOOR_ADJACENCY, MOVE_COST, getFloorMoveCost, TIME_COST, MAX_TIME,
   getStudentLocation, FACTION_LABELS,
 } from './data';
-import { generateConversationData, generateTalkLogSummary, generateChitchatData } from './logic/conversationGenerator';
+import { generateConversationData, generateTalkLogSummary, generateChitchatData, generateGossipData, generateGossipLogSummary } from './logic/conversationGenerator';
+import type { GossipReveal } from './logic/conversationGenerator';
 import { electActivists, processOneActivist, FACTION_LABELS as ACTIVIST_FACTION_LABELS } from './logic/activistLogic';
 import { ORGANIZATIONS } from './data/organizations';
 import { getOrganizationVote } from './logic/organizationLogic';
@@ -188,6 +189,7 @@ export class Game {
       onExitRoom: () => this.handleExitRoom(),
       onChangeFloor: (floor: Floor) => this.handleChangeFloor(floor),
       onTalk: (student: Student) => this.handleTalk(student),
+      onGossip: (student: Student) => this.handleGossip(student),
       onPersuade: (student: Student) => this.handlePersuade(student),
       onNurseRest: () => this.handleNurseRest(),
       onTrain: (stat: 'speech' | 'athletic' | 'intel') => this.handleTrain(stat),
@@ -547,6 +549,123 @@ export class Game {
       // おつかいイベント発生判定
       const updatedStudent = this.state.students.find(s => s.id === student.id);
       if (updatedStudent) this.tryErrand(updatedStudent);
+    });
+  }
+
+  private handleGossip(student: Student): void {
+    if (this.state.stamina < 5 || this.isTimeUp()) return;
+
+    // 会話相手と同じクラス・部活のメンバーを集める
+    const sameOrgs = ORGANIZATIONS.filter(org => {
+      const allIds = [org.leaderId, ...org.subLeaderIds, ...org.memberIds];
+      return allIds.includes(student.id);
+    });
+    const relatedIds = new Set<string>();
+    for (const org of sameOrgs) {
+      for (const id of [org.leaderId, ...org.subLeaderIds, ...org.memberIds]) {
+        if (id !== student.id) relatedIds.add(id);
+      }
+    }
+    // プレイヤー自身は除外
+    const playerId = this.state.playerCharacter?.id;
+    if (playerId) relatedIds.delete(playerId);
+
+    const relatedStudents = this.state.students.filter(s => relatedIds.has(s.id));
+    if (relatedStudents.length === 0) return;
+
+    // ランダムに噂の対象を選ぶ
+    const target = relatedStudents[Math.floor(Math.random() * relatedStudents.length)];
+
+    // 判明させる情報を選ぶ（3種のうちランダムに1つ）
+    const reveal: GossipReveal = { targetId: target.id, targetName: target.name };
+
+    const unrevealedHobbies = (Object.keys(target.hobbies) as HobbyTopic[])
+      .filter(h => !target.revealedHobbies.has(h));
+    const unrevealedLikes = target.likedAttributes.filter(a => !target.revealedLikes.includes(a));
+    const unrevealedDislikes = target.dislikedAttributes.filter(a => !target.revealedDislikes.includes(a));
+
+    // 候補をシャッフルして最初に当たったものを1つだけ採用
+    const candidates: ('hobby' | 'like' | 'dislike')[] = [];
+    if (unrevealedHobbies.length > 0) candidates.push('hobby');
+    if (unrevealedLikes.length > 0) candidates.push('like');
+    if (unrevealedDislikes.length > 0) candidates.push('dislike');
+
+    if (candidates.length > 0) {
+      const chosen = candidates[Math.floor(Math.random() * candidates.length)];
+      if (chosen === 'hobby') {
+        const hobby = unrevealedHobbies[Math.floor(Math.random() * unrevealedHobbies.length)];
+        reveal.hobby = { topic: hobby, pref: target.hobbies[hobby] };
+      } else if (chosen === 'like') {
+        reveal.likedAttr = unrevealedLikes[Math.floor(Math.random() * unrevealedLikes.length)];
+      } else {
+        reveal.dislikedAttr = unrevealedDislikes[Math.floor(Math.random() * unrevealedDislikes.length)];
+      }
+    }
+
+    // 何も新情報がない場合
+    if (!reveal.hobby && !reveal.likedAttr && !reveal.dislikedAttr) {
+      // スタミナだけ消費して「もう知ってることばかりだった」
+      const affinityGain = this.calcAffinityGain(student);
+      const updatedStudents = this.state.students.map(s => {
+        if (s.id !== student.id) return s;
+        return { ...s, talkCount: s.talkCount + 1, affinity: Math.max(-100, Math.min(100, s.affinity + affinityGain)) };
+      });
+      this.state = {
+        ...this.state,
+        students: updatedStudents,
+        stamina: this.state.stamina - 5,
+        currentTime: Math.min(MAX_TIME, this.state.currentTime + TIME_COST.TALK),
+        actionLogs: [...this.state.actionLogs, `${student.name}に噂話を聞いたが、新しい情報はなかった。`],
+      };
+      this.dailyScreen?.update(this.state);
+      return;
+    }
+
+    const affinityGain = this.calcAffinityGain(student);
+
+    // 対象の生徒の情報を更新
+    const updatedStudents = this.state.students.map(s => {
+      if (s.id === student.id) {
+        return { ...s, talkCount: s.talkCount + 1, affinity: Math.max(-100, Math.min(100, s.affinity + affinityGain)) };
+      }
+      if (s.id === target.id) {
+        const newRevealed = new Set(s.revealedHobbies);
+        if (reveal.hobby) newRevealed.add(reveal.hobby.topic);
+        const newLikes = [...s.revealedLikes];
+        if (reveal.likedAttr && !newLikes.includes(reveal.likedAttr)) newLikes.push(reveal.likedAttr);
+        const newDislikes = [...s.revealedDislikes];
+        if (reveal.dislikedAttr && !newDislikes.includes(reveal.dislikedAttr)) newDislikes.push(reveal.dislikedAttr);
+        return { ...s, revealedHobbies: newRevealed, revealedLikes: newLikes, revealedDislikes: newDislikes };
+      }
+      return s;
+    });
+
+    this.state = {
+      ...this.state,
+      students: updatedStudents,
+      stamina: this.state.stamina - 5,
+      currentTime: Math.min(MAX_TIME, this.state.currentTime + TIME_COST.TALK),
+    };
+    this.dailyScreen?.update(this.state);
+
+    // 会話ウィンドウ表示
+    const pc = this.state.playerCharacter;
+    const convData = generateGossipData(
+      student,
+      pc?.name ?? 'あなた',
+      pc?.portrait ?? null,
+      pc?.personality ?? 'flexible',
+      pc?.gender ?? 'male',
+      reveal,
+      affinityGain,
+    );
+    this.dailyScreen?.showConversation(convData.steps, convData.result, () => {
+      const logSummary = generateGossipLogSummary(student, reveal, affinityGain);
+      this.state = {
+        ...this.state,
+        actionLogs: [...this.state.actionLogs, logSummary],
+      };
+      this.dailyScreen?.update(this.state);
     });
   }
 
@@ -1071,29 +1190,11 @@ export class Game {
   private showEnding(): void {
     // 全組織統一時は中間メッセージを表示してから結果画面へ
     if (this.state.day < 30 && this.isAllOrganizationsUnified()) {
-      this.clearScreens();
-      const overlay = document.createElement('div');
-      overlay.style.cssText = `
-        position:fixed; inset:0;
-        background:linear-gradient(160deg, rgba(26,40,64,0.95), rgba(40,56,80,0.95));
-        display:flex; flex-direction:column; align-items:center; justify-content:center;
-        font-family:var(--game-font); z-index:100;
-      `;
-      overlay.innerHTML = `
-        <div style="font-size:2.5em; margin-bottom:16px;">🏛️</div>
-        <div style="font-size:1.4em; font-weight:bold; color:#f0d060; margin-bottom:12px;">
-          全組織の思想が統一された！
-        </div>
-        <div style="color:rgba(255,255,255,0.8); font-size:0.95em; margin-bottom:24px;">
-          ${this.state.day}日目──学園の意思がひとつにまとまった
-        </div>
-        <button id="to-result-btn" class="game-btn game-btn-primary" style="
-          padding:14px 40px; font-size:1em; font-family:var(--game-font);
-        ">結果を見る</button>
-      `;
-      this.root.appendChild(overlay);
-      overlay.querySelector('#to-result-btn')?.addEventListener('pointerup', () => {
-        overlay.remove();
+      showInfoDialog(this.root, {
+        title: '思想統一',
+        message: `全組織の思想が統一された！<br>${this.state.day}日目──学園の意思がひとつにまとまった`,
+        okLabel: '結果を見る',
+      }).then(() => {
         this.transitionToEnding();
       });
     } else {

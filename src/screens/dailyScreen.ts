@@ -119,6 +119,7 @@ export interface DailyCallbacks {
   onExitRoom: () => void;
   onChangeFloor: (targetFloor: Floor) => void;
   onTalk: (student: Student) => void;
+  onGossip: (student: Student) => void;
   onPersuade: (student: Student) => void;
   onNurseRest: () => void;
   onTrain: (stat: 'speech' | 'athletic' | 'intel') => void;
@@ -238,18 +239,7 @@ export class DailyScreen {
       </div>
     `;
 
-    // 下部ステータスバー
-    const bottomBar = `
-      <div style="
-        background:var(--game-panel-bg);
-        border-top:2px solid var(--game-panel-border);
-        padding:6px 16px;
-        display:flex; gap:16px; font-size:0.75em; color:var(--game-text-dim);
-        flex-shrink:0;
-      ">
-        <span>場所: <strong style="color:var(--game-text);">${FLOOR_LABELS[getFloorFromLocation(this.state.currentLocation)]} ${isCorridorLocation(this.state.currentLocation) ? '廊下' : currentLocation?.name ?? ''}</strong></span>
-      </div>
-    `;
+    // フッターは廃止（場所情報はHUD・廊下ヘッダで十分）
 
     // メインコンテンツ
     let mainHtml = '';
@@ -270,32 +260,34 @@ export class DailyScreen {
       mainHtml = this.renderMainPanel(studentsHere, isOutOfStamina);
     }
 
-    // HUD風メッセージボックス（画面下部に固定）
+    // ログボックス（画面下部固定）
     const logs = this.state.actionLogs;
+    const hasMany = logs.length > 2;
     const visibleLogs = this.showLog
       ? [...logs].reverse()
-      : logs.length > 0 ? [logs[logs.length - 1]] : [];
+      : logs.length > 0 ? logs.slice(-2).reverse() : [];
+    const toggleIcon = this.showLog ? '▲' : (hasMany ? '▼' : '');
     const logBoxHtml = `
-      <div style="
-        position:absolute; bottom:36px; left:8px; right:8px;
-        pointer-events:auto; z-index:50;
+      <div id="log-box" class="game-panel" style="
+        flex-shrink:0;
+        padding:8px 12px;
+        font-size:0.78em; line-height:1.6;
+        cursor:pointer;
+        border-radius:0;
+        border-left:none; border-right:none; border-bottom:none;
+        ${this.showLog ? 'max-height:40vh; overflow-y:auto;' : ''}
       ">
-        <div id="log-box" class="game-panel" style="
-          padding:8px 12px;
-          font-size:0.78em; line-height:1.6;
-          cursor:pointer;
-          ${this.showLog ? 'max-height:40vh; overflow-y:auto;' : 'max-height:3.6em; overflow:hidden;'}
-        ">
-          ${visibleLogs.length === 0
-            ? '<span style="color:#888;">...</span>'
-            : visibleLogs.map(log => `
-              <div style="
-                white-space:pre-line;
-                ${this.showLog ? 'padding:4px 0; border-bottom:1px solid rgba(255,255,255,0.1);' : ''}
-              ">${log}</div>
-            `).join('')
-          }
-        </div>
+        ${toggleIcon ? `<div style="text-align:center; font-size:0.7em; color:var(--game-text-dim); margin-bottom:2px;">${toggleIcon}</div>` : ''}
+        ${visibleLogs.length === 0
+          ? '<span style="color:var(--game-text-dim);">...</span>'
+          : visibleLogs.map((log, i) => `
+            <div style="
+              white-space:pre-line;
+              ${this.showLog && i < visibleLogs.length - 1 ? 'padding-bottom:4px; margin-bottom:4px; border-bottom:1px solid rgba(0,0,0,0.08);' : ''}
+              ${!this.showLog && i > 0 ? 'opacity:0.6;' : ''}
+            ">${log}</div>
+          `).join('')
+        }
       </div>
     `;
 
@@ -370,13 +362,12 @@ export class DailyScreen {
       ${timeOverlayHtml}
       ${hudHtml}
       <div style="flex:1; display:flex; overflow:hidden; position:relative; z-index:2;">
-        <div class="daily-main-area" style="flex:1; overflow-y:auto; padding:48px 16px 52px;">
+        <div class="daily-main-area" style="flex:1; overflow-y:auto; padding:48px 16px 16px;">
           ${mainHtml}
         </div>
         ${sidebarHtml ? `<div class="daily-sidebar">${sidebarHtml}</div>` : ''}
       </div>
       ${logBoxHtml}
-      ${bottomBar}
       ${timeUpModalHtml}
     `;
 
@@ -434,7 +425,13 @@ export class DailyScreen {
             <button data-action-talk="${studentData.id}" class="game-btn ${canTalk ? 'game-btn-primary' : 'game-btn-disabled'}" style="
               padding:5px 10px;
               font-size:0.78em; font-family:var(--game-font);
-            ">会話(⚡${talkCost})</button>
+            ">趣味(⚡${talkCost})</button>
+            <button data-action-gossip="${studentData.id}" class="game-btn ${canTalk ? '' : 'game-btn-disabled'}" style="
+              padding:5px 10px;
+              background:linear-gradient(180deg,#9B6B9E,#7B4B7E);
+              border-color:#B080B0;
+              font-size:0.78em; font-family:var(--game-font);
+            ">噂話(⚡${talkCost})</button>
             <button data-action-info="${studentData.id}" class="game-btn" style="
               padding:5px 10px;
               background:linear-gradient(180deg,#6a7890,#4a5870);
@@ -755,7 +752,13 @@ export class DailyScreen {
           <button data-action-talk="${s.id}" class="game-btn ${canTalk ? 'game-btn-primary' : 'game-btn-disabled'}" style="
             padding:5px 10px;
             font-size:0.78em; font-family:var(--game-font);
-          ">会話(⚡${talkCost})</button>
+          ">趣味(⚡${talkCost})</button>
+          <button data-action-gossip="${s.id}" class="game-btn ${canTalk ? '' : 'game-btn-disabled'}" style="
+            padding:5px 10px;
+            background:linear-gradient(180deg,#9B6B9E,#7B4B7E);
+            border-color:#B080B0;
+            font-size:0.78em; font-family:var(--game-font);
+          ">噂話(⚡${talkCost})</button>
           <button data-action-persuade="${s.id}" class="game-btn ${canPersuade ? 'game-btn-warning' : 'game-btn-disabled'}" style="
             padding:5px 10px;
             font-size:0.78em; font-family:var(--game-font);
@@ -956,11 +959,11 @@ export class DailyScreen {
         ">
           ${s.portrait
             ? `<img src="${s.portrait}" alt="${s.name}" style="
-                width:64px; height:64px; border-radius:50%;
+                width:72px; height:72px; border-radius:50%;
                 object-fit:cover; object-position:top;
                 border:2px solid ${sc?.color ?? '#ddd'}; flex-shrink:0;
               "/>`
-            : renderInitialIcon(s.name, s.personality, 64, sc?.color ?? '#ddd')
+            : renderInitialIcon(s.name, s.personality, 72, sc?.color ?? '#ddd')
           }
           <div style="flex:1; min-width:0;">
             <div style="display:flex; align-items:center; gap:4px;">
@@ -1680,13 +1683,24 @@ export class DailyScreen {
       });
     });
 
-    // 会話ボタン
+    // 趣味の会話ボタン
     this.container.querySelectorAll<HTMLButtonElement>('[data-action-talk]').forEach(btn => {
       btn.addEventListener('pointerup', () => {
         const studentId = btn.dataset['actionTalk'];
         const student = this.state.students.find(s => s.id === studentId);
         if (student && this.state.stamina >= 5) {
           this.callbacks.onTalk(student);
+        }
+      });
+    });
+
+    // 噂話ボタン
+    this.container.querySelectorAll<HTMLButtonElement>('[data-action-gossip]').forEach(btn => {
+      btn.addEventListener('pointerup', () => {
+        const studentId = btn.dataset['actionGossip'];
+        const student = this.state.students.find(s => s.id === studentId);
+        if (student && this.state.stamina >= 5) {
+          this.callbacks.onGossip(student);
         }
       });
     });

@@ -312,14 +312,16 @@ export function resolvePlayerTurn(
   baseEffect *= affinityMultiplier(student.affinity);
 
   const playerEffect = Math.round(baseEffect);
+  // 防御時はプレイヤー効果を反転（バーを-方向=防衛成功方向に動かす）
+  const effectivePlayerEffect = battle.isDefending ? -playerEffect : playerEffect;
 
   // 性格による機嫌変化補正
   const adjustedMoodDelta = applyPersonalityMoodShift(student.personality, moodDelta.delta);
   const newMood = shiftMood(battle.enemyMood, adjustedMoodDelta);
 
-  const newBar = clamp(battle.barPosition + playerEffect, -100, 100);
+  const newBar = clamp(battle.barPosition + effectivePlayerEffect, -100, 100);
 
-  const logText = buildPlayerLogText(attitude, topic, stance, playerEffect);
+  const logText = buildPlayerLogText(attitude, topic, stance, effectivePlayerEffect);
 
   const newBattle: BattleState = {
     ...battle,
@@ -344,11 +346,14 @@ export function resolveEnemyTurn(battle: BattleState): { newBattle: BattleState;
   baseCounter *= MOOD_COUNTER_MULTIPLIER[battle.enemyMood];
   baseCounter *= PERSONALITY_COUNTER_MULTIPLIER[student.personality];
 
-  const enemyEffect = -Math.round(baseCounter);
+  const rawEnemyEffect = -Math.round(baseCounter);
+  // 防御時は相手の反撃を反転（バーを+方向=相手の説得方向に動かす）
+  const enemyEffect = battle.isDefending ? -rawEnemyEffect : rawEnemyEffect;
   const newBar = clamp(battle.barPosition + enemyEffect, -100, 100);
 
   const catchphrase = getCatchphrase(student.personality, student.attributes);
-  const logText = `「${catchphrase}」（反論 ${Math.abs(enemyEffect)}）`;
+  const logLabel = battle.isDefending ? '説得' : '反論';
+  const logText = `「${catchphrase}」（${logLabel} ${Math.abs(enemyEffect)}）`;
 
   const newBattle: BattleState = {
     ...battle,

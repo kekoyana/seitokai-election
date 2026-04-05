@@ -96,14 +96,32 @@ function affinityBarBonus(affinity: number): number {
   return Math.round(affinity / 10);
 }
 
-export function initBattle(student: Student, isDefending: boolean = false): BattleState {
+// 相性スコア計算（playerAttrsにはhairStyleを含めること）
+export function calcCompatibilityScore(playerAttrs: PreferenceAttr[], student: Student): number {
+  const liked = playerAttrs.filter(a => student.likedAttributes.includes(a)).length;
+  const disliked = playerAttrs.filter(a => student.dislikedAttributes.includes(a)).length;
+  return liked * 10 - disliked * 8;
+}
+
+export function initBattle(
+  student: Student,
+  isDefending: boolean = false,
+  playerGender?: Gender,
+  playerAttrs?: PreferenceAttr[],
+): BattleState {
   const barBonus = isDefending ? 0 : affinityBarBonus(student.affinity);
+  // 恋愛感情判定: 異性 + 相性30以上 + 好感度30以上
+  let isInLove = false;
+  if (playerGender && playerAttrs && playerGender !== student.gender) {
+    const compat = calcCompatibilityScore(playerAttrs, student);
+    isInLove = compat >= 30 && student.affinity >= 30;
+  }
   return {
     student,
     round: 1,
     maxRounds: 10,
     barPosition: clamp(barBonus, -100, 100),
-    enemyMood: 'normal',
+    enemyMood: isInLove ? 'favorable' as EnemyMood : 'normal',
     logs: [],
     phase: 'select_attitude',
     selectedAttitude: null,
@@ -111,6 +129,7 @@ export function initBattle(student: Student, isDefending: boolean = false): Batt
     result: null,
     isDefending,
     topicUseCounts: {},
+    isInLove,
   };
 }
 
@@ -337,14 +356,44 @@ export function resolvePlayerTurn(
   return { newBattle, playerEffect, log: { speaker: 'player', text: logText, effect: playerEffect } };
 }
 
+// 恋愛感情時の空回りセリフ
+const LOVE_FLUSTERED_LINES = [
+  'え、えっと…あの…',
+  'そ、そんなこと言われたら…',
+  '…っ！べ、別にあなたのためじゃ…',
+  'あ、あの、話が頭に入ってこなくて…',
+  'な、なんでこんなにドキドキ…',
+  'ち、近いです…！集中できない…',
+];
+
 // 相手ターン解決
 export function resolveEnemyTurn(battle: BattleState): { newBattle: BattleState; enemyEffect: number } {
   const student = battle.student;
+
+  // 恋愛感情: 50%の確率で空回り（反撃0）
+  if (battle.isInLove && Math.random() < 0.5) {
+    const flusteredLine = LOVE_FLUSTERED_LINES[Math.floor(Math.random() * LOVE_FLUSTERED_LINES.length)];
+    const logText = `「${flusteredLine}」（空回り）`;
+    const newBattle: BattleState = {
+      ...battle,
+      logs: [...battle.logs, { speaker: 'enemy', text: logText, effect: 0 }],
+      round: battle.round + 1,
+      phase: 'select_attitude',
+      selectedAttitude: null,
+      selectedTopic: null,
+    };
+    return { newBattle, enemyEffect: 0 };
+  }
 
   // 相手の反撃（ベース強化 + 性格倍率）
   let baseCounter = 10 + student.stats.speech * 0.15;
   baseCounter *= MOOD_COUNTER_MULTIPLIER[battle.enemyMood];
   baseCounter *= PERSONALITY_COUNTER_MULTIPLIER[student.personality];
+
+  // 恋愛感情: 反撃が弱まる（×0.6）
+  if (battle.isInLove) {
+    baseCounter *= 0.6;
+  }
 
   const rawEnemyEffect = -Math.round(baseCounter);
   // 防御時は相手の反撃を反転（バーを+方向=相手の説得方向に動かす）

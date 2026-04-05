@@ -736,7 +736,9 @@ export class Game {
   private handlePersuade(student: Student): void {
     if (student.talkCount === 0 || this.isTimeUp()) return;
 
-    const battle = initBattle(student);
+    const playerGender = this.state.playerCharacter?.gender;
+    const playerAttrs = this.state.playerAttributes;
+    const battle = initBattle(student, false, playerGender, playerAttrs);
     this.state = {
       ...this.state,
       screen: 'battle',
@@ -848,7 +850,9 @@ export class Game {
 
   /** 活動家からの強制説得バトルを開始 */
   private startActivistBattle(activist: Student, _activistCandidate: CandidateId): void {
-    const battle = initBattle(activist, true); // isDefending = true
+    const playerGender = this.state.playerCharacter?.gender;
+    const playerAttrs = this.state.playerAttributes;
+    const battle = initBattle(activist, true, playerGender, playerAttrs); // isDefending = true
     this.state = {
       ...this.state,
       battle,

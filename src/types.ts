@@ -132,6 +132,7 @@ export interface BattleState {
   result: 'win' | 'lose' | 'timeout' | null;
   isDefending: boolean; // 活動家から説得されている場合true（勝敗反転）
   topicUseCounts: Record<string, number>; // 話題ごとの使用回数（繰り返しペナルティ用）
+  isInLove: boolean; // 相手が恋愛感情を持っている（異性+相性30+好感度30）
 }
 
 // プレイヤーキャラクター

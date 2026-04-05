@@ -10,6 +10,7 @@ export interface TitleCallbacks {
 export class TitleScreen {
   private container: HTMLDivElement;
   private callbacks: TitleCallbacks;
+  private showVolumeDialog: boolean = false;
 
   constructor(callbacks: TitleCallbacks) {
     this.callbacks = callbacks;
@@ -86,14 +87,37 @@ export class TitleScreen {
           display:flex; align-items:center; justify-content:center; gap:8px;
           margin-top:16px; color:var(--game-text); font-size:0.9em;
         ">
-          <span id="bgm-icon" style="cursor:pointer;">${bgm.volume > 0 ? '🔊' : '🔇'}</span>
-          <input id="bgm-volume" type="range" min="0" max="100" value="${Math.round(bgm.volume * 100)}" style="
-            width:100px; height:4px; cursor:pointer;
-            accent-color:var(--game-accent); vertical-align:middle;
-          "/>
+          <span id="bgm-icon" style="cursor:pointer; padding:4px;">${bgm.volume > 0 ? '🔊' : '🔇'}</span>
         </div>
       </div>
     `;
+
+    // 音量ダイアログ
+    if (this.showVolumeDialog) {
+      const volPct = Math.round(bgm.volume * 100);
+      const volumeDialogHtml = `
+        <div class="game-dialog-overlay" style="
+          position:absolute; inset:0; z-index:200;
+          background:rgba(0,0,20,0.4);
+          display:flex; align-items:center; justify-content:center;
+          animation: fadeIn 0.2s ease;
+        ">
+          <div class="game-panel" style="width:240px; padding:20px; text-align:center;">
+            <div style="font-weight:bold; margin-bottom:15px; color:var(--game-text);">BGM音量</div>
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:20px;">
+              <span id="bgm-dialog-icon" style="font-size:1.2em;">${bgm.volume > 0 ? '🔊' : '🔇'}</span>
+              <input id="bgm-volume-dialog" type="range" min="0" max="100" value="${volPct}" style="
+                flex:1; height:6px; cursor:pointer;
+                accent-color:var(--game-accent);
+              "/>
+              <span id="bgm-volume-label" style="font-size:0.9em; width:35px; text-align:right;">${volPct}%</span>
+            </div>
+            <button id="close-volume-dialog" class="game-btn game-btn-primary" style="padding:8px 24px;">閉じる</button>
+          </div>
+        </div>
+      `;
+      this.container.insertAdjacentHTML('beforeend', volumeDialogHtml);
+    }
 
     const continueBtn = this.container.querySelector<HTMLButtonElement>('#continue-btn');
     if (continueBtn) {
@@ -121,19 +145,29 @@ export class TitleScreen {
       btn.style.transform = 'scale(1)';
     });
 
-    const bgmSlider = this.container.querySelector<HTMLInputElement>('#bgm-volume');
+    // BGM音量アイコン -> ダイアログ表示
     const bgmIcon = this.container.querySelector<HTMLElement>('#bgm-icon');
-    bgmSlider?.addEventListener('input', () => {
-      const v = parseInt(bgmSlider.value, 10) / 100;
-      bgm.setVolume(v);
-      if (bgmIcon) bgmIcon.textContent = v > 0 ? '🔊' : '🔇';
-    });
     bgmIcon?.addEventListener('pointerup', () => {
-      const newVol = bgm.volume > 0 ? 0 : 0.3;
-      bgm.setVolume(newVol);
-      if (bgmSlider) bgmSlider.value = String(Math.round(newVol * 100));
-      if (bgmIcon) bgmIcon.textContent = newVol > 0 ? '🔊' : '🔇';
+      this.showVolumeDialog = true;
+      this.render();
     });
+
+    // BGM音量ダイアログ
+    if (this.showVolumeDialog) {
+      const bgmSlider = this.container.querySelector<HTMLInputElement>('#bgm-volume-dialog');
+      const volLabel = this.container.querySelector<HTMLElement>('#bgm-volume-label');
+      bgmSlider?.addEventListener('input', () => {
+        const v = parseInt(bgmSlider.value, 10) / 100;
+        bgm.setVolume(v);
+        if (volLabel) volLabel.textContent = `${Math.round(v * 100)}%`;
+        const dialogIcon = this.container.querySelector<HTMLElement>('#bgm-dialog-icon');
+        if (dialogIcon) dialogIcon.textContent = v > 0 ? '🔊' : '🔇';
+      });
+      this.container.querySelector('#close-volume-dialog')?.addEventListener('pointerup', () => {
+        this.showVolumeDialog = false;
+        this.render();
+      });
+    }
   }
 
   mount(parent: HTMLElement): void {

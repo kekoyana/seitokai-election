@@ -15,6 +15,7 @@ export class BattleScreen {
   private state: GameState;
   private callbacks: BattleCallbacks;
   private showLog: boolean = false;
+  private showVolumeDialog: boolean = false;
 
   constructor(state: GameState, callbacks: BattleCallbacks) {
     this.state = state;
@@ -76,6 +77,33 @@ export class BattleScreen {
     const isFinished = battle.phase === 'finished';
     const lastLog = battle.logs[battle.logs.length - 1];
 
+    // 音量ダイアログ
+    let volumeDialogHtml = '';
+    if (this.showVolumeDialog) {
+      const volPct = Math.round(bgm.volume * 100);
+      volumeDialogHtml = `
+        <div class="game-dialog-overlay" style="
+          position:absolute; inset:0; z-index:200;
+          background:rgba(0,0,20,0.4);
+          display:flex; align-items:center; justify-content:center;
+          animation: fadeIn 0.2s ease;
+        ">
+          <div class="game-panel-dark" style="width:240px; padding:20px; text-align:center;">
+            <div style="font-weight:bold; margin-bottom:15px; color:#fff;">BGM音量</div>
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:20px;">
+              <span id="bgm-dialog-icon" style="font-size:1.2em;">${bgm.volume > 0 ? '🔊' : '🔇'}</span>
+              <input id="bgm-volume-dialog" type="range" min="0" max="100" value="${volPct}" style="
+                flex:1; height:6px; cursor:pointer;
+                accent-color:#fff;
+              "/>
+              <span id="bgm-volume-label" style="font-size:0.9em; width:35px; text-align:right;">${volPct}%</span>
+            </div>
+            <button id="close-volume-dialog" class="game-btn game-btn-primary" style="padding:8px 24px;">閉じる</button>
+          </div>
+        </div>
+      `;
+    }
+
     this.container.innerHTML = `
       <!-- フローティングHUD -->
       <div style="
@@ -92,11 +120,7 @@ export class BattleScreen {
         ">
           <span>⚡<strong>${this.state.stamina}</strong></span>
           <span style="opacity:0.4;">|</span>
-          <span id="bgm-icon" style="cursor:pointer; font-size:1em; line-height:1;">${bgm.volume > 0 ? '🔊' : '🔇'}</span>
-          <input id="bgm-volume" type="range" min="0" max="100" value="${Math.round(bgm.volume * 100)}" style="
-            width:60px; height:4px; cursor:pointer;
-            accent-color:#fff; vertical-align:middle;
-          "/>
+          <span id="bgm-icon" style="cursor:pointer; font-size:1.1em; line-height:1; padding:2px;">${bgm.volume > 0 ? '🔊' : '🔇'}</span>
         </div>
       </div>
 
@@ -115,7 +139,7 @@ export class BattleScreen {
           : renderInitialIcon(student.name, student.personality, 96, 'rgba(255,255,255,0.3)')
         }
         <div style="color:#fff; min-width:120px;">
-          <div style="font-size:1.05em; font-weight:bold;">${student.name} <span style="font-size:0.75em; font-weight:normal; opacity:0.7;">（${student.nickname}）</span></div>
+          <div style="font-size:1.05em; font-weight:bold;">${student.name} <span style="font-size:0.75em; font-weight:normal; opacity:0.7;">（${student.nickname}）</span>${battle.isInLove ? '<span style="color:#FF6B9D; font-size:0.75em; margin-left:4px;">恋愛感情</span>' : ''}</div>
           <div style="font-size:0.82em; opacity:0.7; margin-bottom:6px;">${student.className}</div>
           <div style="
             display:inline-flex; align-items:center; gap:6px;
@@ -196,6 +220,7 @@ export class BattleScreen {
         `).join('')}
         ${battle.logs.length === 0 ? '<div style="font-size:0.78em; color:#888;">...</div>' : ''}
       </div>
+      ${volumeDialogHtml}
     `;
 
     this.attachEvents();
@@ -479,22 +504,31 @@ export class BattleScreen {
       this.render();
     });
 
-    // BGM音量スライダー
-    const bgmSlider = this.container.querySelector<HTMLInputElement>('#bgm-volume');
+    // BGM音量アイコン -> ダイアログ表示
     const bgmIcon = this.container.querySelector<HTMLElement>('#bgm-icon');
-    bgmSlider?.addEventListener('input', () => {
-      const v = parseInt(bgmSlider.value, 10) / 100;
-      bgm.setVolume(v);
-      if (bgmIcon) bgmIcon.textContent = v > 0 ? '🔊' : '🔇';
-    });
     bgmIcon?.addEventListener('pointerup', () => {
-      const newVol = bgm.volume > 0 ? 0 : 0.3;
-      bgm.setVolume(newVol);
-      if (bgmSlider) bgmSlider.value = String(Math.round(newVol * 100));
-      if (bgmIcon) bgmIcon.textContent = newVol > 0 ? '🔊' : '🔇';
+      this.showVolumeDialog = true;
+      this.render();
     });
 
-    // 態度選択
+    // BGM音量ダイアログ
+    if (this.showVolumeDialog) {
+      const bgmSlider = this.container.querySelector<HTMLInputElement>('#bgm-volume-dialog');
+      const volLabel = this.container.querySelector<HTMLElement>('#bgm-volume-label');
+      bgmSlider?.addEventListener('input', () => {
+        const v = parseInt(bgmSlider.value, 10) / 100;
+        bgm.setVolume(v);
+        if (volLabel) volLabel.textContent = `${Math.round(v * 100)}%`;
+        const dialogIcon = this.container.querySelector<HTMLElement>('#bgm-dialog-icon');
+        if (dialogIcon) dialogIcon.textContent = v > 0 ? '🔊' : '🔇';
+      });
+      this.container.querySelector('#close-volume-dialog')?.addEventListener('pointerup', () => {
+        this.showVolumeDialog = false;
+        this.render();
+      });
+    }
+
+    // 各種アクションボタン
     this.container.querySelectorAll<HTMLButtonElement>('[data-attitude]').forEach(btn => {
       btn.addEventListener('pointerup', () => {
         if (battle.phase === 'select_attitude' && !btn.disabled) {

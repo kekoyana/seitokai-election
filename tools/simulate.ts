@@ -15,7 +15,7 @@ import {
   initBattle, resolvePlayerTurn, resolveEnemyTurn,
   checkBattleEnd, getAttitudeCost, shouldPass, MOOD_ORDER,
 } from '../src/battleLogic';
-import { ALL_FACTION_IDS } from '../src/data';
+import { ALL_FACTION_IDS } from '../src/data/factions';
 
 // ── ヘルパー ──
 

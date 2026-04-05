@@ -77,26 +77,26 @@ export class EndingScreen {
     this.container.innerHTML = `
       <div style="max-width:480px; width:100%;">
         <div class="game-panel" style="
-          border-color:#a03030;
+          border-color:#c05050;
           padding:24px;
           text-align:center; margin-bottom:20px;
         ">
           <div style="font-size:2.5em; margin-bottom:8px;">💀</div>
-          <div style="font-size:1.5em; font-weight:bold; color:#fff; margin-bottom:8px;">
+          <div style="font-size:1.5em; font-weight:bold; color:var(--game-text); margin-bottom:8px;">
             GAME OVER
           </div>
-          <div style="color:rgba(255,255,255,0.85); font-size:0.9em; margin-bottom:16px;">
+          <div style="color:var(--game-text-dim); font-size:0.9em; margin-bottom:16px;">
             信念が揺らぎ、あなたの支持が変わってしまった
           </div>
           <div style="
-            background:rgba(255,255,255,0.15);
+            background:rgba(0,0,0,0.05);
             border-radius:10px; padding:12px;
-            font-size:0.85em; color:#fff;
+            font-size:0.85em; color:var(--game-text);
           ">
             ${lastResult ? `<div style="margin-bottom:8px;">${lastResult.student.name}との説得に失敗</div>` : ''}
             <div style="margin-bottom:4px;">
-              <span style="color:${originalCandidate?.color ?? '#fff'};">${FACTION_LABELS[this.state.candidate ?? ''] ?? ''}</span>派
-              → <span style="color:${newCandidate?.color ?? '#fff'};">${FACTION_LABELS[newTop] ?? ''}</span>派に変化
+              <span style="color:${originalCandidate?.color ?? 'var(--game-text)'};">${FACTION_LABELS[this.state.candidate ?? ''] ?? ''}</span>派
+              → <span style="color:${newCandidate?.color ?? 'var(--game-text)'};">${FACTION_LABELS[newTop] ?? ''}</span>派に変化
             </div>
             <div style="margin-top:8px; opacity:0.9;">
               ${renderSupportBar(playerSupport, 14)}

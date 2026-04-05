@@ -5,7 +5,7 @@ import type {
 import {
   STUDENTS, getFloorFromLocation, getCorridorForFloor,
   FLOOR_ADJACENCY, MOVE_COST, getFloorMoveCost, TIME_COST, MAX_TIME,
-  getStudentLocation,
+  getStudentLocation, FACTION_LABELS,
 } from './data';
 import { generateConversationData, generateTalkLogSummary, generateChitchatData } from './logic/conversationGenerator';
 import { electActivists, processOneActivist, FACTION_LABELS as ACTIVIST_FACTION_LABELS } from './logic/activistLogic';
@@ -840,11 +840,16 @@ export class Game {
     const student = battle.student;
     let shiftAmount = 0;
 
-    // バトルログをアクションログに変換
-    const battleLogLines = battle.logs.map(log => {
-      const prefix = log.speaker === 'player' ? '▶ ' : '◀ ';
-      return `${prefix}${log.text}`;
-    });
+    // シフト結果を自然な日本語で表現するヘルパー
+    const describeShift = (candidateId: CandidateId, amount: number): string => {
+      const name = FACTION_LABELS[candidateId] ?? candidateId;
+      if (amount >= 50) return `${name}派が大きく強まった`;
+      if (amount >= 20) return `${name}派が強まった`;
+      return `${name}派が少し強まった`;
+    };
+
+    // 組織の支持変化検出用に変更前の生徒リストを保存
+    const oldStudents = this.state.students;
 
     // 説得バトルの時間消費（防御バトルは時間消費なし）
     const timeAfterBattle = battle.isDefending
@@ -878,8 +883,8 @@ export class Game {
       }
 
       const logEntry = battle.isDefending
-        ? `【防衛成功】${student.name}の説得を跳ね返した！\n${battleLogLines.join('\n')}\n→ 相手の思想シフト ${shiftAmount}`
-        : `【説得成功】${student.name}を説得した！\n${battleLogLines.join('\n')}\n→ 思想シフト ${shiftAmount}`;
+        ? `【防衛成功】${student.name}の説得を跳ね返した！（${describeShift(this.state.candidate, shiftAmount)}）`
+        : `【説得成功】${student.name}を説得した！（${describeShift(this.state.candidate, shiftAmount)}）`;
       this.state = {
         ...this.state,
         screen: 'daily',
@@ -891,20 +896,18 @@ export class Game {
         actionLogs: [...this.state.actionLogs, logEntry],
       };
       this.state = { ...this.state, students: this.syncPlayerSupport(this.state.students) };
-      if (this.isAllOrganizationsUnified()) {
-        this.showEnding();
-      } else {
-        this.showDaily();
-      }
+      this.appendOrgChangeLogsAndProceed(oldStudents);
     } else if (result === 'lose') {
       // 失敗: プレイヤーの思想が相手方向にシフト
       const { newSupport, shiftPercent } = applyLoseShift(
         this.state.playerSupport, student.support, battle.barPosition
       );
       shiftAmount = shiftPercent;
+      const enemyFaction = (['conservative', 'progressive', 'sports'] as CandidateId[])
+        .reduce((a, b) => student.support[a] >= student.support[b] ? a : b);
       const logEntry = battle.isDefending
-        ? `【防衛失敗】${student.name}に押されてしまった…\n${battleLogLines.join('\n')}\n→ 自分の思想シフト ${shiftAmount}`
-        : `【説得失敗】${student.name}に説得されてしまった…\n${battleLogLines.join('\n')}\n→ 自分の思想シフト ${shiftAmount}`;
+        ? `【防衛失敗】${student.name}に押されてしまった…（${describeShift(enemyFaction, shiftAmount)}）`
+        : `【説得失敗】${student.name}に説得されてしまった…（${describeShift(enemyFaction, shiftAmount)}）`;
 
       // プレイヤーの支持候補が変わったかチェック
       const newCandidate = getPlayerCandidate(newSupport);
@@ -931,11 +934,7 @@ export class Game {
           actionLogs: [...this.state.actionLogs, logEntry],
         };
         this.state = { ...this.state, students: this.syncPlayerSupport(this.state.students) };
-        if (this.isAllOrganizationsUnified()) {
-          this.showEnding();
-        } else {
-          this.showDaily();
-        }
+        this.appendOrgChangeLogsAndProceed(oldStudents);
       }
     } else if (result === 'timeout') {
       // タイムアウト: バー位置に応じて双方の思想をシフト
@@ -944,7 +943,10 @@ export class Game {
       );
       shiftAmount = shiftPercent;
       const timeoutLabel = battle.barPosition > 0 ? '時間切れ（やや優勢）' : battle.barPosition < 0 ? '時間切れ（やや劣勢）' : '時間切れ（引き分け）';
-      const logEntry = `【${timeoutLabel}】${student.name}との説得\n${battleLogLines.join('\n')}\n→ 思想シフト ${shiftAmount}`;
+      const timeoutFaction = battle.barPosition >= 0 ? this.state.candidate
+        : (['conservative', 'progressive', 'sports'] as CandidateId[])
+            .reduce((a, b) => student.support[a] >= student.support[b] ? a : b);
+      const logEntry = `【${timeoutLabel}】${student.name}との説得（${describeShift(timeoutFaction, shiftAmount)}）`;
 
       const updatedStudents = this.state.students.map(s => {
         if (s.id !== student.id) return s;
@@ -978,12 +980,21 @@ export class Game {
           actionLogs: [...this.state.actionLogs, logEntry],
         };
         this.state = { ...this.state, students: this.syncPlayerSupport(this.state.students) };
-        if (this.isAllOrganizationsUnified()) {
-          this.showEnding();
-        } else {
-          this.showDaily();
-        }
+        this.appendOrgChangeLogsAndProceed(oldStudents);
       }
+    }
+  }
+
+  /** 組織の支持変化をログに追加し、統一チェック→画面遷移 */
+  private appendOrgChangeLogsAndProceed(oldStudents: Student[]): void {
+    const orgChanges = this.detectOrgVoteChanges(oldStudents, this.state.students);
+    if (orgChanges.length > 0) {
+      this.state = { ...this.state, actionLogs: [...this.state.actionLogs, ...orgChanges] };
+    }
+    if (this.isAllOrganizationsUnified()) {
+      this.showEnding();
+    } else {
+      this.showDaily();
     }
   }
 
@@ -996,6 +1007,24 @@ export class Game {
       },
     });
     this.endingScreen.mount(this.root);
+  }
+
+  /** 組織の支持変化を検出してログメッセージを返す */
+  private detectOrgVoteChanges(
+    oldStudents: Student[],
+    newStudents: Student[]
+  ): string[] {
+    const messages: string[] = [];
+    for (const org of ORGANIZATIONS) {
+      const oldVote = getOrganizationVote(org, oldStudents);
+      const newVote = getOrganizationVote(org, newStudents);
+      if (oldVote !== newVote) {
+        messages.push(
+          `📢 ${org.name}の支持が${FACTION_LABELS[oldVote] ?? oldVote}派→${FACTION_LABELS[newVote] ?? newVote}派に変わった！`
+        );
+      }
+    }
+    return messages;
   }
 
   /** すべての組織が同一候補を支持しているかチェック */

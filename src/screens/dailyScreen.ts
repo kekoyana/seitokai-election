@@ -608,7 +608,7 @@ export class DailyScreen {
             font-size:0.85em; cursor:pointer;
             text-align:left; font-family:inherit;
           ">
-            <div style="font-weight:bold;">← 廊下へ</div>
+            <div style="font-weight:bold;">← ${getFloorFromLocation(this.state.currentLocation) === 'ground' ? 'グラウンドへ' : '廊下へ'}</div>
             <div style="font-size:0.75em; opacity:0.85;">フロア移動</div>
           </button>
           <button id="info-btn" class="game-btn" style="

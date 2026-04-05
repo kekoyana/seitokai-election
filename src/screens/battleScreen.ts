@@ -274,6 +274,39 @@ export class BattleScreen {
     `;
   }
 
+  private getAttitudeLabel(attitude: PlayerAttitude): { text: string; color: string } {
+    const map: Record<PlayerAttitude, { text: string; color: string }> = {
+      friendly: { text: '柔らかく', color: '#27AE60' },
+      normal: { text: '普通に', color: '#4A90D9' },
+      strong: { text: '情熱的に', color: '#E07820' },
+    };
+    return map[attitude];
+  }
+
+  private getTopicLabel(topic: Topic): string {
+    const candidateLabels: Record<string, string> = {
+      conservative: '保守派の政策', progressive: '革新派の政策', sports: '体育派の政策',
+    };
+    return candidateLabels[topic] ?? HOBBY_LABELS[topic] ?? topic;
+  }
+
+  private renderBreadcrumb(parts: { text: string; color?: string }[]): string {
+    const items = parts.map(p =>
+      `<span style="color:${p.color ?? 'rgba(255,255,255,0.8)'}; font-weight:bold;">${p.text}</span>`
+    );
+    return `
+      <div style="
+        display:flex; align-items:center; justify-content:center; gap:6px;
+        font-size:0.8em; margin-bottom:10px; padding:6px 10px;
+        background:rgba(255,255,255,0.08); border-radius:8px;
+      ">
+        ${items.join('<span style="color:rgba(255,255,255,0.3);"> → </span>')}
+        <span style="color:rgba(255,255,255,0.3);"> → </span>
+        <span style="color:rgba(255,255,255,0.35);">？</span>
+      </div>
+    `;
+  }
+
   private renderCommands(lastLog: { speaker: string; text: string; effect: number } | undefined): string {
     const battle = this.state.battle!;
     const candidateColor = this.getCandidateColor();
@@ -333,7 +366,9 @@ export class BattleScreen {
           `;
         }).join('');
 
+      const attLabel = battle.selectedAttitude ? this.getAttitudeLabel(battle.selectedAttitude) : null;
       return `
+        ${attLabel ? this.renderBreadcrumb([{ text: attLabel.text, color: attLabel.color }]) : ''}
         <div style="color:#f0d060; font-size:0.85em; margin-bottom:8px; text-align:center; font-weight:bold;">
           【2】話題を選択
         </div>
@@ -355,7 +390,13 @@ export class BattleScreen {
     }
 
     if (battle.phase === 'select_stance') {
+      const attLabel = battle.selectedAttitude ? this.getAttitudeLabel(battle.selectedAttitude) : null;
+      const topLabel = battle.selectedTopic ? this.getTopicLabel(battle.selectedTopic) : null;
+      const breadcrumbParts: { text: string; color?: string }[] = [];
+      if (attLabel) breadcrumbParts.push({ text: attLabel.text, color: attLabel.color });
+      if (topLabel) breadcrumbParts.push({ text: topLabel });
       return `
+        ${breadcrumbParts.length > 0 ? this.renderBreadcrumb(breadcrumbParts) : ''}
         <div style="color:#f0d060; font-size:0.85em; margin-bottom:8px; text-align:center; font-weight:bold;">
           【3】立場を選択
         </div>
@@ -379,10 +420,31 @@ export class BattleScreen {
     }
 
     if (battle.phase === 'resolving') {
+      const attLabel = battle.selectedAttitude ? this.getAttitudeLabel(battle.selectedAttitude) : null;
+      const topLabel = battle.selectedTopic ? this.getTopicLabel(battle.selectedTopic) : null;
+      const stanceLabel = lastLog?.text.includes('肯定') ? '肯定' : '否定';
+      const stanceColor = stanceLabel === '肯定' ? '#7EC850' : '#F07070';
+
       return `
-        <div style="text-align:center; color:rgba(255,255,255,0.7); font-size:0.9em; padding:20px;">
-          ${lastLog ? lastLog.text : '...'}
-          <div style="margin-top:12px; font-size:0.8em; opacity:0.6;">相手の反応を待っています...</div>
+        <div style="text-align:center; padding:16px;">
+          <div style="
+            display:inline-flex; align-items:center; gap:6px;
+            font-size:0.85em; padding:8px 16px;
+            background:rgba(255,255,255,0.08); border-radius:8px;
+            margin-bottom:12px;
+          ">
+            ${attLabel ? `<span style="color:${attLabel.color}; font-weight:bold;">${attLabel.text}</span>` : ''}
+            <span style="color:rgba(255,255,255,0.3);">→</span>
+            ${topLabel ? `<span style="color:rgba(255,255,255,0.8); font-weight:bold;">${topLabel}</span>` : ''}
+            <span style="color:rgba(255,255,255,0.3);">→</span>
+            <span style="color:${stanceColor}; font-weight:bold;">${stanceLabel}</span>
+          </div>
+          <div style="color:rgba(255,255,255,0.7); font-size:0.9em;">
+            ${lastLog ? lastLog.text : '...'}
+          </div>
+          <div style="margin-top:12px; font-size:0.8em; color:rgba(255,255,255,0.4);">
+            相手の反応を待っています...
+          </div>
         </div>
       `;
     }

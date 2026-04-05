@@ -179,7 +179,7 @@ export interface GameState {
   battle: BattleState | null;
   lastBattleResult: { student: Student; win: boolean; shiftAmount: number } | null;
   playerCharacter: PlayerCharacter | null;
-  playerAttributes: Attribute[];
+  playerAttributes: PreferenceAttr[];
   playerSupport: { conservative: number; progressive: number; sports: number };
   organizations: Organization[];
   actionLogs: string[];

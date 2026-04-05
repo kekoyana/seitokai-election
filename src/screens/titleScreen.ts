@@ -1,8 +1,10 @@
 import titleBg from '../../assets/backgrounds/title.jpg';
 import { bgm } from '../bgm';
+import { hasSaveData } from '../saveLoad';
 
 export interface TitleCallbacks {
   onStart: () => void;
+  onContinue: () => void;
 }
 
 export class TitleScreen {
@@ -60,13 +62,24 @@ export class TitleScreen {
           <div style="color:var(--game-text);">・30日後、組織の多数票を獲得した候補者が当選！</div>
         </div>
 
-        <button id="start-btn" class="game-btn game-btn-primary" style="
+        ${hasSaveData() ? `
+        <button id="continue-btn" class="game-btn game-btn-primary" style="
           padding: 16px 48px;
           font-size: 1.2em;
           letter-spacing: 0.15em;
           transition: transform 0.05s;
+          margin-bottom: 12px;
         ">
-          ゲームスタート
+          つづきから
+        </button>
+        ` : ''}
+        <button id="start-btn" class="game-btn ${hasSaveData() ? '' : 'game-btn-primary'}" style="
+          padding: ${hasSaveData() ? '12px 48px' : '16px 48px'};
+          font-size: ${hasSaveData() ? '1.0em' : '1.2em'};
+          letter-spacing: 0.15em;
+          transition: transform 0.05s;
+        ">
+          ${hasSaveData() ? 'はじめから' : 'ゲームスタート'}
         </button>
 
         <div style="
@@ -81,6 +94,20 @@ export class TitleScreen {
         </div>
       </div>
     `;
+
+    const continueBtn = this.container.querySelector<HTMLButtonElement>('#continue-btn');
+    if (continueBtn) {
+      continueBtn.addEventListener('pointerdown', () => {
+        continueBtn.style.transform = 'scale(0.97)';
+      });
+      continueBtn.addEventListener('pointerup', () => {
+        continueBtn.style.transform = 'scale(1)';
+        this.callbacks.onContinue();
+      });
+      continueBtn.addEventListener('pointerleave', () => {
+        continueBtn.style.transform = 'scale(1)';
+      });
+    }
 
     const btn = this.container.querySelector<HTMLButtonElement>('#start-btn')!;
     btn.addEventListener('pointerdown', () => {

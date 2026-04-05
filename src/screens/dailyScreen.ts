@@ -369,6 +369,7 @@ export class DailyScreen {
         </div>
         ${sidebarHtml ? `<div class="daily-sidebar">${sidebarHtml}</div>` : ''}
       </div>
+      ${this.renderQuestIndicator()}
       ${logBoxHtml}
       ${timeUpModalHtml}
     `;
@@ -488,6 +489,33 @@ export class DailyScreen {
         <div style="font-size:0.95em; font-weight:bold; color:var(--game-text); margin-bottom:6px;">${org.name}</div>
         ${this.renderOrgInfoSection(org)}
       </div>
+    `;
+  }
+
+  /** 落とし物・おつかい所持中インジケーター */
+  private renderQuestIndicator(): string {
+    const items: string[] = [];
+    const li = this.state.lostItem;
+    if (li) {
+      const owner = this.state.students.find(s => s.id === li.ownerId);
+      items.push(`<span style="color:#D4A017;">📦 ${li.itemName}を所持中（${li.hint}）</span>`);
+      if (owner) items[items.length - 1] = `<span style="color:#D4A017;">📦 ${owner.name}の${li.itemName}を所持中</span>`;
+    }
+    const er = this.state.errand;
+    if (er) {
+      const from = this.state.students.find(s => s.id === er.fromId);
+      const to = this.state.students.find(s => s.id === er.toId);
+      items.push(`<span style="color:#4A90D9;">📨 ${from?.name ?? '?'}の${er.itemName}を${to?.name ?? '?'}に届ける</span>`);
+    }
+    if (items.length === 0) return '';
+    return `
+      <div style="
+        padding:4px 12px;
+        font-size:0.72em;
+        background:var(--game-panel-bg);
+        border-top:1px solid var(--game-panel-border);
+        display:flex; gap:12px; flex-wrap:wrap;
+      ">${items.join('')}</div>
     `;
   }
 
@@ -771,6 +799,24 @@ export class DailyScreen {
             border-color:#8090a8;
             font-size:0.78em; font-family:var(--game-font);
           ">情報</button>
+          ${this.state.lostItem?.ownerId === s.id ? `
+            <button data-deliver-lost="${s.id}" class="game-btn" style="
+              padding:5px 10px;
+              background:linear-gradient(180deg,#D4A017,#B8860B);
+              border-color:#E8C840;
+              font-size:0.78em; font-family:var(--game-font);
+              animation: game-pulse 1.5s ease-in-out infinite;
+            ">届ける</button>
+          ` : ''}
+          ${this.state.errand?.toId === s.id ? `
+            <button data-deliver-errand="${s.id}" class="game-btn" style="
+              padding:5px 10px;
+              background:linear-gradient(180deg,#D4A017,#B8860B);
+              border-color:#E8C840;
+              font-size:0.78em; font-family:var(--game-font);
+              animation: game-pulse 1.5s ease-in-out infinite;
+            ">届ける</button>
+          ` : ''}
         </div>
       </div>
     `;
@@ -1685,6 +1731,20 @@ export class DailyScreen {
       });
     });
 
+    // 落とし物を届けるボタン
+    this.container.querySelectorAll<HTMLButtonElement>('[data-deliver-lost]').forEach(btn => {
+      btn.addEventListener('pointerup', () => {
+        this.callbacks.onDeliverLostItem();
+      });
+    });
+
+    // おつかいを届けるボタン
+    this.container.querySelectorAll<HTMLButtonElement>('[data-deliver-errand]').forEach(btn => {
+      btn.addEventListener('pointerup', () => {
+        this.callbacks.onDeliverErrand();
+      });
+    });
+
     // 趣味の会話ボタン
     this.container.querySelectorAll<HTMLButtonElement>('[data-action-talk]').forEach(btn => {
       btn.addEventListener('pointerup', () => {
@@ -1835,12 +1895,14 @@ export class DailyScreen {
     setTimeout(() => overlay.remove(), 2000);
   }
 
-  showLostItemFound(itemName: string, hint: string): void {
+  showLostItemFound(itemName: string, hint: string, callback?: (picked: boolean) => void): void {
     showConfirmDialog(this.container, {
       title: '落とし物発見',
-      message: `${itemName}を見つけた！ ${hint}`,
+      message: `足元に${itemName}が落ちている…\n${hint}`,
       okLabel: '拾う',
       cancelLabel: '無視する',
+    }).then((picked) => {
+      if (callback) callback(picked);
     });
   }
 

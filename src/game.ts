@@ -25,6 +25,7 @@ import { EndingScreen } from './screens/endingScreen';
 import { DebugScreen } from './screens/debugScreen';
 import { showInfoDialog } from './ui/gameDialog';
 import { bgm, BGM_TRACKS } from './bgm';
+import { saveGame, loadGame, deleteSaveData } from './saveLoad';
 
 function createInitialState(): GameState {
   return {
@@ -123,9 +124,21 @@ export class Game {
     this.clearScreens();
     bgm.play(BGM_TRACKS.title);
     this.titleScreen = new TitleScreen({
-      onStart: () => this.showCharacterSelect(),
+      onStart: () => {
+        deleteSaveData();
+        this.showCharacterSelect();
+      },
+      onContinue: () => this.continueGame(),
     });
     this.titleScreen.mount(this.root);
+  }
+
+  private continueGame(): void {
+    const saved = loadGame();
+    if (!saved) return;
+    this.state = saved;
+    this.state.screen = 'daily';
+    this.showDaily();
   }
 
   private showCharacterSelect(): void {
@@ -166,7 +179,7 @@ export class Game {
             stats: { ...selected.stats },
             portrait: selected.portrait,
           },
-          playerAttributes: [...selected.attributes],
+          playerAttributes: [...selected.attributes, selected.hairStyle],
           playerSupport: { ...selected.support },
         };
         // 初日の活動家選出
@@ -174,6 +187,8 @@ export class Game {
           ...this.state,
           activists: electActivists(this.state.students, selected.id, candidateId),
         };
+        // 初日セーブ
+        saveGame(this.state);
         this.showDaily();
       },
     });
@@ -403,7 +418,12 @@ export class Game {
       lostItem: { itemName: item.name, hint: item.hint(owner), ownerId: owner.id },
     };
     this.dailyScreen?.update(this.state);
-    this.dailyScreen?.showLostItemFound(item.name, item.hint(owner));
+    this.dailyScreen?.showLostItemFound(item.name, item.hint(owner), (picked) => {
+      if (!picked) {
+        this.state = { ...this.state, lostItem: null };
+        this.dailyScreen?.update(this.state);
+      }
+    });
     return true;
   }
 
@@ -816,7 +836,12 @@ export class Game {
       activists,
       actionLogs: [],
       pendingActivistBattle: null,
+      lostItem: null,
+      errand: null,
     };
+
+    // オートセーブ
+    saveGame(this.state);
 
     this.showDaily();
   }
@@ -1175,6 +1200,7 @@ export class Game {
 
   private showGameOver(): void {
     this.clearScreens();
+    deleteSaveData();
     this.endingScreen = new EndingScreen(this.state, {
       onRestart: () => {
         this.state = createInitialState();
@@ -1226,6 +1252,7 @@ export class Game {
 
   private transitionToEnding(): void {
     this.clearScreens();
+    deleteSaveData();
     this.state = { ...this.state, screen: 'ending' };
     this.endingScreen = new EndingScreen(this.state, {
       onRestart: () => {

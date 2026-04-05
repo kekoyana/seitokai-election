@@ -1,4 +1,4 @@
-import type { GameState, Student, Attribute, CandidateId } from '../types';
+import type { GameState, Student, PreferenceAttr, CandidateId } from '../types';
 import { CANDIDATES, FACTION_LABELS, HAIRSTYLE_LABELS, HOBBY_LABELS, ATTRIBUTE_LABELS, getCatchphrase, getCandidateInfo, renderInitialIcon, renderSupportBar, getStudentLocation } from '../data';
 import { ORGANIZATIONS, ORGANIZATION_TYPE_LABELS } from '../data/organizations';
 import { getOrganizationVote } from '../logic/organizationLogic';
@@ -44,7 +44,7 @@ export class DebugScreen {
     this.render();
   }
 
-  private calcCompatibility(student: Student): { score: number; liked: Attribute[]; disliked: Attribute[] } {
+  private calcCompatibility(student: Student): { score: number; liked: PreferenceAttr[]; disliked: PreferenceAttr[] } {
     const playerAttrs = this.state.playerAttributes;
     const liked = playerAttrs.filter(a => student.likedAttributes.includes(a));
     const disliked = playerAttrs.filter(a => student.dislikedAttributes.includes(a));

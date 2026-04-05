@@ -63,31 +63,22 @@ export class TitleScreen {
           <div style="color:var(--game-text);">・30日後、組織の多数票を獲得した派閥が勝利！</div>
         </div>
 
-        ${hasSaveData() ? `
-        <button id="continue-btn" class="game-btn game-btn-primary" style="
-          padding: 16px 48px;
-          font-size: 1.2em;
-          letter-spacing: 0.15em;
-          transition: transform 0.05s;
-          margin-bottom: 12px;
-        ">
-          つづきから
-        </button>
-        ` : ''}
-        <button id="start-btn" class="game-btn ${hasSaveData() ? '' : 'game-btn-primary'}" style="
-          padding: ${hasSaveData() ? '12px 48px' : '16px 48px'};
-          font-size: ${hasSaveData() ? '1.0em' : '1.2em'};
-          letter-spacing: 0.15em;
-          transition: transform 0.05s;
-        ">
-          ${hasSaveData() ? 'はじめから' : 'ゲームスタート'}
-        </button>
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 4px; margin-top: 24px;">
+          ${hasSaveData() ? `
+          <button id="continue-btn" class="game-btn-etrian">
+            つづきから
+          </button>
+          ` : ''}
+          <button id="start-btn" class="game-btn-etrian">
+            ${hasSaveData() ? 'はじめから' : 'ゲームスタート'}
+          </button>
+        </div>
 
         <div style="
           display:flex; align-items:center; justify-content:center; gap:8px;
-          margin-top:16px; color:var(--game-text); font-size:0.9em;
+          margin-top:24px; color:var(--game-text); font-size:0.9em;
         ">
-          <span id="bgm-icon" style="cursor:pointer; padding:4px;">${bgm.volume > 0 ? '🔊' : '🔇'}</span>
+          <span id="bgm-icon" style="cursor:pointer; padding:4px; opacity: 0.7;">${bgm.volume > 0 ? '🔊 BGM設定' : '🔇 BGM設定'}</span>
         </div>
       </div>
     `;
@@ -121,28 +112,14 @@ export class TitleScreen {
 
     const continueBtn = this.container.querySelector<HTMLButtonElement>('#continue-btn');
     if (continueBtn) {
-      continueBtn.addEventListener('pointerdown', () => {
-        continueBtn.style.transform = 'scale(0.97)';
-      });
       continueBtn.addEventListener('pointerup', () => {
-        continueBtn.style.transform = 'scale(1)';
         this.callbacks.onContinue();
-      });
-      continueBtn.addEventListener('pointerleave', () => {
-        continueBtn.style.transform = 'scale(1)';
       });
     }
 
-    const btn = this.container.querySelector<HTMLButtonElement>('#start-btn')!;
-    btn.addEventListener('pointerdown', () => {
-      btn.style.transform = 'scale(0.97)';
-    });
-    btn.addEventListener('pointerup', () => {
-      btn.style.transform = 'scale(1)';
+    const startBtn = this.container.querySelector<HTMLButtonElement>('#start-btn')!;
+    startBtn.addEventListener('pointerup', () => {
       this.callbacks.onStart();
-    });
-    btn.addEventListener('pointerleave', () => {
-      btn.style.transform = 'scale(1)';
     });
 
     // BGM音量アイコン -> ダイアログ表示

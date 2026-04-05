@@ -1,197 +1,309 @@
-import type { Student, FactionId } from '../types';
-import { FACTION_INFO, FACTION_LABELS, getCatchphrase, renderInitialIcon, ALL_FACTION_IDS } from '../data';
+import type { Student, FactionId, FactionInfo } from '../types';
+import {
+  FACTION_INFO, FACTION_LABELS, getCatchphrase, renderInitialIcon,
+  CLUB_LABELS,
+} from '../data';
 import dailyBg from '../../assets/backgrounds/daily.jpg';
 import type { Screen } from './Screen';
 
 export interface CharacterSelectCallbacks {
   onSelect: (student: Student) => void;
+  onBack: () => void;
 }
 
 export class CharacterSelectScreen implements Screen {
   private container: HTMLDivElement;
   private students: Student[];
+  private faction: FactionId;
+  private factionInfo: FactionInfo;
   private callbacks: CharacterSelectCallbacks;
-  private activeTab: FactionId | null = null;
+  private selectedStudent: Student;
+  private swipeStartX = 0;
+  private swipeStartY = 0;
 
-  constructor(students: Student[], callbacks: CharacterSelectCallbacks) {
+  constructor(students: Student[], faction: FactionId, callbacks: CharacterSelectCallbacks) {
     this.students = students;
+    this.faction = faction;
+    this.factionInfo = FACTION_INFO.find(c => c.id === faction)!;
     this.callbacks = callbacks;
+    this.selectedStudent = students[0];
     this.container = document.createElement('div');
     this.render();
   }
 
-  private getSupportFaction(s: Student): FactionId {
-    return ALL_FACTION_IDS
-      .reduce((a, b) => s.support[a] >= s.support[b] ? a : b);
+  private switchStudent(delta: number): void {
+    const idx = this.students.indexOf(this.selectedStudent);
+    const next = idx + delta;
+    if (next >= 0 && next < this.students.length) {
+      this.selectedStudent = this.students[next];
+      this.render();
+    }
   }
 
   private render(): void {
     this.container.style.cssText = `
       position:fixed; inset:0;
-      background:linear-gradient(160deg, rgba(210,180,140,0.5) 0%, rgba(245,220,180,0.5) 100%),
+      background:linear-gradient(160deg, rgba(15,25,50,0.85) 0%, rgba(30,50,80,0.85) 100%),
         url('${dailyBg}') center/cover no-repeat;
       display:flex; flex-direction:column;
       font-family:var(--game-font);
       overflow:hidden; box-sizing:border-box;
+      color:#e0e8f0;
     `;
 
-    const activeInfo = this.activeTab ? FACTION_INFO.find(c => c.id === this.activeTab)! : null;
+    const info = this.factionInfo;
+    const sel = this.selectedStudent;
+    const clubLabel = sel.clubId ? (CLUB_LABELS[sel.clubId] ?? sel.clubId) : null;
 
-    // タブ
-    const tabsHtml = FACTION_INFO.map(info => {
-      const active = info.id === this.activeTab;
-      const count = this.students.filter(s => this.getSupportFaction(s) === info.id).length;
-      return `<button class="faction-tab" data-faction="${info.id}" style="
-        flex:1;
-        background:${active ? info.color : '#e8eef5'};
-        color:${active ? '#fff' : '#6070a0'};
-        border:2px solid ${active ? info.color : 'transparent'};
-        border-bottom:${active ? 'none' : '2px solid var(--game-panel-border)'};
-        padding:10px 8px 8px;
-        cursor:pointer;
+    // --- Faction header bar ---
+    const headerHtml = `
+      <div style="
+        display:flex; align-items:center; padding:12px 16px 0; flex-shrink:0; gap:8px;
+      ">
+        <button class="back-btn" style="
+          background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2);
+          border-radius:4px; padding:6px 12px; cursor:pointer;
+          font-family:var(--game-font); font-size:0.8em; color:rgba(255,255,255,0.6);
+          transition:all 0.15s;
+        ">◀ 戻る</button>
+        <div style="flex:1; text-align:center;">
+          <h1 style="
+            font-size:1.1em; margin:0; font-weight:900;
+            color:#e0e8f0; text-shadow:0 2px 4px rgba(0,0,0,0.5);
+            letter-spacing:0.1em;
+          ">キャラクター選択</h1>
+        </div>
+        <div style="width:60px;"></div>
+      </div>
+      <div style="
+        padding:6px 16px; font-size:0.78em; text-align:center;
+        background:${info.color}20; border-top:1px solid ${info.color}40;
+        border-bottom:1px solid ${info.color}40; color:rgba(255,255,255,0.7);
+        margin-top:8px;
+      ">
+        <strong style="color:${info.accentColor};">${info.platform}</strong>
+        <span style="margin-left:8px; opacity:0.7;">${info.description}</span>
+      </div>
+    `;
+
+    // --- Character showcase ---
+    const showcaseHtml = `
+      <div class="showcase-area" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
+        padding:12px 16px; gap:8px; min-height:0; overflow-y:auto; touch-action:pan-y;">
+
+        <!-- Portrait -->
+        <div style="position:relative; flex-shrink:0;">
+          ${sel.portrait
+            ? `<img src="${sel.portrait}" alt="${sel.name}" style="
+                width:180px; height:180px; border-radius:8px;
+                object-fit:cover; object-position:top;
+                border:3px solid ${info.color};
+                box-shadow:0 0 20px ${info.color}60, 0 4px 12px rgba(0,0,0,0.4);
+              "/>`
+            : renderInitialIcon(sel.name, sel.personality, 180, info.color)
+          }
+          <!-- Faction badge -->
+          <div style="
+            position:absolute; bottom:-8px; left:50%; transform:translateX(-50%);
+            background:${info.color}; color:#fff;
+            font-size:0.7em; font-weight:bold; padding:2px 12px;
+            border-radius:4px; white-space:nowrap;
+            box-shadow:0 2px 4px rgba(0,0,0,0.3);
+          ">${FACTION_LABELS[info.id]}派</div>
+        </div>
+
+        <!-- Dot indicator -->
+        <div style="display:flex; gap:6px; align-items:center; margin-top:4px;">
+          ${this.students.map((s, i) => `
+            <div style="
+              width:${s.id === sel.id ? '10px' : '6px'}; height:${s.id === sel.id ? '10px' : '6px'};
+              border-radius:4px;
+              background:${s.id === sel.id ? info.accentColor : 'rgba(255,255,255,0.25)'};
+              transition:all 0.2s;
+            "></div>
+          `).join('')}
+        </div>
+
+        <!-- Name & info -->
+        <div style="text-align:center; margin-top:8px;">
+          <div style="font-size:1.3em; font-weight:900; letter-spacing:0.05em;
+            text-shadow:0 2px 4px rgba(0,0,0,0.5);">
+            ${sel.name}
+            <span style="font-size:0.6em; font-weight:400; opacity:0.6; margin-left:4px;">（${sel.nickname}）</span>
+          </div>
+          <div style="font-size:0.8em; opacity:0.7; margin-top:2px;">
+            ${sel.className}　${sel.gender === 'male' ? '♂' : '♀'}${clubLabel ? `　${clubLabel}` : ''}
+          </div>
+        </div>
+
+        <!-- Catchphrase -->
+        <div style="
+          font-size:0.85em; color:#f0d060; font-style:italic;
+          text-align:center; margin:2px 0;
+          text-shadow:0 1px 2px rgba(0,0,0,0.4);
+        ">「${getCatchphrase(sel.personality, sel.attributes)}」</div>
+
+        <!-- Description -->
+        <div style="
+          font-size:0.78em; line-height:1.6; color:rgba(255,255,255,0.75);
+          background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.1);
+          border-radius:6px; padding:8px 12px;
+          max-width:400px; text-align:center;
+        ">${sel.description}</div>
+
+        <!-- Stats -->
+        <div style="
+          display:grid; grid-template-columns:repeat(3, 1fr); gap:8px;
+          width:100%; max-width:360px; margin-top:4px;
+        ">
+          ${this.renderStatBlock('弁舌', sel.stats.speech, '#5baef5')}
+          ${this.renderStatBlock('運動', sel.stats.athletic, '#E74C3C')}
+          ${this.renderStatBlock('知性', sel.stats.intel, '#2ECC71')}
+        </div>
+
+        <!-- Select button -->
+        <button class="select-character-btn" style="
+          margin-top:8px; padding:10px 40px;
+          background:linear-gradient(135deg, ${info.color} 0%, ${info.accentColor} 100%);
+          color:#fff; border:2px solid rgba(255,255,255,0.3);
+          border-radius:4px; font-family:var(--game-font);
+          font-size:1em; font-weight:bold; cursor:pointer;
+          box-shadow:0 0 15px ${info.color}40, 0 3px 8px rgba(0,0,0,0.3);
+          transition:all 0.2s; text-shadow:0 1px 2px rgba(0,0,0,0.4);
+          flex-shrink:0;
+        ">この生徒を選ぶ</button>
+      </div>
+    `;
+
+    // --- Character thumbnail strip ---
+    const thumbs = this.students.map(s => {
+      const isSelected = sel.id === s.id;
+      return `<button data-thumb-id="${s.id}" style="
+        flex-shrink:0; width:64px; display:flex; flex-direction:column; align-items:center; gap:4px;
+        padding:6px 4px; cursor:pointer;
+        background:${isSelected ? 'rgba(255,255,255,0.15)' : 'transparent'};
+        border:2px solid ${isSelected ? info.color : 'transparent'};
+        border-radius:8px; transition:all 0.2s;
         font-family:var(--game-font);
-        font-size:0.85em;
-        font-weight:bold;
-        transition:all 0.15s;
-        border-radius:6px 6px 0 0;
-        text-shadow:${active ? '0 1px 1px rgba(0,0,0,0.3)' : 'none'};
-      ">${FACTION_LABELS[info.id]}派 <span style="font-size:0.8em; opacity:0.7;">(${count})</span></button>`;
+      ">
+        ${s.portrait
+          ? `<img src="${s.portrait}" alt="${s.name}" style="
+              width:48px; height:48px; border-radius:4px;
+              object-fit:cover; object-position:top;
+              border:2px solid ${isSelected ? '#fff' : 'rgba(255,255,255,0.2)'};
+              box-shadow:${isSelected ? `0 0 8px ${info.color}80` : 'none'};
+              transition:all 0.2s;
+            "/>`
+          : `<div style="
+              width:48px; height:48px; border-radius:4px;
+              background:rgba(255,255,255,0.1);
+              border:2px solid ${isSelected ? '#fff' : 'rgba(255,255,255,0.2)'};
+              display:flex; align-items:center; justify-content:center;
+              font-size:1.2em; font-weight:bold; color:rgba(255,255,255,0.5);
+            ">${s.name[0]}</div>`
+        }
+        <span style="
+          font-size:0.65em; color:${isSelected ? '#fff' : 'rgba(255,255,255,0.5)'};
+          font-weight:${isSelected ? 'bold' : 'normal'};
+          white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+          max-width:60px; text-align:center;
+        ">${s.name}</span>
+      </button>`;
     }).join('');
 
-    // 派閥説明 or 未選択メッセージ
-    let descHtml: string;
-    if (activeInfo) {
-      descHtml = `
-        <div class="game-panel-light" style="
-          border-left:4px solid ${activeInfo.color};
-          margin:0 16px 12px;
-        ">
-          <div style="font-weight:bold; color:${activeInfo.color}; font-size:0.9em; margin-bottom:4px;">
-            ${activeInfo.platform}
-          </div>
-          <div style="font-size:0.8em; color:var(--game-text-dim); line-height:1.6;">
-            ${activeInfo.description}
-          </div>
-        </div>
-      `;
-    } else {
-      descHtml = `
-        <div class="game-panel-light" style="
-          margin:0 16px 12px;
-          text-align:center;
-        ">
-          <div style="font-size:0.95em; color:var(--game-heading-accent); margin-bottom:4px;">
-            支持する思想を選んでください
-          </div>
-          <div style="font-size:0.8em; color:var(--game-text-dim); line-height:1.6;">
-            上のタブから派閥を選ぶと、所属する生徒の一覧が表示されます
-          </div>
-        </div>
-      `;
-    }
-
-    // カード
-    const factionStudents = this.activeTab
-      ? this.students.filter(s => this.getSupportFaction(s) === this.activeTab)
-      : [];
-    const cardsHtml = factionStudents.map(s => this.renderCard(s)).join('');
-
-    this.container.innerHTML = `
+    const thumbnailHtml = `
       <div style="
-        text-align:center; padding:20px 16px 0;
-        flex-shrink:0;
-      ">
-        <h1 class="game-title" style="font-size:1.3em; margin:0 0 4px;">キャラクター選択</h1>
-        <p style="font-size:0.85em; color:var(--game-text-dim); margin:0 0 16px;">あなたの分身となる生徒を選んでください</p>
-      </div>
-      <div style="
-        display:flex; gap:0;
-        padding:0 16px;
-        flex-shrink:0;
-        border-bottom:2px solid var(--game-panel-border);
-      ">${tabsHtml}</div>
-      <div style="flex:1; overflow-y:auto; padding:12px 16px;">
-        ${descHtml}
-        <div style="display:flex; flex-direction:column; gap:12px;">
-          ${cardsHtml}
-        </div>
-      </div>
+        display:flex; justify-content:center; gap:4px;
+        padding:8px 16px 12px; overflow-x:auto;
+        background:rgba(0,0,0,0.3);
+        border-top:1px solid rgba(255,255,255,0.08);
+      ">${thumbs}</div>
     `;
 
-    // タブイベント
-    this.container.querySelectorAll<HTMLButtonElement>('.faction-tab').forEach(btn => {
+    // --- Assemble ---
+    this.container.innerHTML = `
+      ${headerHtml}
+      ${showcaseHtml}
+      ${thumbnailHtml}
+    `;
+
+    this.bindEvents();
+  }
+
+  private renderStatBlock(label: string, value: number, color: string): string {
+    return `
+      <div style="text-align:center;">
+        <div style="font-size:0.68em; color:rgba(255,255,255,0.5); margin-bottom:3px;">${label}</div>
+        <div style="
+          height:6px; background:rgba(255,255,255,0.1);
+          border-radius:3px; overflow:hidden;
+          border:1px solid rgba(255,255,255,0.08);
+        ">
+          <div style="
+            width:${value}%; height:100%;
+            background:linear-gradient(90deg, ${color}, ${color}cc);
+            border-radius:2px;
+            box-shadow:0 0 6px ${color}60;
+          "></div>
+        </div>
+        <div style="font-size:0.85em; font-weight:bold; color:${color}; margin-top:2px;
+          text-shadow:0 0 6px ${color}40;">${value}</div>
+      </div>
+    `;
+  }
+
+  private bindEvents(): void {
+    // Swipe on showcase area
+    const showcase = this.container.querySelector<HTMLElement>('.showcase-area');
+    if (showcase) {
+      showcase.addEventListener('pointerdown', (e) => {
+        this.swipeStartX = e.clientX;
+        this.swipeStartY = e.clientY;
+      });
+      showcase.addEventListener('pointerup', (e) => {
+        const dx = e.clientX - this.swipeStartX;
+        const dy = e.clientY - this.swipeStartY;
+        // Horizontal swipe: must exceed 50px and be more horizontal than vertical
+        if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+          this.switchStudent(dx < 0 ? 1 : -1);
+        }
+      });
+    }
+
+    // Back button
+    const backBtn = this.container.querySelector<HTMLButtonElement>('.back-btn');
+    if (backBtn) {
+      backBtn.addEventListener('pointerup', () => this.callbacks.onBack());
+    }
+
+    // Thumbnail events
+    this.container.querySelectorAll<HTMLButtonElement>('[data-thumb-id]').forEach(btn => {
       btn.addEventListener('pointerup', () => {
-        const faction = btn.dataset['faction'] as FactionId;
-        if (faction && faction !== this.activeTab) {
-          this.activeTab = faction;
+        const id = btn.dataset['thumbId'];
+        const s = this.students.find(st => st.id === id);
+        if (s && s.id !== this.selectedStudent.id) {
+          this.selectedStudent = s;
           this.render();
         }
       });
     });
 
-    // カード選択イベント
-    this.container.querySelectorAll<HTMLButtonElement>('[data-student-id]').forEach(btn => {
-      btn.addEventListener('pointerup', () => {
-        const id = btn.dataset['studentId'];
-        const s = this.students.find(st => st.id === id);
-        if (s) this.callbacks.onSelect(s);
+    // Select button
+    const selectBtn = this.container.querySelector<HTMLButtonElement>('.select-character-btn');
+    if (selectBtn) {
+      const student = this.selectedStudent;
+      selectBtn.addEventListener('pointerenter', () => {
+        selectBtn.style.transform = 'translateY(-2px)';
+        selectBtn.style.filter = 'brightness(1.2)';
       });
-    });
-  }
-
-  private renderCard(s: Student): string {
-    const statsBar = (label: string, value: number, color: string) => `
-      <div style="display:flex; align-items:center; gap:6px; font-size:0.75em;">
-        <span style="width:28px; color:var(--game-text-dim); font-weight:700;">${label}</span>
-        <div style="flex:1; height:8px; background:#d8e0e8; border:1px solid #b0b8c8; border-radius:3px; overflow:hidden;">
-          <div style="width:${value}%; height:100%; background:${color}; box-shadow:inset 0 -1px 0 rgba(0,0,0,0.15); border-radius:2px;"></div>
-        </div>
-        <span style="width:20px; text-align:right; color:var(--game-text); font-weight:700;">${value}</span>
-      </div>
-    `;
-
-    const supportFactionId = this.activeTab;
-    const supportFaction = supportFactionId ? FACTION_INFO.find(f => f.id === supportFactionId) : null;
-
-    return `
-      <button data-student-id="${s.id}" class="game-chara-card" style="
-        cursor:pointer; text-align:left;
-        font-family:var(--game-font);
-      " onpointerenter="this.style.borderColor='${supportFaction?.color ?? '#4A90D9'}';this.style.boxShadow='0 0 12px ${supportFaction?.color ?? '#4A90D9'}40'"
-         onpointerleave="this.style.borderColor='#b0c0d8';this.style.boxShadow='0 2px 4px rgba(0,0,0,0.08)'">
-        <div style="display:flex; align-items:flex-start; gap:12px; margin-bottom:10px;">
-          ${s.portrait
-            ? `<img src="${s.portrait}" alt="${s.name}" style="
-                width:112px; height:112px; border-radius:4px;
-                object-fit:cover; object-position:top;
-                border:2px solid ${supportFaction?.color ?? '#b0c0d8'}; flex-shrink:0;
-                box-shadow:0 2px 4px rgba(0,0,0,0.12);
-              "/>`
-            : renderInitialIcon(s.name, s.personality, 112, supportFaction?.color ?? '#4a6090')
-          }
-          <div style="flex:1; min-width:0;">
-            <div style="display:flex; align-items:center; gap:6px;">
-              <span style="font-size:1em; font-weight:bold; color:var(--game-text);">${s.name}</span>
-              <span style="font-size:0.75em; color:var(--game-text-dim);">（${s.nickname}）</span>
-            </div>
-            <div style="font-size:0.8em; color:var(--game-text-dim);">
-              ${s.className}　${s.gender === 'male' ? '♂' : '♀'}
-            </div>
-            <div style="font-size:0.78em; color:var(--game-heading-accent); margin-bottom:6px;">「${getCatchphrase(s.personality, s.attributes)}」</div>
-            <div style="font-size:0.78em; color:var(--game-text-dim); line-height:1.5;
-              background:var(--game-panel-inner); border-radius:6px; padding:6px 8px; border:1px solid #c8d8e8;">
-              ${s.description}
-            </div>
-          </div>
-        </div>
-
-        <div style="display:flex; flex-direction:column; gap:3px;">
-          ${statsBar('弁舌', s.stats.speech, '#4A90D9')}
-          ${statsBar('運動', s.stats.athletic, '#E74C3C')}
-          ${statsBar('知性', s.stats.intel, '#27AE60')}
-        </div>
-      </button>
-    `;
+      selectBtn.addEventListener('pointerleave', () => {
+        selectBtn.style.transform = '';
+        selectBtn.style.filter = '';
+      });
+      selectBtn.addEventListener('pointerup', () => {
+        this.callbacks.onSelect(student);
+      });
+    }
   }
 
   mount(parent: HTMLElement): void {

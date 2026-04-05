@@ -15,9 +15,10 @@ import { getOrganizationVote } from './logic/organizationLogic';
 import {
   initBattle, resolvePlayerTurn, resolveEnemyTurn,
   checkBattleEnd, applyWinShift, applyLoseShift, applyTimeoutShift,
-  getPlayerFaction, getAttitudeCost, shouldPass
+  getPlayerFaction, getAttitudeCost, shouldPass, checkIsInLove
 } from './battleLogic';
 import { TitleScreen } from './screens/titleScreen';
+import { FactionSelectScreen } from './screens/factionSelect';
 import { CharacterSelectScreen } from './screens/characterSelect';
 import { DailyScreen } from './screens/dailyScreen';
 import { BattleScreen } from './screens/battleScreen';
@@ -67,6 +68,7 @@ export class Game {
   private state: GameState;
 
   private titleScreen: TitleScreen | null = null;
+  private factionSelectScreen: FactionSelectScreen | null = null;
   private characterScreen: CharacterSelectScreen | null = null;
   private dailyScreen: DailyScreen | null = null;
   private battleScreenInst: BattleScreen | null = null;
@@ -121,6 +123,7 @@ export class Game {
   private clearScreens(): void {
     this.titleScreen?.unmount();
     this.prologueScreen?.unmount();
+    this.factionSelectScreen?.unmount();
     this.characterScreen?.unmount();
     this.dailyScreen?.unmount();
     this.battleScreenInst?.unmount();
@@ -128,6 +131,7 @@ export class Game {
     this.debugScreen?.unmount();
     this.titleScreen = null;
     this.prologueScreen = null;
+    this.factionSelectScreen = null;
     this.characterScreen = null;
     this.dailyScreen = null;
     this.battleScreenInst = null;
@@ -176,30 +180,42 @@ export class Game {
     this.prologueScreen = new PrologueScreen({
       onFinish: () => {
         this.updateState({ tutorial: { ...this.state.tutorial, seenPrologue: true } });
-        this.showCharacterSelect();
+        this.showFactionSelect();
       },
     });
     this.prologueScreen.mount(this.root);
   }
 
-  private showCharacterSelect(): void {
+  private showFactionSelect(): void {
+    this.clearScreens();
+    this.updateState({ screen: 'faction_select' });
+    this.factionSelectScreen = new FactionSelectScreen({
+      onSelect: (faction) => {
+        this.showCharacterSelect(faction);
+      },
+    });
+    this.factionSelectScreen.mount(this.root);
+  }
+
+  private showCharacterSelect(faction: FactionId): void {
     this.clearScreens();
     const allStudents = STUDENTS.map(s => ({
       ...s,
       revealedHobbies: new Set<HobbyTopic>(),
     }));
-    const playableStudents = allStudents.filter(s => s.playable);
-    this.characterScreen = new CharacterSelectScreen(playableStudents, {
+    const factionStudents = allStudents.filter(s => {
+      const topFaction = ALL_FACTION_IDS
+        .reduce((a, b) => s.support[a] >= s.support[b] ? a : b);
+      return topFaction === faction && s.playable;
+    });
+    this.characterScreen = new CharacterSelectScreen(factionStudents, faction, {
       onSelect: (selected: Student) => {
-        // 選んだ生徒の思想軸の最大値が支持候補になる
-        const factionId = ALL_FACTION_IDS
-          .reduce((a, b) => selected.support[a] >= selected.support[b] ? a : b);
         // 選んだ生徒をプレイヤーに（studentsには全員残す＝組織の代表計算に必要）
         const startLocation = CLASS_LOCATION_MAP[selected.className] ?? 'class1b';
         this.state = {
           ...createInitialState(),
           screen: 'daily',
-          faction: factionId,
+          faction: faction,
           students: allStudents,
           currentLocation: startLocation,
           playerCharacter: {
@@ -220,11 +236,14 @@ export class Game {
         };
         // 初日の活動家選出
         this.updateState({
-          activists: electActivists(this.state.students, selected.id, factionId),
+          activists: electActivists(this.state.students, selected.id, faction),
         });
         // 初日セーブ
         saveGame(this.state);
         this.showDaily();
+      },
+      onBack: () => {
+        this.showFactionSelect();
       },
     });
     this.characterScreen.mount(this.root);
@@ -430,6 +449,7 @@ export class Game {
       newRevealed.add(revealedHobby);
     }
 
+    const chitchatIsInLove = checkIsInLove(student, pc.gender, this.state.playerAttributes);
     const convData = generateChitchatData(
       student,
       pc.name,
@@ -437,6 +457,7 @@ export class Game {
       pc.personality,
       pc.gender,
       revealedHobby,
+      chitchatIsInLove,
     );
 
     // 好感度を微量上昇
@@ -634,6 +655,7 @@ export class Game {
 
     // 会話ウィンドウ表示
     const pc = this.state.playerCharacter;
+    const isInLove = checkIsInLove(student, pc?.gender, this.state.playerAttributes);
     const convData = generateConversationData(
       student,
       pc?.name ?? 'あなた',
@@ -642,6 +664,7 @@ export class Game {
       pc?.gender ?? 'male',
       revealedHobby,
       affinityGain,
+      isInLove,
     );
     this.dailyScreen?.showConversation(convData.steps, convData.result, () => {
       // 会話終了: 要約ログを追加

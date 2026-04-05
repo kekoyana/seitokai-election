@@ -1,5 +1,4 @@
 import titleBg from '../../assets/backgrounds/title.jpg';
-import { FACTION_INFO } from '../data';
 import type { Screen } from './Screen';
 
 interface PrologueCallbacks {
@@ -19,8 +18,6 @@ export class PrologueScreen implements Screen {
   constructor(callbacks: PrologueCallbacks) {
     this.callbacks = callbacks;
     this.container = document.createElement('div');
-
-    const [con, pro, spo] = FACTION_INFO;
 
     this.pages = [
       {
@@ -58,30 +55,10 @@ export class PrologueScreen implements Screen {
       },
       {
         html: `
-          <div style="font-weight:900; text-align:center; margin-bottom:16px; color:var(--game-text); font-size:1.1em;">
-            3つの派閥
-          </div>
-          <div style="display:flex; flex-direction:column; gap:10px;">
-            ${[con, pro, spo].map(f => `
-              <div class="game-panel-light" style="padding:12px 16px; border-left:4px solid ${f.color};">
-                <div style="font-weight:bold; color:${f.color}; margin-bottom:4px; font-size:0.95em;">
-                  ${f.platform}
-                </div>
-                <div style="color:var(--game-text); font-size:0.82em; line-height:1.6;">
-                  ${f.description}
-                </div>
-              </div>
-            `).join('')}
-          </div>
-        `,
-      },
-      {
-        html: `
           <p style="color:var(--game-text); line-height:2; font-size:0.95em;">
             あなたは学園の<strong>1人の生徒</strong>。
           </p>
           <p style="color:var(--game-text); line-height:2; font-size:0.95em; margin-top:12px;">
-            支持する派閥を選び、<br>
             学園中の生徒たちと語り合い、時にぶつかり合い――<br>
             <strong style="color:var(--game-heading-accent);">30日間で仲間を増やして、投票を勝ち取ろう。</strong>
           </p>
@@ -127,7 +104,7 @@ export class PrologueScreen implements Screen {
           ${isLastPage ? `
             <button id="prologue-next" class="game-btn game-btn-primary" style="
               padding:14px 40px; font-size:1.05em; letter-spacing:0.1em;
-            ">キャラクター選択へ</button>
+            ">派閥を選ぶ</button>
           ` : `
             <div id="prologue-next" style="
               color:var(--game-text-dim); font-size:0.85em;

@@ -104,6 +104,13 @@ export function calcCompatibilityScore(playerAttrs: PreferenceAttr[], student: S
   return liked * 10 - disliked * 8;
 }
 
+/** 恋愛感情判定: 異性 + 相性30以上 + 好感度35以上（「信頼」以上） */
+export function checkIsInLove(student: Student, playerGender?: Gender, playerAttrs?: PreferenceAttr[]): boolean {
+  if (!playerGender || !playerAttrs || playerGender === student.gender) return false;
+  const compat = calcCompatibilityScore(playerAttrs, student);
+  return compat >= 30 && student.affinity >= 35;
+}
+
 export function initBattle(
   student: Student,
   isDefending: boolean = false,
@@ -111,12 +118,7 @@ export function initBattle(
   playerAttrs?: PreferenceAttr[],
 ): BattleState {
   const barBonus = isDefending ? 0 : affinityBarBonus(student.affinity);
-  // 恋愛感情判定: 異性 + 相性30以上 + 好感度30以上
-  let isInLove = false;
-  if (playerGender && playerAttrs && playerGender !== student.gender) {
-    const compat = calcCompatibilityScore(playerAttrs, student);
-    isInLove = compat >= 30 && student.affinity >= 35; // 「信頼」以上
-  }
+  const isInLove = checkIsInLove(student, playerGender, playerAttrs);
   return {
     student,
     round: 1,
@@ -370,7 +372,7 @@ export function resolveEnemyTurn(battle: BattleState): { newBattle: BattleState;
   // 恋愛感情: 50%の確率で空回り（反撃0）
   if (battle.isInLove && Math.random() < 0.5) {
     const flusteredLine = LOVE_FLUSTERED_LINES[Math.floor(Math.random() * LOVE_FLUSTERED_LINES.length)];
-    const logText = `「${flusteredLine}」（空回り）`;
+    const logText = `「${flusteredLine}」`;
     const newBattle: BattleState = {
       ...battle,
       logs: [...battle.logs, { speaker: 'enemy', text: logText, effect: 0 }],

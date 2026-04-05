@@ -140,7 +140,7 @@ export class BattleScreen implements Screen {
           : renderInitialIcon(student.name, student.personality, 96, 'rgba(255,255,255,0.3)')
         }
         <div style="color:#fff; min-width:120px;">
-          <div style="font-size:1.05em; font-weight:bold;">${student.name} <span style="font-size:0.75em; font-weight:normal; opacity:0.7;">（${student.nickname}）</span>${battle.isInLove ? '<span style="color:#FF6B9D; font-size:0.75em; margin-left:4px;">恋愛感情</span>' : ''}</div>
+          <div style="font-size:1.05em; font-weight:bold;">${student.name} <span style="font-size:0.75em; font-weight:normal; opacity:0.7;">（${student.nickname}）</span></div>
           <div style="font-size:0.82em; opacity:0.7; margin-bottom:6px;">${student.className}</div>
           <div style="
             display:inline-flex; align-items:center; gap:6px;

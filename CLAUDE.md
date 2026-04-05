@@ -45,7 +45,8 @@ src/
   screens/
     Screen.ts           # 画面インターフェース（mount/unmount）
     titleScreen.ts      # タイトル画面
-    characterSelect.ts  # プレイヤーキャラ選択
+    factionSelect.ts    # 派閥選択画面
+    characterSelect.ts  # プレイヤーキャラ選択（派閥固定）
     dailyScreen.ts      # 日常パート（メイン画面）
     daily/
       mapRenderer.ts    # マップ描画（フロア・部屋ボタン・階段）

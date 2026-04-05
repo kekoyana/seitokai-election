@@ -28,6 +28,72 @@ function pick<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
+/**
+ * 恋愛感情時にセリフをしどろもどろに変換する
+ * 元のセリフに吃音・言い淀みを追加して照れている様子を表現
+ */
+function flusterLine(line: string): string {
+  // 「」の中身を取り出す
+  const match = line.match(/^「(.+)」$/);
+  if (!match) return line;
+  const inner = match[1];
+
+  // ランダムに複数の変換を適用
+  const transforms: ((s: string) => string)[] = [
+    // 最初の文字を吃音にする（ひらがな・カタカナ）
+    (s) => {
+      const first = s.charAt(0);
+      if (/[ぁ-んァ-ヶ]/.test(first)) {
+        return `${first}、${first}${s.slice(1)}`;
+      }
+      return s;
+    },
+    // 途中に「…」を挟む
+    (s) => {
+      const mid = Math.floor(s.length * 0.4);
+      if (mid > 2 && mid < s.length - 2) {
+        return `${s.slice(0, mid)}…${s.slice(mid)}`;
+      }
+      return s;
+    },
+    // 末尾に照れた付加を追加
+    (s) => {
+      const suffixes = ['…な、なんでもない', '…って、違うけど', '…あ、えっと', '…'];
+      // 既存の末尾記号を除去
+      const trimmed = s.replace(/[！？!?…。]+$/, '');
+      return trimmed + pick(suffixes);
+    },
+  ];
+
+  // 1〜2個の変換をランダムに適用
+  const shuffled = transforms.sort(() => Math.random() - 0.5);
+  const count = Math.random() < 0.5 ? 1 : 2;
+  let result = inner;
+  for (let i = 0; i < count; i++) {
+    result = shuffled[i](result);
+  }
+
+  return `「${result}」`;
+}
+
+/** 恋愛感情時の相手セリフ差し替え（50%の確率で専用セリフ、50%でしどろもどろ変換） */
+function applyLoveFlustered(originalLine: string): string {
+  const LOVE_LINES = [
+    'え、えっと…あの…',
+    'そ、そんなこと言われたら…',
+    '…っ！べ、別にあなたのためじゃ…',
+    'あ、あの、話が頭に入ってこなくて…',
+    'な、なんでこんなにドキドキ…',
+    'ち、近いです…！集中できない…',
+    'あ…えっと…その…',
+    'な、何見てるの…？',
+  ];
+  if (Math.random() < 0.4) {
+    return `「${pick(LOVE_LINES)}」`;
+  }
+  return flusterLine(originalLine);
+}
+
 export function generateConversationData(
   student: Student,
   playerName: string,
@@ -36,11 +102,16 @@ export function generateConversationData(
   playerGender: Gender,
   revealedHobby: HobbyTopic | null,
   affinityGain: number,
+  isInLove: boolean = false,
 ): ConversationData {
   const steps: ConversationStep[] = [];
   const studentLines = getTalkLines(student.personality, student.gender);
   const playerLines = getPlayerLines(playerPersonality, playerGender);
   const level = getTalkAffinityGroup(student.affinity);
+
+  // 恋愛感情時はセリフをしどろもどろにする変換関数
+  const maybeFlustered = (line: string): string =>
+    isInLove ? applyLoveFlustered(line) : line;
 
   // 1. プレイヤーが話しかける
   steps.push({
@@ -55,7 +126,7 @@ export function generateConversationData(
     speaker: 'student',
     name: student.name,
     portrait: student.portrait,
-    text: `「${pick(studentLines.greeting[level])}」`,
+    text: maybeFlustered(`「${pick(studentLines.greeting[level])}」`),
   });
 
   // 3. 趣味の話題（解禁された場合）
@@ -80,7 +151,7 @@ export function generateConversationData(
       speaker: 'student',
       name: student.name,
       portrait: student.portrait,
-      text: `「${reactionLine}」`,
+      text: maybeFlustered(`「${reactionLine}」`),
       effectHtml: `<span style="color:${prefColor};">${prefIcon} ${hobbyName}</span>`,
     });
   }
@@ -97,7 +168,7 @@ export function generateConversationData(
     speaker: 'student',
     name: student.name,
     portrait: student.portrait,
-    text: `「${pick(studentLines.farewell[level])}」`,
+    text: maybeFlustered(`「${pick(studentLines.farewell[level])}」`),
   });
 
   // 結果（ポップアップ用）
@@ -134,17 +205,22 @@ export function generateChitchatData(
   playerPersonality: Personality,
   playerGender: Gender,
   revealedHobby: HobbyTopic | null = null,
+  isInLove: boolean = false,
 ): ConversationData {
   const steps: ConversationStep[] = [];
   const chitchatLines = getChitchatLines(student.personality, student.gender);
   const playerLines = getPlayerLines(playerPersonality, playerGender);
+
+  // 恋愛感情時はセリフをしどろもどろにする変換関数
+  const maybeFlustered = (line: string): string =>
+    isInLove ? applyLoveFlustered(line) : line;
 
   // 1. 生徒が話しかけてくる
   steps.push({
     speaker: 'student',
     name: student.name,
     portrait: student.portrait,
-    text: `「${pick(chitchatLines.opener)}」`,
+    text: maybeFlustered(`「${pick(chitchatLines.opener)}」`),
   });
 
   // 2. プレイヤーの応答
@@ -160,7 +236,7 @@ export function generateChitchatData(
     speaker: 'student',
     name: student.name,
     portrait: student.portrait,
-    text: `「${pick(chitchatLines.topic)}」`,
+    text: maybeFlustered(`「${pick(chitchatLines.topic)}」`),
   });
 
   // 3.5. 趣味が判明した場合
@@ -176,7 +252,7 @@ export function generateChitchatData(
       speaker: 'student',
       name: student.name,
       portrait: student.portrait,
-      text: `「${reactionLine}」`,
+      text: maybeFlustered(`「${reactionLine}」`),
       effectHtml: `<span style="color:${prefColor};">${prefIcon} ${hobbyName}</span>`,
     });
   }
@@ -186,7 +262,7 @@ export function generateChitchatData(
     speaker: 'student',
     name: student.name,
     portrait: student.portrait,
-    text: `「${pick(chitchatLines.closer)}」`,
+    text: maybeFlustered(`「${pick(chitchatLines.closer)}」`),
   });
 
   const affinityGain = Math.random() < 0.7 ? 1 : 2;

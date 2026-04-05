@@ -1399,9 +1399,6 @@ export class DailyScreen {
 
   /** 生徒詳細カード（情報パネル・部屋内情報ボタン共通、プレイヤー自身にも対応） */
   private renderStudentDetailCard(s: Student, backAction: string, isPlayer = false): string {
-    const PERS_LABELS: Record<string, string> = {
-      passionate: '熱血', cautious: '慎重', stubborn: '頑固', flexible: '柔軟', cunning: '狡猾',
-    };
     const borderColor = isPlayer
       ? this.getCandidateColor()
       : (CANDIDATES.find(c => c.id === Object.entries(s.support).sort((a, b) => b[1] - a[1])[0][0])?.color ?? '#d0e0f0');
@@ -1454,7 +1451,6 @@ export class DailyScreen {
         <div style="font-size:1.05em; font-weight:bold; color:#333;">${s.name} <span style="font-size:0.72em; color:#888; font-weight:normal;">（${s.nickname}）</span></div>
         <div style="display:flex; align-items:center; gap:4px; flex-wrap:wrap; margin-top:2px; font-size:0.78em; color:#888;">
           ${renderStudentAffiliation(s.id, s.className, s.clubId)}
-          <span style="color:#999;">${PERS_LABELS[s.personality] ?? s.personality}</span>
         </div>
         ${isPlayer
           ? `<div style="font-size:0.75em; color:${borderColor}; font-weight:bold; margin-top:2px;">${FACTION_LABELS[this.state.candidate ?? ''] ?? ''}派</div>`
@@ -1500,7 +1496,7 @@ export class DailyScreen {
       : `<div style="margin-bottom:8px;">
           <div style="background:rgba(240,245,255,0.8); border-radius:8px; padding:6px; font-size:0.78em;">
             <div style="color:#888;">好感度</div>
-            <div style="font-weight:bold; color:${s.affinity >= 0 ? '#27AE60' : '#C0392B'};">${s.affinity > 0 ? '+' : ''}${s.affinity}</div>
+            <div style="font-weight:bold; color:${s.affinity >= 20 ? '#27AE60' : s.affinity <= -20 ? '#C0392B' : '#888'};">${s.affinity >= 20 ? '好意的' : s.affinity <= -20 ? '不快' : '普通'}</div>
           </div>
         </div>`;
 

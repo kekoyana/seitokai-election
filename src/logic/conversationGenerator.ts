@@ -132,6 +132,7 @@ export function generateChitchatData(
   playerPortrait: string | null,
   playerPersonality: Personality,
   playerGender: Gender,
+  revealedHobby: HobbyTopic | null = null,
 ): ConversationData {
   const steps: ConversationStep[] = [];
   const chitchatLines = getChitchatLines(student.personality, student.gender);
@@ -161,6 +162,24 @@ export function generateChitchatData(
     text: `「${pick(chitchatLines.topic)}」`,
   });
 
+  // 3.5. 趣味が判明した場合
+  if (revealedHobby) {
+    const pref = student.hobbies[revealedHobby];
+    const hobbyName = HOBBY_LABELS[revealedHobby] ?? revealedHobby;
+    const studentTalkLines = getTalkLines(student.personality, student.gender);
+    const reactionLine = pick(studentTalkLines.hobbyReaction[pref]);
+    const prefColor = pref === 'like' ? '#7EC850' : pref === 'dislike' ? '#F07070' : '#999';
+    const prefIcon = pref === 'like' ? '♥' : pref === 'dislike' ? '✗' : '―';
+
+    steps.push({
+      speaker: 'student',
+      name: student.name,
+      portrait: student.portrait,
+      text: `「${reactionLine}」`,
+      effectHtml: `<span style="color:${prefColor};">${prefIcon} ${hobbyName}</span>`,
+    });
+  }
+
   // 4. 締め
   steps.push({
     speaker: 'student',
@@ -170,9 +189,19 @@ export function generateChitchatData(
   });
 
   const affinityGain = Math.random() < 0.7 ? 1 : 2;
+  const resultEffectParts: string[] = [];
+  if (revealedHobby) {
+    const pref = student.hobbies[revealedHobby];
+    const hobbyName = HOBBY_LABELS[revealedHobby] ?? revealedHobby;
+    const prefColor = pref === 'like' ? '#7EC850' : pref === 'dislike' ? '#F07070' : '#999';
+    const prefIcon = pref === 'like' ? '♥' : pref === 'dislike' ? '✗' : '―';
+    resultEffectParts.push(`<span style="color:${prefColor};">${prefIcon} ${hobbyName}</span>`);
+  }
+  resultEffectParts.push(`<span style="color:#7EC850;">好感度 +${affinityGain}</span>`);
+
   const result: ConversationResult = {
     text: pick(CHITCHAT_NARRATIONS),
-    effectHtml: `<span style="color:#7EC850;">好感度 +${affinityGain}</span>`,
+    effectHtml: resultEffectParts.join('　'),
   };
 
   return { steps, result };

@@ -22,6 +22,7 @@ import { DailyScreen } from './screens/dailyScreen';
 import { BattleScreen } from './screens/battleScreen';
 import { EndingScreen } from './screens/endingScreen';
 import { DebugScreen } from './screens/debugScreen';
+import { showInfoDialog } from './ui/gameDialog';
 import { bgm, BGM_TRACKS } from './bgm';
 
 function createInitialState(): GameState {
@@ -335,19 +336,31 @@ export class Game {
 
     const student = studentsHere[Math.floor(Math.random() * studentsHere.length)];
 
+    // 未判明の趣味があれば1つ判明させる
+    const unrevealed = (Object.keys(student.hobbies) as HobbyTopic[]).filter(
+      h => !student.revealedHobbies.has(h)
+    );
+    let revealedHobby: HobbyTopic | null = null;
+    const newRevealed = new Set(student.revealedHobbies);
+    if (unrevealed.length > 0) {
+      revealedHobby = unrevealed[Math.floor(Math.random() * unrevealed.length)];
+      newRevealed.add(revealedHobby);
+    }
+
     const convData = generateChitchatData(
       student,
       pc.name,
       pc.portrait ?? null,
       pc.personality,
       pc.gender,
+      revealedHobby,
     );
 
     // 好感度を微量上昇
     const affinityGain = convData.result.effectHtml.includes('+2') ? 2 : 1;
     const updatedStudents = this.state.students.map(s =>
       s.id === student.id
-        ? { ...s, affinity: Math.min(100, s.affinity + affinityGain) }
+        ? { ...s, affinity: Math.min(100, s.affinity + affinityGain), revealedHobbies: newRevealed }
         : s
     );
     this.state = { ...this.state, students: updatedStudents };
@@ -985,17 +998,38 @@ export class Game {
     }
   }
 
-  /** 組織の支持変化をログに追加し、統一チェック→画面遷移 */
+  /** 組織の支持変化をログに追加し、ダイアログ表示→統一チェック→画面遷移 */
   private appendOrgChangeLogsAndProceed(oldStudents: Student[]): void {
     const orgChanges = this.detectOrgVoteChanges(oldStudents, this.state.students);
     if (orgChanges.length > 0) {
       this.state = { ...this.state, actionLogs: [...this.state.actionLogs, ...orgChanges] };
-    }
-    if (this.isAllOrganizationsUnified()) {
+      // 変化をダイアログで順次表示してから遷移
+      this.showOrgChangeDialogs(orgChanges, 0);
+    } else if (this.isAllOrganizationsUnified()) {
       this.showEnding();
     } else {
       this.showDaily();
     }
+  }
+
+  /** 組織変化ダイアログを順次表示 */
+  private showOrgChangeDialogs(messages: string[], index: number): void {
+    if (index >= messages.length) {
+      if (this.isAllOrganizationsUnified()) {
+        this.showEnding();
+      } else {
+        this.showDaily();
+      }
+      return;
+    }
+    // HTMLタグを除去してプレーンテキストにする
+    const plain = messages[index].replace(/<[^>]*>/g, '').replace(/📢\s*/, '');
+    showInfoDialog(this.root, {
+      title: '支持変動',
+      message: plain,
+    }).then(() => {
+      this.showOrgChangeDialogs(messages, index + 1);
+    });
   }
 
   private showGameOver(): void {

@@ -1,5 +1,5 @@
 import type { Student, CandidateId } from '../types';
-import { ATTRIBUTE_LABELS, HOBBY_LABELS, CANDIDATES, CANDIDATE_INFO, FACTION_LABELS, getCatchphrase, renderInitialIcon } from '../data';
+import { CANDIDATES, CANDIDATE_INFO, FACTION_LABELS, getCatchphrase, renderInitialIcon } from '../data';
 import dailyBg from '../../assets/backgrounds/daily.jpg';
 
 const PERSONALITY_LABELS: Record<string, string> = {
@@ -166,19 +166,6 @@ export class CharacterSelectScreen {
   }
 
   private renderCard(s: Student): string {
-    const attrsHtml = s.attributes.map(a =>
-      `<span style="
-        background:#e0ecf8; color:#3060a0;
-        border:1px solid #b0c8e0;
-        border-radius:4px; padding:1px 7px; font-size:0.75em; font-weight:700;
-      ">${ATTRIBUTE_LABELS[a] ?? a}</span>`
-    ).join(' ');
-
-    const hobbiesLiked = Object.entries(s.hobbies)
-      .filter(([, pref]) => pref === 'like')
-      .map(([h]) => HOBBY_LABELS[h] ?? h)
-      .join('、');
-
     const statsBar = (label: string, value: number, color: string) => `
       <div style="display:flex; align-items:center; gap:6px; font-size:0.75em;">
         <span style="width:28px; color:var(--game-text-dim); font-weight:700;">${label}</span>
@@ -214,7 +201,7 @@ export class CharacterSelectScreen {
               <span style="font-size:0.75em; color:var(--game-text-dim);">（${s.nickname}）</span>
             </div>
             <div style="font-size:0.8em; color:var(--game-text-dim);">
-              ${s.className}　${s.gender === 'male' ? '♂' : '♀'}　${PERSONALITY_LABELS[s.personality] ?? s.personality}
+              ${s.className}　${s.gender === 'male' ? '♂' : '♀'}
             </div>
             <div style="font-size:0.78em; color:var(--game-heading-accent); margin-bottom:6px;">「${getCatchphrase(s.personality, s.attributes)}」</div>
             <div style="font-size:0.78em; color:var(--game-text-dim); line-height:1.5;
@@ -224,18 +211,10 @@ export class CharacterSelectScreen {
           </div>
         </div>
 
-        <div style="margin-bottom:8px;">
-          ${attrsHtml}
-        </div>
-
-        <div style="display:flex; flex-direction:column; gap:3px; margin-bottom:8px;">
+        <div style="display:flex; flex-direction:column; gap:3px;">
           ${statsBar('弁舌', s.stats.speech, '#4A90D9')}
           ${statsBar('運動', s.stats.athletic, '#E74C3C')}
           ${statsBar('知性', s.stats.intel, '#27AE60')}
-        </div>
-
-        <div style="font-size:0.78em; color:var(--game-text-dim);">
-          好き: ${hobbiesLiked || 'なし'}
         </div>
       </button>
     `;

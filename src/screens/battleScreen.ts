@@ -314,14 +314,18 @@ export class BattleScreen {
           const pref = isRevealed ? battle.student.hobbies[id] : null;
           const prefColor = pref === 'like' ? '#7EC850' : pref === 'dislike' ? '#F07070' : pref === 'neutral' ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.35)';
           const prefIcon = pref === 'like' ? ' ♥' : pref === 'dislike' ? ' ✗' : pref === 'neutral' ? ' ―' : '';
+          const useCount = battle.topicUseCounts[id] ?? 0;
+          const useMark = useCount >= 2 ? ' ×' : useCount === 1 ? ' △' : '';
+          const dimStyle = useCount >= 2 ? 'opacity:0.4;' : '';
           return `
             <button data-topic="${id}" class="game-btn" style="
               padding:8px 12px; text-align:left;
               background:linear-gradient(180deg,rgba(40,50,80,0.6),rgba(20,30,50,0.6));
               border-color:rgba(74,96,144,0.5);
               color:${prefColor}; font-size:0.82em; font-family:var(--game-font);
+              ${dimStyle}
             ">
-              ${label}${prefIcon}${!isRevealed ? ' ?' : ''}
+              ${label}${prefIcon}${!isRevealed ? ' ?' : ''}${useMark}
             </button>
           `;
         }).join('');

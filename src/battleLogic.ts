@@ -1,6 +1,6 @@
 import type {
   BattleState, Student, PlayerAttitude, Topic, Stance,
-  EnemyMood, HobbyTopic, CandidateId, BattleLog, PreferenceAttr, Gender
+  EnemyMood, HobbyTopic, CandidateId, BattleLog, PreferenceAttr, Gender, Personality
 } from './types';
 import { getCatchphrase } from './catchphrase';
 
@@ -18,22 +18,62 @@ const ATTITUDE_COST: Record<PlayerAttitude, number> = {
   strong: 8,
 };
 
-// 相手の態度倍率（プレイヤー効果）
+// 相手の態度倍率（プレイヤー効果）— 圧縮版: 機嫌以外の要素も効くようにする
 const MOOD_EFFECT_MULTIPLIER: Record<EnemyMood, number> = {
-  furious: 0.3,
-  upset: 0.6,
+  furious: 0.5,
+  upset: 0.7,
   normal: 1.0,
-  favorable: 1.3,
-  devoted: 1.5,
+  favorable: 1.15,
+  devoted: 1.3,
 };
 
-// 相手の反撃倍率
+// 相手の反撃倍率 — 圧縮版: 心酔でも敵の反撃が残る
 const MOOD_COUNTER_MULTIPLIER: Record<EnemyMood, number> = {
-  furious: 1.5,
-  upset: 1.2,
+  furious: 1.3,
+  upset: 1.15,
   normal: 1.0,
-  favorable: 0.7,
-  devoted: 0.3,
+  favorable: 0.85,
+  devoted: 0.7,
+};
+
+// 性格ごとの反撃倍率
+const PERSONALITY_COUNTER_MULTIPLIER: Record<Personality, number> = {
+  passionate: 1.0,
+  cautious: 1.1,
+  stubborn: 1.3,
+  flexible: 0.7,
+  cunning: 1.15,
+};
+
+// 性格による機嫌変化の補正
+function applyPersonalityMoodShift(personality: Personality, delta: number): number {
+  switch (personality) {
+    case 'stubborn':
+      // 頑固: 全ての機嫌変化が1段階少ない（プラスもマイナスも）
+      if (delta > 0) return Math.max(0, delta - 1);
+      if (delta < 0) return Math.min(0, delta + 1);
+      return 0;
+    case 'flexible':
+      // 柔軟: プラスの機嫌変化が1段階多い
+      if (delta > 0) return delta + 1;
+      return delta;
+    case 'cunning':
+      // 狡猾: 50%の確率で機嫌変化を無効化
+      return Math.random() < 0.5 ? 0 : delta;
+    case 'cautious':
+      // 慎重: プラスの機嫌変化が1段階少ない（警戒心が強い）
+      if (delta > 0) return Math.max(0, delta - 1);
+      return delta;
+    default: // passionate
+      return delta;
+  }
+}
+
+// 候補者話題の態度別機嫌ペナルティ
+const ATTITUDE_MOOD_PENALTY: Record<PlayerAttitude, number> = {
+  friendly: 0,   // 柔らかく → 角が立たない
+  normal: 1,     // 普通 → 従来通り
+  strong: 2,     // 情熱的 → 攻撃的で機嫌が大きく下がる
 };
 
 const MOOD_ORDER: EnemyMood[] = ['furious', 'upset', 'normal', 'favorable', 'devoted'];
@@ -70,6 +110,7 @@ export function initBattle(student: Student, isDefending: boolean = false): Batt
     selectedTopic: null,
     result: null,
     isDefending,
+    topicUseCounts: {},
   };
 }
 
@@ -146,7 +187,8 @@ function calcHobbyEffect(
   stance: Stance,
   student: Student,
   moodDelta: { delta: number },
-  attitude: PlayerAttitude
+  attitude: PlayerAttitude,
+  decayFactor: number = 1.0
 ): number {
   // バトル中に話題にした時点で趣味が判明する
   student.revealedHobbies.add(topic);
@@ -178,6 +220,10 @@ function calcHobbyEffect(
     baseMood = stance === 'positive' ? 1 : -1;
     barEffect = stance === 'positive' ? -1 : 1;
   }
+
+  // 繰り返しペナルティ適用（同じ話題は効果が減衰）
+  baseMood = Math.round(baseMood * decayFactor);
+  barEffect = Math.round(barEffect * decayFactor);
 
   // 態度倍率を機嫌変化に適用（小数を四捨五入して整数段階に）
   moodDelta.delta += Math.round(baseMood * moodMul);
@@ -224,6 +270,11 @@ export function resolvePlayerTurn(
   const student = battle.student;
   const moodDelta = { delta: 0 };
 
+  // 話題の使用回数を記録（繰り返しペナルティ用）
+  const topicKey = topic as string;
+  const prevCount = battle.topicUseCounts[topicKey] ?? 0;
+  const newTopicUseCounts = { ...battle.topicUseCounts, [topicKey]: prevCount + 1 };
+
   // 基礎効果計算
   let baseEffect: number;
   const isCandidateTopic = ['conservative', 'progressive', 'sports'].includes(topic);
@@ -231,14 +282,17 @@ export function resolvePlayerTurn(
   if (isCandidateTopic) {
     const topicCandidate = topic as CandidateId;
     baseEffect = calcCandidateEffect(topicCandidate, stance, student);
-    // 思想の話は機嫌が下がる（攻撃的な話題なので）
-    moodDelta.delta -= 1;
+    // 態度に応じた機嫌ペナルティ（柔らかく=0, 普通=-1, 情熱的=-2）
+    moodDelta.delta -= ATTITUDE_MOOD_PENALTY[attitude];
     // 選んだ候補と話題候補が一致する場合はボーナス
     if (topicCandidate === candidateId) {
       baseEffect *= 1.1;
     }
   } else {
-    baseEffect = calcHobbyEffect(topic as HobbyTopic, stance, student, moodDelta, attitude);
+    // 趣味話題: 繰り返しペナルティ適用
+    // 1回目=フル, 2回目=半減, 3回目以降=無効
+    const hobbyDecay = prevCount === 0 ? 1.0 : prevCount === 1 ? 0.5 : 0;
+    baseEffect = calcHobbyEffect(topic as HobbyTopic, stance, student, moodDelta, attitude, hobbyDecay);
   }
 
   // 態度倍率
@@ -259,8 +313,9 @@ export function resolvePlayerTurn(
 
   const playerEffect = Math.round(baseEffect);
 
-  // 態度変化
-  const newMood = shiftMood(battle.enemyMood, moodDelta.delta);
+  // 性格による機嫌変化補正
+  const adjustedMoodDelta = applyPersonalityMoodShift(student.personality, moodDelta.delta);
+  const newMood = shiftMood(battle.enemyMood, adjustedMoodDelta);
 
   const newBar = clamp(battle.barPosition + playerEffect, -100, 100);
 
@@ -274,6 +329,7 @@ export function resolvePlayerTurn(
     phase: 'resolving',
     selectedAttitude: attitude,
     selectedTopic: topic,
+    topicUseCounts: newTopicUseCounts,
   };
 
   return { newBattle, playerEffect, log: { speaker: 'player', text: logText, effect: playerEffect } };
@@ -283,9 +339,10 @@ export function resolvePlayerTurn(
 export function resolveEnemyTurn(battle: BattleState): { newBattle: BattleState; enemyEffect: number } {
   const student = battle.student;
 
-  // 相手の反撃
-  let baseCounter = 8 + student.stats.speech * 0.1;
+  // 相手の反撃（ベース強化 + 性格倍率）
+  let baseCounter = 10 + student.stats.speech * 0.15;
   baseCounter *= MOOD_COUNTER_MULTIPLIER[battle.enemyMood];
+  baseCounter *= PERSONALITY_COUNTER_MULTIPLIER[student.personality];
 
   const enemyEffect = -Math.round(baseCounter);
   const newBar = clamp(battle.barPosition + enemyEffect, -100, 100);

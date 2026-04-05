@@ -131,6 +131,7 @@ export interface BattleState {
   selectedTopic: Topic | null;
   result: 'win' | 'lose' | 'timeout' | null;
   isDefending: boolean; // 活動家から説得されている場合true（勝敗反転）
+  topicUseCounts: Record<string, number>; // 話題ごとの使用回数（繰り返しペナルティ用）
 }
 
 // プレイヤーキャラクター

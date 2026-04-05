@@ -79,6 +79,7 @@ interface SimState {
   bar: number;
   mood: EnemyMood;
   stamina: number;
+  topicUseCounts: Record<string, number>;
 }
 
 type Strategy = (
@@ -87,42 +88,95 @@ type Strategy = (
   playerCandidate: CandidateId,
 ) => { attitude: PlayerAttitude; topic: Topic; stance: Stance };
 
-/** 戦略A: 自候補を肯定（運動依存） */
-const strategyPositive: Strategy = (state, student, playerCandidate) => {
-  const moodIdx = MOOD_ORDER.indexOf(state.mood);
-  let attitude: PlayerAttitude = 'normal';
-  if (state.stamina >= 40 && moodIdx >= 3) attitude = 'strong';
-  else if (state.stamina < 15) attitude = 'friendly';
-
-  if (moodIdx >= 3) return { attitude, topic: playerCandidate, stance: 'positive' };
-
-  // 好きな趣味が判明していたら雑談で機嫌を上げる
+/** 未使用 or 使用回数が少ない好き趣味を返す */
+function findBestHobby(student: Student, useCounts: Record<string, number>): HobbyTopic | null {
+  const candidates: { topic: HobbyTopic; uses: number }[] = [];
   for (const [hobby, pref] of Object.entries(student.hobbies)) {
     if (pref === 'like' && student.revealedHobbies.has(hobby as HobbyTopic)) {
-      return { attitude: 'friendly', topic: hobby as HobbyTopic, stance: 'positive' };
+      candidates.push({ topic: hobby as HobbyTopic, uses: useCounts[hobby] ?? 0 });
     }
   }
-  return { attitude, topic: playerCandidate, stance: 'positive' };
+  // 使用回数が少ない順（2回以上は効果なし）
+  candidates.sort((a, b) => a.uses - b.uses);
+  return candidates.length > 0 && candidates[0].uses < 2 ? candidates[0].topic : null;
+}
+
+/** 未判明の趣味をランダムに1つ返す */
+function findUnknownHobby(student: Student): HobbyTopic | null {
+  for (const h of ALL_HOBBIES) {
+    if (!student.revealedHobbies.has(h)) return h;
+  }
+  return null;
+}
+
+/** 戦略A: 自候補を肯定（運動依存） — 複数趣味を使い分け */
+const strategyPositive: Strategy = (state, student, playerCandidate) => {
+  const moodIdx = MOOD_ORDER.indexOf(state.mood);
+
+  // 機嫌が好意的以上: 情熱的に候補者話題
+  if (moodIdx >= 3 && state.stamina >= 8) {
+    return { attitude: 'strong', topic: playerCandidate, stance: 'positive' };
+  }
+
+  // 機嫌が平常以上: 普通に候補者話題（柔らかくなら機嫌ペナ0）
+  if (moodIdx >= 2) {
+    // まだ使える好き趣味があるなら機嫌を上げてから攻める
+    const hobby = findBestHobby(student, state.topicUseCounts);
+    if (hobby) {
+      return { attitude: 'normal', topic: hobby, stance: 'positive' };
+    }
+    // 未知趣味を探索
+    const unknown = findUnknownHobby(student);
+    if (unknown) {
+      return { attitude: 'normal', topic: unknown, stance: 'positive' };
+    }
+    // 趣味が尽きた: 柔らかく候補者（機嫌ペナ0）
+    return { attitude: 'friendly', topic: playerCandidate, stance: 'positive' };
+  }
+
+  // 機嫌が低い: 趣味で回復
+  const hobby = findBestHobby(student, state.topicUseCounts);
+  if (hobby) {
+    return { attitude: 'friendly', topic: hobby, stance: 'positive' };
+  }
+  const unknown = findUnknownHobby(student);
+  if (unknown) {
+    return { attitude: 'friendly', topic: unknown, stance: 'positive' };
+  }
+  return { attitude: 'friendly', topic: playerCandidate, stance: 'positive' };
 };
 
-/** 戦略B: 相手の最強候補を否定（知性依存） */
+/** 戦略B: 相手の最強候補を否定（知性依存） — 複数趣味を使い分け */
 const strategyNegative: Strategy = (state, student, _playerCandidate) => {
   const moodIdx = MOOD_ORDER.indexOf(state.mood);
-  let attitude: PlayerAttitude = 'normal';
-  if (state.stamina >= 40 && moodIdx >= 3) attitude = 'strong';
-  else if (state.stamina < 15) attitude = 'friendly';
-
   const enemyTop = (['conservative', 'progressive', 'sports'] as CandidateId[])
     .reduce((a, b) => student.support[a] >= student.support[b] ? a : b);
 
-  if (moodIdx >= 3) return { attitude, topic: enemyTop, stance: 'negative' };
-
-  for (const [hobby, pref] of Object.entries(student.hobbies)) {
-    if (pref === 'like' && student.revealedHobbies.has(hobby as HobbyTopic)) {
-      return { attitude: 'friendly', topic: hobby as HobbyTopic, stance: 'positive' };
-    }
+  if (moodIdx >= 3 && state.stamina >= 8) {
+    return { attitude: 'strong', topic: enemyTop, stance: 'negative' };
   }
-  return { attitude, topic: enemyTop, stance: 'negative' };
+
+  if (moodIdx >= 2) {
+    const hobby = findBestHobby(student, state.topicUseCounts);
+    if (hobby) {
+      return { attitude: 'normal', topic: hobby, stance: 'positive' };
+    }
+    const unknown = findUnknownHobby(student);
+    if (unknown) {
+      return { attitude: 'normal', topic: unknown, stance: 'positive' };
+    }
+    return { attitude: 'friendly', topic: enemyTop, stance: 'negative' };
+  }
+
+  const hobby = findBestHobby(student, state.topicUseCounts);
+  if (hobby) {
+    return { attitude: 'friendly', topic: hobby, stance: 'positive' };
+  }
+  const unknown = findUnknownHobby(student);
+  if (unknown) {
+    return { attitude: 'friendly', topic: unknown, stance: 'positive' };
+  }
+  return { attitude: 'friendly', topic: enemyTop, stance: 'negative' };
 };
 
 // ── シミュレーション実行 ──
@@ -162,7 +216,7 @@ function simulate(
     }
 
     const action = strategy(
-      { round: battle.round, bar: battle.barPosition, mood: battle.enemyMood, stamina },
+      { round: battle.round, bar: battle.barPosition, mood: battle.enemyMood, stamina, topicUseCounts: battle.topicUseCounts },
       student,
       playerCandidate,
     );
@@ -276,9 +330,9 @@ function analyzeMultipliers(
   console.log(`    属性×${attrMul.toFixed(3)} [${matches.join(', ') || 'なし'}]`);
   console.log(`    好感×${affMul.toFixed(3)} (affinity=${target.affinity})`);
 
-  // 肯定時の総合倍率（態度strong=1.2, 機嫌好意的=1.3）
-  const totalPos = 1.2 * 1.3 * speechMul * athMul * attrMul * affMul;
-  const totalNeg = 1.2 * 1.3 * speechMul * intMul * attrMul * affMul;
+  // 肯定時の総合倍率（態度strong=1.2, 機嫌好意的=1.15）
+  const totalPos = 1.2 * 1.15 * speechMul * athMul * attrMul * affMul;
+  const totalNeg = 1.2 * 1.15 * speechMul * intMul * attrMul * affMul;
   console.log(`    総合(肯定/strong/好意的): ×${totalPos.toFixed(3)}`);
   console.log(`    総合(否定/strong/好意的): ×${totalNeg.toFixed(3)}`);
 }
@@ -318,12 +372,64 @@ simulate('肯定戦略', watanabe, 'sports', tanaka_liked, tanaka_stats, 'male',
 console.log('\n■ 戦略B: 相手の最強候補(革新)を否定 → 知性25しかない');
 simulate('否定戦略', watanabe, 'sports', tanaka_liked, tanaka_stats, 'male', strategyNegative);
 
-// ── 4. 属性一致の影響比較 ──
+// ── 4. 性格による難易度差 ──
 console.log('\n\n' + '━'.repeat(60));
-console.log('  4. 【属性一致の影響比較】同じ能力値、属性一致0 vs 3');
+console.log('  4. 【性格による難易度差】同条件・性格のみ変更');
 console.log('━'.repeat(60));
 
 const avgStats = { speech: 50, athletic: 50, intel: 50 };
+const avgLiked: PreferenceAttr[] = ['cool'];
+
+// 柔軟な相手
+const flexibleStudent = makeStudent({
+  name: '柔軟タイプ',
+  support: { conservative: 33, progressive: 34, sports: 33 },
+  hobbies: makeHobbies(['game', 'music'], ['study']),
+  revealedHobbies: new Set<HobbyTopic>(['game', 'music']),
+  attributes: ['cool'],
+  stats: { speech: 50, athletic: 40, intel: 40 },
+  affinity: 0,
+});
+(flexibleStudent as any).personality = 'flexible';
+
+// 頑固な相手
+const stubbornStudent = makeStudent({
+  name: '頑固タイプ',
+  support: { conservative: 33, progressive: 34, sports: 33 },
+  hobbies: makeHobbies(['game', 'music'], ['study']),
+  revealedHobbies: new Set<HobbyTopic>(['game', 'music']),
+  attributes: ['cool'],
+  stats: { speech: 50, athletic: 40, intel: 40 },
+  affinity: 0,
+});
+(stubbornStudent as any).personality = 'stubborn';
+
+// 狡猾な相手
+const cunningStudent = makeStudent({
+  name: '狡猾タイプ',
+  support: { conservative: 33, progressive: 34, sports: 33 },
+  hobbies: makeHobbies(['game', 'music'], ['study']),
+  revealedHobbies: new Set<HobbyTopic>(['game', 'music']),
+  attributes: ['cool'],
+  stats: { speech: 50, athletic: 40, intel: 40 },
+  affinity: 0,
+});
+(cunningStudent as any).personality = 'cunning';
+
+console.log('\n■ vs 柔軟タイプ（反撃×0.7, 機嫌上がりやすい）');
+simulate('肯定', flexibleStudent, 'conservative', avgLiked, avgStats, 'male', strategyPositive);
+
+console.log('\n■ vs 頑固タイプ（反撃×1.3, 機嫌変化しにくい）');
+simulate('肯定', stubbornStudent, 'conservative', avgLiked, avgStats, 'male', strategyPositive);
+
+console.log('\n■ vs 狡猾タイプ（反撃×1.15, 機嫌変化50%無効）');
+simulate('肯定', cunningStudent, 'conservative', avgLiked, avgStats, 'male', strategyPositive);
+
+// ── 5. 属性一致の影響比較 ──
+console.log('\n\n' + '━'.repeat(60));
+console.log('  5. 【属性一致の影響比較】同じ能力値、属性一致0 vs 3');
+console.log('━'.repeat(60));
+
 const noMatch: PreferenceAttr[] = ['blonde', 'bun', 'delinquent']; // 渡辺と一致しない
 const fullMatch: PreferenceAttr[] = ['cool', 'fashionable', 'introverted']; // 渡辺と3一致
 
@@ -335,9 +441,9 @@ analyzeMultipliers('一致3', avgStats, fullMatch, watanabe, 'male');
 console.log('\n■ 属性一致3 / 否定戦略');
 simulate('一致3', watanabe, 'conservative', fullMatch, avgStats, 'male', strategyNegative);
 
-// ── 5. ステータス差の影響比較 ──
+// ── 6. ステータス差の影響比較 ──
 console.log('\n\n' + '━'.repeat(60));
-console.log('  5. 【ステータス差の影響比較】属性一致0、弁30/知30 vs 弁80/知80');
+console.log('  6. 【ステータス差の影響比較】属性一致0、弁30/知30 vs 弁80/知80');
 console.log('━'.repeat(60));
 
 const lowStats = { speech: 30, athletic: 30, intel: 30 };
@@ -350,3 +456,22 @@ simulate('低能力', watanabe, 'conservative', noMatch, lowStats, 'male', strat
 analyzeMultipliers('高能力', highStats, noMatch, watanabe, 'male');
 console.log('\n■ 高能力(弁80/知80) / 否定戦略');
 simulate('高能力', watanabe, 'conservative', noMatch, highStats, 'male', strategyNegative);
+
+// ── 7. 好感度の影響 ──
+console.log('\n\n' + '━'.repeat(60));
+console.log('  7. 【好感度の影響】好感度0 vs 50 vs 80');
+console.log('━'.repeat(60));
+
+for (const aff of [0, 50, 80]) {
+  const s = makeStudent({
+    name: `好感度${aff}`,
+    support: { conservative: 33, progressive: 34, sports: 33 },
+    hobbies: makeHobbies(['game', 'music'], ['study']),
+    revealedHobbies: new Set<HobbyTopic>(['game', 'music']),
+    attributes: ['cool'],
+    stats: { speech: 50, athletic: 40, intel: 40 },
+    affinity: aff,
+  });
+  console.log(`\n■ 好感度${aff}`);
+  simulate(`好感度${aff}`, s, 'conservative', avgLiked, avgStats, 'male', strategyPositive);
+}

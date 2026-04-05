@@ -193,14 +193,6 @@ export class DailyScreen {
 
     const pc = this.state.playerCharacter;
 
-    // 支持者数
-    const playerCandidateId = this.state.candidate;
-    const supporterCount = this.state.students.filter(s => {
-      const maxKey = (['conservative', 'progressive', 'sports'] as const)
-        .reduce((a, b) => s.support[a] >= s.support[b] ? a : b);
-      return maxKey === playerCandidateId;
-    }).length;
-
     // フローティングHUD（左上: プレイヤー、右上: ステータス）
     const hudHtml = `
       <div style="
@@ -254,7 +246,6 @@ export class DailyScreen {
         display:flex; gap:16px; font-size:0.75em; color:var(--game-text-dim);
         flex-shrink:0;
       ">
-        <span>支持者: <strong style="color:${candidateColor}">${supporterCount}</strong>名</span>
         <span>場所: <strong style="color:var(--game-text);">${FLOOR_LABELS[getFloorFromLocation(this.state.currentLocation)]} ${isCorridorLocation(this.state.currentLocation) ? '廊下' : currentLocation?.name ?? ''}</strong></span>
       </div>
     `;
@@ -381,9 +372,7 @@ export class DailyScreen {
         <div class="daily-main-area" style="flex:1; overflow-y:auto; padding:48px 16px 52px;">
           ${mainHtml}
         </div>
-        <div class="daily-sidebar">
-          ${sidebarHtml}
-        </div>
+        ${sidebarHtml ? `<div class="daily-sidebar">${sidebarHtml}</div>` : ''}
       </div>
       ${logBoxHtml}
       ${bottomBar}
@@ -587,7 +576,7 @@ export class DailyScreen {
       </button>
     ` : '';
 
-    const nextDayBtnHtml = `
+    const nextDayBtnHtml = !isOverlay ? `
       <button id="sidebar-next-day-btn" class="game-btn game-btn-warning" style="
         padding:10px 12px; width:100%;
         font-size:0.85em;
@@ -596,7 +585,7 @@ export class DailyScreen {
         <div style="font-weight:bold;">翌日へ</div>
         <div style="font-size:0.75em; opacity:0.85;">${dayToDate(this.state.day)}</div>
       </button>
-    `;
+    ` : '';
 
     return `${exitBtnHtml}${infoBtnHtml}${nextDayBtnHtml}`;
   }

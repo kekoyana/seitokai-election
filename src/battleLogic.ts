@@ -3,7 +3,7 @@ import type {
   EnemyMood, HobbyTopic, FactionId, BattleLog, PreferenceAttr, Gender, Personality
 } from './types';
 import { getCatchphrase } from './catchphrase';
-import { ALL_FACTION_IDS } from './data';
+import { ALL_FACTION_IDS } from './data/factions';
 
 // 態度倍率（思想話題のバー効果に適用）
 const ATTITUDE_MULTIPLIER: Record<PlayerAttitude, number> = {
@@ -176,7 +176,7 @@ function likedAttributeMultiplier(
 }
 
 // 派閥話題の効果を計算（バーに大きく影響）
-// 肯定: 自派閥を推す → 相手のその派閥への支持が低いほど効果が必要（基礎値で押す）
+// 肯定: 自派閥を推す → 相手の支持が低いほど伸びしろがある（説得余地が大きい）
 // 否定: 相手の派閥を攻撃 → 相手の支持が高い派閥ほど否定が刺さる
 function calcFactionEffect(
   topic: FactionId,
@@ -185,9 +185,16 @@ function calcFactionEffect(
 ): number {
   const topicSupport = student.support[topic];
   const diff = topicSupport - 33;
-  // 肯定も否定も、相手の支持度が高い候補ほど効果が大きい
-  // どちらもバーをプラス（成功方向）に動かす
-  return 15 + diff * 0.4;
+
+  if (stance === 'positive') {
+    // 肯定: 相手の支持が低い派閥ほど説得余地がある
+    // support 25(低) → 15 + 3.2 = 18.2, support 50(高) → 15 - 6.8 = 8.2
+    return 15 - diff * 0.4;
+  } else {
+    // 否定: 相手の支持が高い派閥ほど揺さぶれる
+    // support 50(高) → 15 + 6.8 = 21.8, support 25(低) → 15 - 3.2 = 11.8
+    return 15 + diff * 0.4;
+  }
 }
 
 // 態度ごとの機嫌変化倍率（体力を多く使うほど機嫌への影響が大きい）

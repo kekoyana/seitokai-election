@@ -1,5 +1,5 @@
 import type { GameState, PlayerAttitude, Topic, Stance, CandidateId, HobbyTopic } from '../types';
-import { CANDIDATES, HOBBY_LABELS, MOOD_LABELS, renderInitialIcon } from '../data';
+import { CANDIDATES, HOBBY_LABELS, MOOD_LABELS, renderInitialIcon, renderSupportBar } from '../data';
 import { bgm } from '../bgm';
 import battleBg from '../../assets/backgrounds/battle.jpg';
 
@@ -127,6 +127,9 @@ export class BattleScreen {
           </div>
           <div style="display:flex; align-items:center; gap:4px; margin-top:4px;">
             ${moodIndicatorHtml}
+          </div>
+          <div style="margin-top:6px; width:120px;">
+            ${renderSupportBar(student.support, 10)}
           </div>
         </div>
       </div>

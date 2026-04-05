@@ -1,5 +1,5 @@
 import type { GameState, CandidateId } from '../types';
-import { CANDIDATES, CANDIDATE_INFO, FACTION_LABELS, renderSupportBar } from '../data';
+import { CANDIDATES, FACTION_LABELS, renderSupportBar } from '../data';
 import { ORGANIZATIONS } from '../data/organizations';
 import { getOrganizationVote } from '../logic/organizationLogic';
 

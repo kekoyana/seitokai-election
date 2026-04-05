@@ -1835,6 +1835,24 @@ export class DailyScreen {
     setTimeout(() => overlay.remove(), 2000);
   }
 
+  showLostItemFound(itemName: string, hint: string): void {
+    showConfirmDialog(this.container, {
+      title: '落とし物発見',
+      message: `${itemName}を見つけた！ ${hint}`,
+      okLabel: '拾う',
+      cancelLabel: '無視する',
+    });
+  }
+
+  showErrandRequest(from: Student, to: Student, itemName: string, callback: (accepted: boolean) => void): void {
+    showConfirmDialog(this.container, {
+      title: 'おつかい依頼',
+      message: `${from.name}から${to.name}へ${itemName}を届けてほしいと頼まれた。`,
+      okLabel: '引き受ける',
+      cancelLabel: '断る',
+    }).then(callback);
+  }
+
   mount(parent: HTMLElement): void {
     parent.appendChild(this.container);
   }

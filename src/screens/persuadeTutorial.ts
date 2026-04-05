@@ -24,7 +24,7 @@ const GUIDE_MESSAGES: Record<TutorialStep, { title: string; text: string; btn: s
     title: '【1】態度を選ぼう',
     text: 'まず<strong style="color:#f0d060;">態度</strong>を選ぼう。<br>' +
       '<span style="color:#27AE60;">柔らかく</span>はスタミナ節約、<span style="color:#E07820;">情熱的に</span>は効果大だがコストも高い。<br><br>' +
-      '画面上のバーを<strong>右側（+70以上）</strong>まで押し込めば説得成功！',
+      '画面上のバーを<strong>右端（+100）</strong>まで押し込めば説得成功！',
     btn: 'OK',
   },
   topic: {

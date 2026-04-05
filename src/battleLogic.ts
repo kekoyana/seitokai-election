@@ -416,9 +416,9 @@ export function resolveEnemyTurn(battle: BattleState): { newBattle: BattleState;
 
 // バトル終了チェック
 export function checkBattleEnd(battle: BattleState): BattleState {
-  // 防御時は勝敗の判定を反転（バー+70で負け、-70で勝ち）
-  const winThreshold = battle.isDefending ? -70 : 70;
-  const loseThreshold = battle.isDefending ? 70 : -70;
+  // 防御時は勝敗の判定を反転（バー+100で負け、-100で勝ち）
+  const winThreshold = battle.isDefending ? -100 : 100;
+  const loseThreshold = battle.isDefending ? 100 : -100;
   if (battle.isDefending ? battle.barPosition <= winThreshold : battle.barPosition >= winThreshold) {
     return { ...battle, phase: 'finished', result: 'win' };
   }
@@ -479,11 +479,11 @@ function calcShiftPercent(barPosition: number): number {
 }
 
 // タイムアウト時のシフト量を計算（バー位置に比例、中央付近は小さい）
-// barPosition: -69〜+69 → シフト量 0〜10%
+// barPosition: -99〜+99 → シフト量 0〜10%
 function calcTimeoutShiftPercent(barPosition: number): number {
   const absBar = Math.abs(barPosition);
-  // 0→0%, 69→10% の線形補間
-  const t = clamp(absBar / 69, 0, 1);
+  // 0→0%, 99→10% の線形補間
+  const t = clamp(absBar / 99, 0, 1);
   return t * 10;
 }
 

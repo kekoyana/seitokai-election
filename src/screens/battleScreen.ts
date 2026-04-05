@@ -165,11 +165,11 @@ export class BattleScreen implements Screen {
           display:flex; justify-content:space-between;
           font-size:0.72em; color:rgba(255,255,255,0.6); margin-bottom:4px;
         ">
-          <span>${battle.isDefending ? '成功 (-70)' : '失敗 (-70)'}</span>
+          <span>${battle.isDefending ? '成功' : '失敗'}</span>
           <span style="font-size:1.1em; font-weight:bold; color:${battle.barPosition >= 0 ? '#7EC8F0' : '#F07070'};">
             ${battle.barPosition > 0 ? '+' : ''}${battle.barPosition}
           </span>
-          <span>${battle.isDefending ? '失敗 (+70)' : '成功 (+70)'}</span>
+          <span>${battle.isDefending ? '失敗' : '成功'}</span>
         </div>
         <div class="game-bar" style="
           height:16px; position:relative;
@@ -190,9 +190,7 @@ export class BattleScreen implements Screen {
               : `right:${50}%; width:${50 - barPct}%;`
             }
           "></div>
-          <!-- ゾーン表示 -->
-          <div style="position:absolute; left:${((-70 + 100) / 2)}%; top:0; width:2px; height:100%; background:rgba(255,0,0,0.4);"></div>
-          <div style="position:absolute; left:${((70 + 100) / 2)}%; top:0; width:2px; height:100%; background:rgba(0,200,0,0.4);"></div>
+          <!-- ゾーン表示（バー端=勝敗なのでラインは不要） -->
         </div>
       </div>
 

@@ -1,5 +1,5 @@
-import type { GameState, PlayerAttitude, Topic, Stance, CandidateId, HobbyTopic } from '../types';
-import { CANDIDATES, HOBBY_LABELS, MOOD_LABELS, renderInitialIcon, renderSupportBar } from '../data';
+import type { GameState, PlayerAttitude, Topic, Stance, FactionId, HobbyTopic } from '../types';
+import { FACTION_INFO, HOBBY_LABELS, MOOD_LABELS, renderInitialIcon, renderSupportBar } from '../data';
 import { bgm } from '../bgm';
 import battleBg from '../../assets/backgrounds/battle.jpg';
 
@@ -29,16 +29,16 @@ export class BattleScreen {
     this.render();
   }
 
-  private getCandidateColor(): string {
-    const c = CANDIDATES.find(c => c.id === this.state.candidate);
-    return c ? c.color : '#1B3A6B';
+  private getFactionColor(): string {
+    const f = FACTION_INFO.find(f => f.id === this.state.faction);
+    return f ? f.color : '#1B3A6B';
   }
 
   private render(): void {
     const battle = this.state.battle;
     if (!battle) return;
 
-    const candidateColor = this.getCandidateColor();
+    const candidateColor = this.getFactionColor();
     const student = battle.student;
     const barPct = (battle.barPosition + 100) / 2; // 0〜100%
 
@@ -246,7 +246,7 @@ export class BattleScreen {
       color = '#7EC8F0';
       message = battle.isDefending
         ? `${battle.student.name}の説得を跳ね返した！`
-        : `${battle.student.name}はあなたの候補者を支持します！`;
+        : `${battle.student.name}はあなたの派閥を支持します！`;
       btnColor = '#2E5FAC';
     } else if (isTimeout) {
       emoji = '⏰';
@@ -309,10 +309,10 @@ export class BattleScreen {
   }
 
   private getTopicLabel(topic: Topic): string {
-    const candidateLabels: Record<string, string> = {
+    const factionLabels: Record<string, string> = {
       conservative: '保守派の政策', progressive: '革新派の政策', sports: '体育派の政策',
     };
-    return candidateLabels[topic] ?? HOBBY_LABELS[topic] ?? topic;
+    return factionLabels[topic] ?? HOBBY_LABELS[topic] ?? topic;
   }
 
   private renderBreadcrumb(parts: { text: string; color?: string }[]): string {
@@ -334,7 +334,7 @@ export class BattleScreen {
 
   private renderCommands(lastLog: { speaker: string; text: string; effect: number } | undefined): string {
     const battle = this.state.battle!;
-    const candidateColor = this.getCandidateColor();
+    const candidateColor = this.getFactionColor();
 
     if (battle.phase === 'select_attitude') {
       return `
@@ -350,21 +350,21 @@ export class BattleScreen {
     }
 
     if (battle.phase === 'select_topic') {
-      const candidate = this.state.candidate!;
-      const candidateTopicsHtml = (
+      const faction = this.state.faction!;
+      const factionTopicsHtml = (
         [
           { id: 'conservative', label: '保守派の政策' },
           { id: 'progressive', label: '革新派の政策' },
           { id: 'sports', label: '体育派の政策' },
-        ] as { id: CandidateId; label: string }[]
+        ] as { id: FactionId; label: string }[]
       ).map(t =>
         `<button data-topic="${t.id}" class="game-btn" style="
           padding:8px 12px; text-align:left; width:100%;
-          background:${t.id === candidate ? `linear-gradient(180deg,${candidateColor},${candidateColor}aa)` : 'linear-gradient(180deg,rgba(40,50,80,0.8),rgba(20,30,50,0.8))'};
-          border-color:${t.id === candidate ? candidateColor : 'var(--game-panel-border)'};
+          background:${t.id === faction ? `linear-gradient(180deg,${candidateColor},${candidateColor}aa)` : 'linear-gradient(180deg,rgba(40,50,80,0.8),rgba(20,30,50,0.8))'};
+          border-color:${t.id === faction ? candidateColor : 'var(--game-panel-border)'};
           font-size:0.82em; font-family:var(--game-font);
         ">
-          ${t.id === candidate ? '★ ' : ''}${t.label}
+          ${t.id === faction ? '★ ' : ''}${t.label}
         </button>`
       ).join('');
 
@@ -398,8 +398,8 @@ export class BattleScreen {
           【2】話題を選択
         </div>
         <div style="margin-bottom:8px;">
-          <div style="font-size:0.75em; color:rgba(255,255,255,0.5); margin-bottom:4px;">候補者の話題 <span style="color:#7EC8F0;">（バーが大きく動く）</span></div>
-          <div style="display:flex; flex-direction:column; gap:4px;">${candidateTopicsHtml}</div>
+          <div style="font-size:0.75em; color:rgba(255,255,255,0.5); margin-bottom:4px;">派閥の話題 <span style="color:#7EC8F0;">（バーが大きく動く）</span></div>
+          <div style="display:flex; flex-direction:column; gap:4px;">${factionTopicsHtml}</div>
         </div>
         <div style="margin-bottom:12px;">
           <div style="font-size:0.75em; color:rgba(255,255,255,0.5); margin-bottom:4px;">雑談（趣味）<span style="color:#F0D070;">（相手の機嫌が変化）</span></div>

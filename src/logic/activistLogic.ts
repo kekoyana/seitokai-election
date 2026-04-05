@@ -1,7 +1,7 @@
-import type { Student, CandidateId } from '../types';
+import type { Student, FactionId } from '../types';
 
 /** 生徒の最も高い思想軸を派閥として返す */
-export function getStudentFaction(s: Student): CandidateId {
+export function getStudentFaction(s: Student): FactionId {
   const { conservative, progressive, sports } = s.support;
   if (conservative >= progressive && conservative >= sports) return 'conservative';
   if (progressive >= conservative && progressive >= sports) return 'progressive';
@@ -15,17 +15,16 @@ export function getStudentFaction(s: Student): CandidateId {
 export function electActivists(
   students: Student[],
   playerCharacterId: string,
-  playerCandidate: CandidateId,
+  playerFaction: FactionId,
 ): string[] {
-  const factions: CandidateId[] = ['conservative', 'progressive', 'sports'];
+  const factions: FactionId[] = ['conservative', 'progressive', 'sports'];
   const result: string[] = [];
 
   for (const faction of factions) {
-    const maxCount = faction === playerCandidate ? 2 : 4;
+    const maxCount = faction === playerFaction ? 2 : 4;
 
     const candidates = students
       .filter(s =>
-        !s.candidateId &&
         s.id !== playerCharacterId &&
         getStudentFaction(s) === faction &&
         s.support[faction] >= 50
@@ -43,7 +42,7 @@ export function electActivists(
   return result;
 }
 
-export const FACTION_LABELS: Record<CandidateId, string> = {
+export const FACTION_LABELS: Record<FactionId, string> = {
   conservative: '保守',
   progressive: '革新',
   sports: '体育',
@@ -54,7 +53,7 @@ export interface SingleActivistResult {
   log: string | null;
   /** プレイヤーをターゲットにした活動家（強制バトル用） */
   playerTargetedBy: Student | null;
-  playerTargetedCandidate: CandidateId | null;
+  playerTargetedFaction: FactionId | null;
 }
 
 /**
@@ -69,25 +68,24 @@ export function processOneActivist(
 ): SingleActivistResult {
   // 30%の確率で行動
   if (Math.random() > 0.30) {
-    return { updatedStudents: students, log: null, playerTargetedBy: null, playerTargetedCandidate: null };
+    return { updatedStudents: students, log: null, playerTargetedBy: null, playerTargetedFaction: null };
   }
 
   const activist = students.find(s => s.id === activistId);
   if (!activist) {
-    return { updatedStudents: students, log: null, playerTargetedBy: null, playerTargetedCandidate: null };
+    return { updatedStudents: students, log: null, playerTargetedBy: null, playerTargetedFaction: null };
   }
 
   const activistFaction = getStudentFaction(activist);
 
-  // ターゲット: 異なる派閥の生徒（候補者・他の活動家を除く）
+  // ターゲット: 異なる派閥の生徒（他の活動家を除く）
   const targets = students.filter(s =>
-    !s.candidateId &&
     s.id !== activistId &&
     !activists.includes(s.id) &&
     getStudentFaction(s) !== activistFaction
   );
   if (targets.length === 0) {
-    return { updatedStudents: students, log: null, playerTargetedBy: null, playerTargetedCandidate: null };
+    return { updatedStudents: students, log: null, playerTargetedBy: null, playerTargetedFaction: null };
   }
 
   const target = targets[Math.floor(Math.random() * targets.length)];
@@ -98,7 +96,7 @@ export function processOneActivist(
       updatedStudents: students,
       log: null,
       playerTargetedBy: activist,
-      playerTargetedCandidate: activistFaction,
+      playerTargetedFaction: activistFaction,
     };
   }
 
@@ -118,7 +116,7 @@ export function processOneActivist(
       updatedStudents,
       log: `${activist.name}が${target.name}を説得した（${FACTION_LABELS[activistFaction]}+${shiftAmount}）`,
       playerTargetedBy: null,
-      playerTargetedCandidate: null,
+      playerTargetedFaction: null,
     };
   }
 
@@ -126,14 +124,14 @@ export function processOneActivist(
     updatedStudents: students,
     log: `${activist.name}が${target.name}の説得に失敗した`,
     playerTargetedBy: null,
-    playerTargetedCandidate: null,
+    playerTargetedFaction: null,
   };
 }
 
 /** 指定した派閥方向に思想をシフトする（3軸合計100を維持） */
-function applyFactionShift(student: Student, faction: CandidateId, amount: number): Student {
+function applyFactionShift(student: Student, faction: FactionId, amount: number): Student {
   const support = { ...student.support };
-  const others = (['conservative', 'progressive', 'sports'] as CandidateId[]).filter(f => f !== faction);
+  const others = (['conservative', 'progressive', 'sports'] as FactionId[]).filter(f => f !== faction);
 
   support[faction] = Math.min(100, support[faction] + amount);
   const excess = support.conservative + support.progressive + support.sports - 100;

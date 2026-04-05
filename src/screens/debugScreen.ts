@@ -1,5 +1,5 @@
-import type { GameState, Student, PreferenceAttr, CandidateId } from '../types';
-import { CANDIDATES, FACTION_LABELS, HAIRSTYLE_LABELS, HOBBY_LABELS, ATTRIBUTE_LABELS, getCatchphrase, getCandidateInfo, renderInitialIcon, renderSupportBar, getStudentLocation } from '../data';
+import type { GameState, Student, PreferenceAttr, FactionId } from '../types';
+import { FACTION_INFO, FACTION_LABELS, HAIRSTYLE_LABELS, HOBBY_LABELS, ATTRIBUTE_LABELS, getCatchphrase, renderInitialIcon, renderSupportBar, getStudentLocation } from '../data';
 import { ORGANIZATIONS, ORGANIZATION_TYPE_LABELS } from '../data/organizations';
 import { getOrganizationVote } from '../logic/organizationLogic';
 import { getStudentFaction } from '../logic/activistLogic';
@@ -35,7 +35,7 @@ export class DebugScreen {
   private state: GameState;
   private callbacks: DebugCallbacks;
   private activeTab: 'player' | 'students' | 'organizations' = 'player';
-  private studentFilter: string = 'all'; // 'all' | '1年' | '2年' | '3年' | 'candidate' | 'activist'
+  private studentFilter: string = 'all'; // 'all' | '1年' | '2年' | '3年' | 'activist'
 
   constructor(state: GameState, callbacks: DebugCallbacks) {
     this.state = state;
@@ -52,11 +52,11 @@ export class DebugScreen {
     return { score, liked, disliked };
   }
 
-  private getSupportCandidate(s: Student): { id: CandidateId; name: string; color: string } {
-    const top = (['conservative', 'progressive', 'sports'] as CandidateId[])
+  private getSupportFaction(s: Student): { id: FactionId; label: string; color: string } {
+    const top = (['conservative', 'progressive', 'sports'] as FactionId[])
       .reduce((a, b) => s.support[a] >= s.support[b] ? a : b);
-    const c = CANDIDATES.find(c => c.id === top);
-    return { id: top, name: c?.name ?? '', color: c?.color ?? '#888' };
+    const f = FACTION_INFO.find(f => f.id === top);
+    return { id: top, label: FACTION_LABELS[top] ?? '', color: f?.color ?? '#888' };
   }
 
   private render(): void {
@@ -122,14 +122,13 @@ export class DebugScreen {
       const allStudents = this.state.students.filter(s => s.id !== playerId);
       const factionFilters: string[] = ['conservative', 'progressive', 'sports'];
       const filtered = this.studentFilter === 'all' ? allStudents
-        : this.studentFilter === 'candidate' ? allStudents.filter(s => s.candidateId !== null)
         : this.studentFilter === 'activist' ? allStudents.filter(s => this.state.activists.includes(s.id))
         : factionFilters.includes(this.studentFilter) ? allStudents.filter(s => getStudentFaction(s) === this.studentFilter)
         : allStudents.filter(s => s.className.startsWith(this.studentFilter.charAt(0)));
 
-      const filterBtns = ['all', '1年', '2年', '3年', 'conservative', 'progressive', 'sports', 'candidate', 'activist'].map(key => {
+      const filterBtns = ['all', '1年', '2年', '3年', 'conservative', 'progressive', 'sports', 'activist'].map(key => {
         const active = this.studentFilter === key;
-        const label = key === 'all' ? '全員' : key === 'candidate' ? '候補者' : key === 'activist' ? '活動家'
+        const label = key === 'all' ? '全員' : key === 'activist' ? '活動家'
           : key === 'conservative' ? '保守' : key === 'progressive' ? '革新' : key === 'sports' ? '体育' : key;
         return `<button class="debug-student-filter" data-filter="${key}" style="
           padding:3px 10px; border:none; border-radius:10px;
@@ -196,7 +195,7 @@ export class DebugScreen {
   }
 
   private renderPlayerCard(pc: import('../types').PlayerCharacter): string {
-    const playerCandidate = CANDIDATES.find(c => c.id === this.state.candidate);
+    const playerFaction = FACTION_INFO.find(f => f.id === this.state.faction);
     const ps = this.state.playerSupport;
 
     const attrsHtml = pc.attributes.map(a =>
@@ -256,10 +255,10 @@ export class DebugScreen {
           <div style="text-align:right; flex-shrink:0;">
             <div style="
               font-size:0.75em; padding:2px 8px; border-radius:8px;
-              background:${playerCandidate?.color ?? '#888'}33;
-              color:${playerCandidate?.color ?? '#888'};
-              border:1px solid ${playerCandidate?.color ?? '#888'}66;
-            ">${FACTION_LABELS[this.state.candidate ?? ''] ?? ''}派</div>
+              background:${playerFaction?.color ?? '#888'}33;
+              color:${playerFaction?.color ?? '#888'};
+              border:1px solid ${playerFaction?.color ?? '#888'}66;
+            ">${FACTION_LABELS[this.state.faction ?? 'conservative'] ?? ''}派</div>
           </div>
         </div>
 
@@ -294,13 +293,11 @@ export class DebugScreen {
 
   private renderStudentRow(s: Student): string {
     const compat = this.calcCompatibility(s);
-    const sup = this.getSupportCandidate(s);
-    const isAlly = sup.id === this.state.candidate;
-    const isCandidate = s.candidateId !== null;
+    const sup = this.getSupportFaction(s);
+    const isAlly = sup.id === this.state.faction;
     const isActivist = this.state.activists.includes(s.id);
-    const candidateColor = isCandidate ? (getCandidateInfo(s.candidateId!).color) : null;
     const faction = getStudentFaction(s);
-    const factionCandidate = CANDIDATES.find(c => c.id === faction);
+    const factionInfo = FACTION_INFO.find(f => f.id === faction);
     const loc = getStudentLocation(s.id, this.state.timeSlot, this.state.day, this.state.currentTime);
     const locLabel = loc ?? '不明';
 
@@ -343,12 +340,12 @@ export class DebugScreen {
       ">${ATTRIBUTE_LABELS[a] ?? a}</span>`;
     }).join(' ');
 
-    const borderColor = isCandidate ? candidateColor! : (isAlly ? '#4f8' : 'rgba(255,255,255,0.15)');
+    const borderColor = isAlly ? '#4f8' : 'rgba(255,255,255,0.15)';
 
     return `
       <div style="
-        background:${isCandidate ? candidateColor + '10' : 'rgba(255,255,255,0.04)'};
-        border:1px solid ${isCandidate ? candidateColor + '40' : 'rgba(255,255,255,0.08)'};
+        background:rgba(255,255,255,0.04);
+        border:1px solid rgba(255,255,255,0.08);
         border-radius:10px; padding:10px 12px;
         margin-bottom:8px;
       ">
@@ -375,15 +372,10 @@ export class DebugScreen {
                 font-size:0.68em; background:rgba(255,255,255,0.08);
                 border-radius:6px; padding:1px 6px; color:#bbb;
               ">${PERSONALITY_LABELS[s.personality] ?? s.personality}</span>
-              ${isCandidate ? `<span style="
-                font-size:0.65em; background:${candidateColor}30; color:${candidateColor};
-                border-radius:4px; padding:1px 5px;
-                border:1px solid ${candidateColor}60;
-              ">${FACTION_LABELS[s.candidateId!] ?? ''}派候補</span>` : ''}
               ${isActivist ? `<span style="
-                font-size:0.65em; background:${factionCandidate?.color ?? '#888'}30; color:${factionCandidate?.color ?? '#f88'};
+                font-size:0.65em; background:${factionInfo?.color ?? '#888'}30; color:${factionInfo?.color ?? '#f88'};
                 border-radius:4px; padding:1px 5px;
-                border:1px solid ${factionCandidate?.color ?? '#888'}60;
+                border:1px solid ${factionInfo?.color ?? '#888'}60;
                 font-weight:bold;
               ">活動家</span>` : ''}
             </div>
@@ -450,8 +442,8 @@ export class DebugScreen {
   private renderOrganizations(): string {
     return ORGANIZATIONS.map(org => {
       const vote = getOrganizationVote(org, this.state.students);
-      const voteCandidate = CANDIDATES.find(c => c.id === vote);
-      const isPlayerVote = vote === this.state.candidate;
+      const voteCandidate = FACTION_INFO.find(f => f.id === vote);
+      const isPlayerVote = vote === this.state.faction;
       const leader = this.state.students.find(s => s.id === org.leaderId);
       const typeLabel = ORGANIZATION_TYPE_LABELS[org.type] ?? org.type;
 

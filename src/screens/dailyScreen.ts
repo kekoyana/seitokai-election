@@ -1,6 +1,6 @@
-import type { GameState, Student, LocationId, ActionType, CandidateId, Floor } from '../types';
+import type { GameState, Student, LocationId, ActionType, FactionId, Floor } from '../types';
 import {
-  LOCATIONS, CANDIDATES, FACTION_LABELS, getStudentLocation, getCandidateLocation,
+  LOCATIONS, FACTION_INFO, FACTION_LABELS, getStudentLocation,
   HOBBY_LABELS, TIME_LABELS, getCatchphrase, renderInitialIcon,
   isCorridorLocation, getFloorFromLocation, FLOOR_ROOMS, FLOOR_ADJACENCY,
   FLOOR_LABELS, MOVE_COST, getFloorMoveCost, renderSupportBar, MAX_TIME, TIME_COST,
@@ -161,25 +161,18 @@ export class DailyScreen {
     const playerId = this.state.playerCharacter?.id;
     return this.state.students.filter(s =>
       s.id !== playerId &&
-      s.candidateId === null &&
       getStudentLocation(s.id, this.state.timeSlot, this.state.day, this.state.currentTime) === this.state.currentLocation
     );
   }
 
-  private getCandidatesAtLocation(): typeof CANDIDATES {
-    return CANDIDATES.filter(c =>
-      getCandidateLocation(c.id, this.state.timeSlot, this.state.day, this.state.currentTime) === this.state.currentLocation
-    );
-  }
-
-  private getCandidateColor(): string {
-    const c = CANDIDATES.find(c => c.id === this.state.candidate);
-    return c ? c.color : '#1B3A6B';
+  private getFactionColor(): string {
+    const f = FACTION_INFO.find(f => f.id === this.state.faction);
+    return f ? f.color : '#1B3A6B';
   }
 
   private render(): void {
-    const candidate = CANDIDATES.find(c => c.id === this.state.candidate);
-    const candidateColor = this.getCandidateColor();
+    const factionInfo = FACTION_INFO.find(f => f.id === this.state.faction);
+    const candidateColor = this.getFactionColor();
     const studentsHere = this.getStudentsAtLocation();
     const currentLocation = LOCATIONS.find(l => l.id === this.state.currentLocation);
     const isTimeUp = this.state.currentTime >= MAX_TIME;
@@ -219,7 +212,7 @@ export class DailyScreen {
             : renderInitialIcon(pc.name, pc.personality, 28, 'rgba(255,255,255,0.5)')
           ) : ''}
           <span style="font-weight:bold; color:#fff; font-size:0.85em;">${pc?.name ?? ''}</span>
-          <span style="opacity:0.8; font-size:0.75em; color:#fff;">${FACTION_LABELS[this.state.candidate ?? ''] ?? ''}派</span>
+          <span style="opacity:0.8; font-size:0.75em; color:#fff;">${FACTION_LABELS[this.state.faction ?? 'conservative'] ?? ''}派</span>
         </div>
         <div class="game-hud-badge" style="
           pointer-events:auto;
@@ -403,81 +396,11 @@ export class DailyScreen {
     this.attachEvents();
   }
 
-  private renderCandidateCard(c: typeof CANDIDATES[number]): string {
-    const isPlayerCandidate = c.id === this.state.candidate;
-    // state.studentsから候補者の生徒データを取得（会話・好感度の状態を持つ）
-    const studentData = this.state.students.find(s => s.candidateId === c.id);
-    const talkCost = 5;
-    const canTalk = this.state.stamina >= talkCost;
-    const affinityColor = studentData && studentData.affinity >= 20 ? '#27AE60'
-      : studentData && studentData.affinity <= -20 ? '#C0392B' : '#888';
-    const affinityLabel = studentData && studentData.affinity >= 20 ? '好意的'
-      : studentData && studentData.affinity <= -20 ? '不快' : '普通';
-
-    return `
-      <div class="game-chara-card" style="
-        display:flex; align-items:center; gap:10px;
-        border-color:${c.color}60;
-      ">
-        ${c.portrait
-          ? `<img src="${c.portrait}" alt="${c.name}" style="
-              width:96px; height:96px; border-radius:4px;
-              object-fit:cover; object-position:top;
-              border:2px solid ${c.color};
-              flex-shrink:0;
-              box-shadow:0 2px 6px rgba(0,0,0,0.4);
-            "/>`
-          : renderInitialIcon(c.name, c.personality, 96, c.color)
-        }
-        <div style="flex:1; min-width:0;">
-          <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
-            <span style="font-size:0.9em; font-weight:bold; color:var(--game-text);">${c.name}</span>
-            <span style="
-              font-size:0.65em; padding:1px 6px; border-radius:3px;
-              background:${c.color}30; color:${c.color};
-              border:1px solid ${c.color}50;
-            ">${FACTION_LABELS[c.id] ?? ''}派候補</span>
-            ${isPlayerCandidate ? `<span style="
-              font-size:0.65em; padding:1px 6px; border-radius:3px;
-              background:${c.color}30; color:${c.color};
-              border:1px solid ${c.color}50;
-            ">支持中</span>` : ''}
-          </div>
-          <div style="display:flex; align-items:center; gap:4px; flex-wrap:wrap; font-size:0.75em; color:var(--game-text-dim);">
-            ${studentData ? renderStudentAffiliation(studentData.id, c.className, studentData.clubId) : c.className}
-          </div>
-          <div style="font-size:0.72em; color:var(--game-text-dim);">${c.platform}</div>
-          ${studentData ? `<div style="font-size:0.72em; color:${affinityColor};">好感度: ${affinityLabel}</div>` : ''}
-        </div>
-        ${studentData ? `
-          <div style="display:flex; flex-direction:column; gap:4px; flex-shrink:0;">
-            <button data-action-talk="${studentData.id}" class="game-btn ${canTalk ? 'game-btn-primary' : 'game-btn-disabled'}" style="
-              padding:5px 10px;
-              font-size:0.78em; font-family:var(--game-font);
-            ">趣味(⚡${talkCost})</button>
-            <button data-action-gossip="${studentData.id}" class="game-btn ${canTalk ? '' : 'game-btn-disabled'}" style="
-              padding:5px 10px;
-              background:linear-gradient(180deg,#9B6B9E,#7B4B7E);
-              border-color:#B080B0;
-              font-size:0.78em; font-family:var(--game-font);
-            ">噂話(⚡${talkCost})</button>
-            <button data-action-info="${studentData.id}" class="game-btn" style="
-              padding:5px 10px;
-              background:linear-gradient(180deg,#6a7890,#4a5870);
-              border-color:#8090a8;
-              font-size:0.78em; font-family:var(--game-font);
-            ">情報</button>
-          </div>
-        ` : ''}
-      </div>
-    `;
-  }
-
   /** 組織情報セクション（クラス詳細・情報画面で共通） */
   private renderOrgInfoSection(org: typeof ORGANIZATIONS[number]): string {
     const vote = getOrganizationVote(org, this.state.students);
-    const voteCandidate = CANDIDATES.find(c => c.id === vote);
-    const isAlly = vote === this.state.candidate;
+    const voteCandidate = FACTION_INFO.find(f => f.id === vote);
+    const isAlly = vote === this.state.faction;
 
     const leader = this.state.students.find(s => s.id === org.leaderId);
     const allMemberIds = [org.leaderId, ...org.subLeaderIds, ...org.memberIds];
@@ -645,10 +568,7 @@ export class DailyScreen {
   }
 
   private renderMainPanel(studentsHere: Student[], isOutOfStamina: boolean): string {
-    const candidatesHere = this.getCandidatesAtLocation();
-    const candidatesHtml = candidatesHere.map(c => this.renderCandidateCard(c)).join('');
-
-    const studentsHtml = (studentsHere.length === 0 && candidatesHere.length === 0)
+    const studentsHtml = studentsHere.length === 0
       ? `<div style="text-align:center; color:#aaa; padding:20px; font-size:0.9em;">ここには誰もいない</div>`
       : studentsHere.map(s => this.renderStudentCard(s)).join('');
 
@@ -697,7 +617,6 @@ export class DailyScreen {
 
       <div class="game-panel" style="margin-bottom:12px;">
         <h3 style="font-size:0.9em; color:var(--game-heading); margin-bottom:10px; font-weight:bold;">この場所にいる生徒</h3>
-        ${candidatesHtml}
         ${studentsHtml}
       </div>
 
@@ -795,8 +714,8 @@ export class DailyScreen {
           ${(() => {
             const maxKey = (['conservative', 'progressive', 'sports'] as const)
               .reduce((a, b) => s.support[a] >= s.support[b] ? a : b);
-            const sc = CANDIDATES.find(c => c.id === maxKey);
-            const isAlly = maxKey === this.state.candidate;
+            const sc = FACTION_INFO.find(f => f.id === maxKey);
+            const isAlly = maxKey === this.state.faction;
             return `<span style="
               font-size:0.7em; background:${sc?.color ?? '#888'}; color:#fff;
               border-radius:3px; padding:1px 6px;
@@ -923,7 +842,7 @@ export class DailyScreen {
   }
 
   private renderInfoOrgList(tab: 'class' | 'club'): string {
-    const candidateColor = this.getCandidateColor();
+    const candidateColor = this.getFactionColor();
     const subTab = this.infoPanel?.subTab ?? (tab === 'class' ? 'grade1' : 'sports');
 
     const allOrgs = tab === 'class'
@@ -938,13 +857,13 @@ export class DailyScreen {
         : allOrgs.filter(o => CULTURE_CLUB_IDS.has(o.id));
 
     const allAllyCount = allOrgs.filter(org =>
-      getOrganizationVote(org, this.state.students) === this.state.candidate
+      getOrganizationVote(org, this.state.students) === this.state.faction
     ).length;
 
     const orgRows = orgs.map(org => {
       const vote = getOrganizationVote(org, this.state.students);
-      const voteCandidate = CANDIDATES.find(c => c.id === vote);
-      const isAlly = vote === this.state.candidate;
+      const voteCandidate = FACTION_INFO.find(f => f.id === vote);
+      const isAlly = vote === this.state.faction;
       const leader = this.state.students.find(s => s.id === org.leaderId);
 
       return `
@@ -1019,7 +938,7 @@ export class DailyScreen {
       const sup = s.support;
       const maxKey = (['conservative', 'progressive', 'sports'] as const)
         .reduce((a, b) => sup[a] >= sup[b] ? a : b);
-      const sc = CANDIDATES.find(c => c.id === maxKey);
+      const sc = FACTION_INFO.find(f => f.id === maxKey);
       const roleColor = role === '代表' ? '#E74C3C' : role === '副代表' ? '#E07820' : 'var(--game-text-dim)';
 
       return `
@@ -1086,17 +1005,10 @@ export class DailyScreen {
 
   private countStudentsAtLocation(locId: LocationId): number {
     const playerId = this.state.playerCharacter?.id;
-    // 一般生徒（候補者除く）
-    const studentCount = this.state.students.filter(s =>
+    return this.state.students.filter(s =>
       s.id !== playerId &&
-      s.candidateId === null &&
       getStudentLocation(s.id, this.state.timeSlot, this.state.day, this.state.currentTime) === locId
     ).length;
-    // 候補者は専用の位置関数で判定
-    const candidateCount = CANDIDATES.filter(c =>
-      getCandidateLocation(c.id, this.state.timeSlot, this.state.day, this.state.currentTime) === locId
-    ).length;
-    return studentCount + candidateCount;
   }
 
   // 建物風の部屋ボタン
@@ -1477,8 +1389,8 @@ export class DailyScreen {
   /** 生徒詳細カード（情報パネル・部屋内情報ボタン共通、プレイヤー自身にも対応） */
   private renderStudentDetailCard(s: Student, backAction: string, isPlayer = false): string {
     const borderColor = isPlayer
-      ? this.getCandidateColor()
-      : (CANDIDATES.find(c => c.id === Object.entries(s.support).sort((a, b) => b[1] - a[1])[0][0])?.color ?? '#d0e0f0');
+      ? this.getFactionColor()
+      : (FACTION_INFO.find(f => f.id === Object.entries(s.support).sort((a, b) => b[1] - a[1])[0][0])?.color ?? '#d0e0f0');
 
     const hobbiesHtml = Object.entries(s.hobbies).map(([hobby, pref]) => {
       const isRevealed = isPlayer || s.revealedHobbies.has(hobby as import('../types').HobbyTopic);
@@ -1530,7 +1442,7 @@ export class DailyScreen {
           ${renderStudentAffiliation(s.id, s.className, s.clubId)}
         </div>
         ${isPlayer
-          ? `<div style="font-size:0.75em; color:${borderColor}; font-weight:bold; margin-top:2px;">${FACTION_LABELS[this.state.candidate ?? ''] ?? ''}派</div>`
+          ? `<div style="font-size:0.75em; color:${borderColor}; font-weight:bold; margin-top:2px;">${FACTION_LABELS[this.state.faction ?? 'conservative'] ?? ''}派</div>`
           : ''
         }
         <div style="font-size:0.75em; color:#888; margin-top:2px;">「${getCatchphrase(s.personality, s.attributes)}」</div>

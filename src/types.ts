@@ -1,9 +1,9 @@
-// 候補者ID
-export type CandidateId = 'conservative' | 'progressive' | 'sports';
+// 派閥ID
+export type FactionId = 'conservative' | 'progressive' | 'sports';
 
-// 候補者の表示情報（色・公約など）
-export interface CandidateInfo {
-  id: CandidateId;
+// 派閥の表示情報（色・方針など）
+export interface FactionInfo {
+  id: FactionId;
   color: string;
   accentColor: string;
   description: string;
@@ -35,15 +35,15 @@ export type TimeSlot = 'morning' | 'lunch' | 'afternoon' | 'afterschool';
 export type PlayerAttitude = 'friendly' | 'normal' | 'strong';
 
 // 話題タイプ
-export type TopicType = 'candidate' | 'hobby';
+export type TopicType = 'faction' | 'hobby';
 
-// 候補者話題
-export type CandidateTopic = 'conservative' | 'progressive' | 'sports';
+// 派閥話題
+export type FactionTopic = 'conservative' | 'progressive' | 'sports';
 
 // 趣味話題
 export type HobbyTopic = 'love' | 'game' | 'sns' | 'sports_hobby' | 'study' | 'video' | 'music' | 'reading' | 'fashion' | 'fortune';
 
-export type Topic = CandidateTopic | HobbyTopic;
+export type Topic = FactionTopic | HobbyTopic;
 
 // 立場
 export type Stance = 'positive' | 'negative';
@@ -74,7 +74,7 @@ export type PreferenceAttr = Attribute | HairStyle;
 // 性別
 export type Gender = 'male' | 'female';
 
-// 生徒データ（候補者も含むすべてのキャラクター）
+// 生徒データ（すべてのキャラクター）
 export interface Student {
   id: string;
   name: string;
@@ -97,19 +97,8 @@ export interface Student {
   affinity: number;
   talkCount: number;
   portrait: string | null;
-  candidateId: CandidateId | null;
   playable: boolean;            // プレイヤーとして選択可能か
 }
-
-// 候補者生徒（Student に CandidateInfo のプロパティを付加した型）
-export type CandidateStudent = Omit<Student, 'id' | 'candidateId'> & {
-  id: CandidateId;
-  candidateId: CandidateId;
-  color: string;
-  accentColor: string;
-  description: string;
-  platform: string;
-};
 
 // バトルログ
 export interface BattleLog {
@@ -169,8 +158,8 @@ export interface Organization {
 
 // ゲーム全体状態
 export interface GameState {
-  screen: 'title' | 'candidate_select' | 'daily' | 'battle' | 'battle_result' | 'ending' | 'gameover';
-  candidate: CandidateId | null;
+  screen: 'title' | 'faction_select' | 'daily' | 'battle' | 'battle_result' | 'ending' | 'gameover';
+  faction: FactionId | null;
   students: Student[];
   day: number; // 1〜30
   currentTime: number; // 放課後の経過分（0=15:00, 240=19:00）
@@ -185,7 +174,7 @@ export interface GameState {
   organizations: Organization[];
   actionLogs: string[];
   activists: string[];  // 活動家の生徒IDリスト
-  pendingActivistBattle: { activistId: string; candidate: CandidateId } | null;
+  pendingActivistBattle: { activistId: string; faction: FactionId } | null;
   // 探索イベント
   lostItem: { itemName: string; hint: string; ownerId: string } | null;
   errand: { fromId: string; toId: string; itemName: string } | null;

@@ -1,6 +1,6 @@
 import type {
   BattleState, Student, PlayerAttitude, Topic, Stance,
-  EnemyMood, HobbyTopic, CandidateId, BattleLog, PreferenceAttr, Gender, Personality
+  EnemyMood, HobbyTopic, FactionId, BattleLog, PreferenceAttr, Gender, Personality
 } from './types';
 import { getCatchphrase } from './catchphrase';
 
@@ -69,7 +69,7 @@ function applyPersonalityMoodShift(personality: Personality, delta: number): num
   }
 }
 
-// 候補者話題の態度別機嫌ペナルティ
+// 派閥話題の態度別機嫌ペナルティ
 const ATTITUDE_MOOD_PENALTY: Record<PlayerAttitude, number> = {
   friendly: 0,   // 柔らかく → 角が立たない
   normal: 1,     // 普通 → 従来通り
@@ -172,15 +172,11 @@ function likedAttributeMultiplier(
   return 1.0 + baseBonus + genderBonus;
 }
 
-// 候補者話題の効果を計算（バーに大きく影響）
-// 肯定: 自候補を推す → 相手のその候補への支持が低いほど効果が必要（基礎値で押す）
-//   支持50の候補を肯定 → 15 + 6.8 = 21.8（相手が元々好きなので刺さる）
-//   支持25の候補を肯定 → 15 - 3.2 = 11.8（相手が興味薄いので効果小）
-// 否定: 相手の候補を攻撃 → 相手の支持が高い候補ほど否定が刺さる
-//   支持50の候補を否定 → 15 + 6.8 = 21.8（核心を突く）
-//   支持25の候補を否定 → 15 - 3.2 = 11.8（どうでもいい候補なので効果小）
-function calcCandidateEffect(
-  topic: CandidateId,
+// 派閥話題の効果を計算（バーに大きく影響）
+// 肯定: 自派閥を推す → 相手のその派閥への支持が低いほど効果が必要（基礎値で押す）
+// 否定: 相手の派閥を攻撃 → 相手の支持が高い派閥ほど否定が刺さる
+function calcFactionEffect(
+  topic: FactionId,
   stance: Stance,
   student: Student
 ): number {
@@ -260,9 +256,9 @@ interface PlayerStats {
 // speech: 思想話題の全般倍率（0→×1.0, 50→×1.40, 100→×1.80）
 // athletic: 肯定時の追加倍率（0→×1.0, 50→×1.25, 100→×1.50）
 // intel: 否定時の追加倍率（0→×1.0, 50→×1.25, 100→×1.50）
-function calcStatMultiplier(stats: PlayerStats, stance: Stance, isCandidateTopic: boolean): number {
+function calcStatMultiplier(stats: PlayerStats, stance: Stance, isFactionTopic: boolean): number {
   let multiplier = 1.0;
-  if (isCandidateTopic) {
+  if (isFactionTopic) {
     // 弁舌: 思想話題全般
     multiplier *= 1.0 + stats.speech * 0.008;
     // 運動/知性: 立場に応じた追加ボーナス
@@ -281,7 +277,7 @@ export function resolvePlayerTurn(
   attitude: PlayerAttitude,
   topic: Topic,
   stance: Stance,
-  candidateId: CandidateId,
+  factionId: FactionId,
   playerLikedAttributes: PreferenceAttr[],
   playerStats: PlayerStats,
   playerGender: Gender
@@ -296,15 +292,15 @@ export function resolvePlayerTurn(
 
   // 基礎効果計算
   let baseEffect: number;
-  const isCandidateTopic = ['conservative', 'progressive', 'sports'].includes(topic);
+  const isFactionTopic = ['conservative', 'progressive', 'sports'].includes(topic);
 
-  if (isCandidateTopic) {
-    const topicCandidate = topic as CandidateId;
-    baseEffect = calcCandidateEffect(topicCandidate, stance, student);
+  if (isFactionTopic) {
+    const topicFaction = topic as FactionId;
+    baseEffect = calcFactionEffect(topicFaction, stance, student);
     // 態度に応じた機嫌ペナルティ（柔らかく=0, 普通=-1, 情熱的=-2）
     moodDelta.delta -= ATTITUDE_MOOD_PENALTY[attitude];
-    // 選んだ候補と話題候補が一致する場合はボーナス
-    if (topicCandidate === candidateId) {
+    // 選んだ派閥と話題派閥が一致する場合はボーナス
+    if (topicFaction === factionId) {
       baseEffect *= 1.1;
     }
   } else {
@@ -321,7 +317,7 @@ export function resolvePlayerTurn(
   baseEffect *= MOOD_EFFECT_MULTIPLIER[battle.enemyMood];
 
   // ステータスボーナス（弁舌/運動/知性）
-  baseEffect *= calcStatMultiplier(playerStats, stance, isCandidateTopic);
+  baseEffect *= calcStatMultiplier(playerStats, stance, isFactionTopic);
 
   // 好き属性ボーナス（属性+髪型を統合して判定、異性なら外見系2倍）
   const isOppositeGender = playerGender !== student.gender;
@@ -493,7 +489,7 @@ function calcTimeoutShiftPercent(barPosition: number): number {
 // 説得成功: 相手の思想をプレイヤーの支持方向にシフト
 export function applyWinShift(
   student: Student,
-  playerCandidate: CandidateId,
+  playerFaction: FactionId,
   barPosition: number
 ): { conservative: number; progressive: number; sports: number } {
   const shiftPercent = calcShiftPercent(barPosition);
@@ -501,20 +497,20 @@ export function applyWinShift(
   const total = support.conservative + support.progressive + support.sports;
   const shiftAmount = total * shiftPercent / 100;
 
-  // プレイヤーの支持する候補の軸を増やし、他の2軸から均等に引く
-  const others = (['conservative', 'progressive', 'sports'] as CandidateId[]).filter(k => k !== playerCandidate);
-  support[playerCandidate] += shiftAmount;
+  // プレイヤーの支持する派閥の軸を増やし、他の2軸から均等に引く
+  const others = (['conservative', 'progressive', 'sports'] as FactionId[]).filter(k => k !== playerFaction);
+  support[playerFaction] += shiftAmount;
   for (const key of others) {
     support[key] -= shiftAmount / 2;
   }
 
   // 負にならないようクランプし、合計を100に正規化
-  for (const key of ['conservative', 'progressive', 'sports'] as CandidateId[]) {
+  for (const key of ['conservative', 'progressive', 'sports'] as FactionId[]) {
     support[key] = Math.max(0, support[key]);
   }
   const newTotal = support.conservative + support.progressive + support.sports;
   if (newTotal > 0) {
-    for (const key of ['conservative', 'progressive', 'sports'] as CandidateId[]) {
+    for (const key of ['conservative', 'progressive', 'sports'] as FactionId[]) {
       support[key] = Math.round(support[key] / newTotal * 100);
     }
   }
@@ -531,25 +527,25 @@ export function applyLoseShift(
   const shiftPercent = calcShiftPercent(barPosition);
 
   // 相手の最大軸の方向にプレイヤーの思想をシフト
-  const maxKey = (['conservative', 'progressive', 'sports'] as CandidateId[])
+  const maxKey = (['conservative', 'progressive', 'sports'] as FactionId[])
     .reduce((a, b) => studentSupport[a] >= studentSupport[b] ? a : b);
 
   const support = { ...playerSupport };
   const total = support.conservative + support.progressive + support.sports;
   const shiftAmount = total * shiftPercent / 100;
 
-  const others = (['conservative', 'progressive', 'sports'] as CandidateId[]).filter(k => k !== maxKey);
+  const others = (['conservative', 'progressive', 'sports'] as FactionId[]).filter(k => k !== maxKey);
   support[maxKey] += shiftAmount;
   for (const key of others) {
     support[key] -= shiftAmount / 2;
   }
 
-  for (const key of ['conservative', 'progressive', 'sports'] as CandidateId[]) {
+  for (const key of ['conservative', 'progressive', 'sports'] as FactionId[]) {
     support[key] = Math.max(0, support[key]);
   }
   const newTotal = support.conservative + support.progressive + support.sports;
   if (newTotal > 0) {
-    for (const key of ['conservative', 'progressive', 'sports'] as CandidateId[]) {
+    for (const key of ['conservative', 'progressive', 'sports'] as FactionId[]) {
       support[key] = Math.round(support[key] / newTotal * 100);
     }
   }
@@ -563,7 +559,7 @@ export function applyLoseShift(
 // barPosition ≈ 0: ほぼ変化なし
 export function applyTimeoutShift(
   student: Student,
-  playerCandidate: CandidateId,
+  playerFaction: FactionId,
   playerSupport: { conservative: number; progressive: number; sports: number },
   barPosition: number
 ): {
@@ -579,41 +575,41 @@ export function applyTimeoutShift(
     const total = support.conservative + support.progressive + support.sports;
     const shiftAmount = total * shiftPercent / 100;
 
-    const others = (['conservative', 'progressive', 'sports'] as CandidateId[]).filter(k => k !== playerCandidate);
-    support[playerCandidate] += shiftAmount;
+    const others = (['conservative', 'progressive', 'sports'] as FactionId[]).filter(k => k !== playerFaction);
+    support[playerFaction] += shiftAmount;
     for (const key of others) {
       support[key] -= shiftAmount / 2;
     }
-    for (const key of ['conservative', 'progressive', 'sports'] as CandidateId[]) {
+    for (const key of ['conservative', 'progressive', 'sports'] as FactionId[]) {
       support[key] = Math.max(0, support[key]);
     }
     const newTotal = support.conservative + support.progressive + support.sports;
     if (newTotal > 0) {
-      for (const key of ['conservative', 'progressive', 'sports'] as CandidateId[]) {
+      for (const key of ['conservative', 'progressive', 'sports'] as FactionId[]) {
         support[key] = Math.round(support[key] / newTotal * 100);
       }
     }
     return { studentSupport: support, playerNewSupport: { ...playerSupport }, shiftPercent };
   } else if (barPosition < 0) {
     // 相手有利: プレイヤーの思想をシフト
-    const maxKey = (['conservative', 'progressive', 'sports'] as CandidateId[])
+    const maxKey = (['conservative', 'progressive', 'sports'] as FactionId[])
       .reduce((a, b) => student.support[a] >= student.support[b] ? a : b);
 
     const support = { ...playerSupport };
     const total = support.conservative + support.progressive + support.sports;
     const shiftAmount = total * shiftPercent / 100;
 
-    const others = (['conservative', 'progressive', 'sports'] as CandidateId[]).filter(k => k !== maxKey);
+    const others = (['conservative', 'progressive', 'sports'] as FactionId[]).filter(k => k !== maxKey);
     support[maxKey] += shiftAmount;
     for (const key of others) {
       support[key] -= shiftAmount / 2;
     }
-    for (const key of ['conservative', 'progressive', 'sports'] as CandidateId[]) {
+    for (const key of ['conservative', 'progressive', 'sports'] as FactionId[]) {
       support[key] = Math.max(0, support[key]);
     }
     const newTotal = support.conservative + support.progressive + support.sports;
     if (newTotal > 0) {
-      for (const key of ['conservative', 'progressive', 'sports'] as CandidateId[]) {
+      for (const key of ['conservative', 'progressive', 'sports'] as FactionId[]) {
         support[key] = Math.round(support[key] / newTotal * 100);
       }
     }
@@ -624,10 +620,10 @@ export function applyTimeoutShift(
   }
 }
 
-// プレイヤーの支持候補を判定（最大軸）
-export function getPlayerCandidate(
+// プレイヤーの支持派閥を判定（最大軸）
+export function getPlayerFaction(
   support: { conservative: number; progressive: number; sports: number }
-): CandidateId {
+): FactionId {
   if (support.conservative >= support.progressive && support.conservative >= support.sports) return 'conservative';
   if (support.progressive >= support.sports) return 'progressive';
   return 'sports';

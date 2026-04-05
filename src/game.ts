@@ -1,5 +1,5 @@
 import type {
-  GameState, Student, CandidateId, LocationId, Floor,
+  GameState, Student, FactionId, LocationId, Floor,
   PlayerAttitude, Topic, Stance, HobbyTopic
 } from './types';
 import {
@@ -15,7 +15,7 @@ import { getOrganizationVote } from './logic/organizationLogic';
 import {
   initBattle, resolvePlayerTurn, resolveEnemyTurn,
   checkBattleEnd, applyWinShift, applyLoseShift, applyTimeoutShift,
-  getPlayerCandidate, getAttitudeCost, shouldPass
+  getPlayerFaction, getAttitudeCost, shouldPass
 } from './battleLogic';
 import { TitleScreen } from './screens/titleScreen';
 import { CharacterSelectScreen } from './screens/characterSelect';
@@ -30,7 +30,7 @@ import { saveGame, loadGame, deleteSaveData } from './saveLoad';
 function createInitialState(): GameState {
   return {
     screen: 'title',
-    candidate: null,
+    faction: null,
     students: STUDENTS.map(s => ({
       ...s,
       revealedHobbies: new Set<HobbyTopic>(),
@@ -95,7 +95,7 @@ export class Game {
       this.previousScreen = null;
     } else {
       // 候補者選択後のみデバッグ表示可能
-      if (!this.state.candidate) return;
+      if (!this.state.faction) return;
       this.previousScreen = this.state.screen;
       this.clearScreens();
       this.debugScreen = new DebugScreen(this.state, {
@@ -151,7 +151,7 @@ export class Game {
     this.characterScreen = new CharacterSelectScreen(playableStudents, {
       onSelect: (selected: Student) => {
         // 選んだ生徒の思想軸の最大値が支持候補になる
-        const candidateId = (['conservative', 'progressive', 'sports'] as CandidateId[])
+        const factionId = (['conservative', 'progressive', 'sports'] as FactionId[])
           .reduce((a, b) => selected.support[a] >= selected.support[b] ? a : b);
         // 選んだ生徒をプレイヤーに（studentsには全員残す＝組織の代表計算に必要）
         const classMap: Record<string, LocationId> = {
@@ -163,7 +163,7 @@ export class Game {
         this.state = {
           ...createInitialState(),
           screen: 'daily',
-          candidate: candidateId,
+          faction: factionId,
           students: allStudents,
           currentLocation: startLocation,
           playerCharacter: {
@@ -185,7 +185,7 @@ export class Game {
         // 初日の活動家選出
         this.state = {
           ...this.state,
-          activists: electActivists(this.state.students, selected.id, candidateId),
+          activists: electActivists(this.state.students, selected.id, factionId),
         };
         // 初日セーブ
         saveGame(this.state);
@@ -288,7 +288,7 @@ export class Game {
     // プレイヤーがターゲットにされた場合 → 呼び止め会話 → バトル
     if (result.playerTargetedBy) {
       const activist = result.playerTargetedBy;
-      const faction = result.playerTargetedCandidate!;
+      const faction = result.playerTargetedFaction!;
       this.showActivistApproach(activist, faction);
       return true;
     }
@@ -297,7 +297,7 @@ export class Game {
   }
 
   /** 活動家がプレイヤーに近づいてくる演出（会話→バトル） */
-  private showActivistApproach(activist: Student, faction: CandidateId): void {
+  private showActivistApproach(activist: Student, faction: FactionId): void {
     const pc = this.state.playerCharacter;
     if (!pc) return;
 
@@ -343,9 +343,8 @@ export class Game {
     const pc = this.state.playerCharacter;
     if (!pc) return;
 
-    // 現在地にいる生徒（候補者・プレイヤー自身を除く）
+    // 現在地にいる生徒（プレイヤー自身を除く）
     const studentsHere = this.state.students.filter(s =>
-      !s.candidateId &&
       s.id !== pc.id &&
       getStudentLocation(s.id, this.state.timeSlot, this.state.day, this.state.currentTime) === this.state.currentLocation
     );
@@ -400,7 +399,7 @@ export class Game {
     if (!pc) return false;
 
     // 持ち主候補: プレイヤー以外の一般生徒
-    const candidates = this.state.students.filter(s => s.id !== pc.id && !s.candidateId);
+    const candidates = this.state.students.filter(s => s.id !== pc.id);
     if (candidates.length === 0) return false;
 
     const owner = candidates[Math.floor(Math.random() * candidates.length)];
@@ -483,7 +482,7 @@ export class Game {
 
     // 届け先: 同じクラスまたは同じ部活で、異なるフロアにいる生徒を優先
     const possibleTargets = this.state.students.filter(s =>
-      s.id !== pc.id && s.id !== student.id && !s.candidateId &&
+      s.id !== pc.id && s.id !== student.id &&
       (s.className === student.className || (s.clubId && s.clubId === student.clubId))
     );
     if (possibleTargets.length === 0) return;
@@ -825,7 +824,7 @@ export class Game {
     const activists = electActivists(
       this.state.students,
       this.state.playerCharacter?.id ?? '',
-      this.state.candidate ?? 'conservative',
+      this.state.faction ?? 'conservative',
     );
 
     this.state = {
@@ -849,7 +848,7 @@ export class Game {
   }
 
   /** 活動家からの強制説得バトルを開始 */
-  private startActivistBattle(activist: Student, _activistCandidate: CandidateId): void {
+  private startActivistBattle(activist: Student, _activistCandidate: FactionId): void {
     const playerGender = this.state.playerCharacter?.gender;
     const playerAttrs = this.state.playerAttributes;
     const battle = initBattle(activist, true, playerGender, playerAttrs); // isDefending = true
@@ -895,7 +894,7 @@ export class Game {
         this.battleScreenInst?.update(this.state);
       },
       onStanceSelect: (stance: Stance) => {
-        if (!this.state.battle || !this.state.candidate) return;
+        if (!this.state.battle || !this.state.faction) return;
         const { selectedAttitude, selectedTopic } = this.state.battle;
         if (!selectedAttitude || !selectedTopic) return;
 
@@ -905,7 +904,7 @@ export class Game {
 
         // プレイヤーターン
         const { newBattle: afterPlayer } = resolvePlayerTurn(
-          this.state.battle, selectedAttitude, selectedTopic, stance, this.state.candidate,
+          this.state.battle, selectedAttitude, selectedTopic, stance, this.state.faction,
           playerLikedAttributes, playerStats, playerGender
         );
 
@@ -1017,14 +1016,14 @@ export class Game {
 
   private finishBattle(): void {
     const battle = this.state.battle;
-    if (!battle || !this.state.candidate) return;
+    if (!battle || !this.state.faction) return;
 
     const result = battle.result;
     const student = battle.student;
     let shiftAmount = 0;
 
     // シフト結果を自然な日本語で表現するヘルパー
-    const describeShift = (candidateId: CandidateId, amount: number): string => {
+    const describeShift = (candidateId: FactionId, amount: number): string => {
       const name = FACTION_LABELS[candidateId] ?? candidateId;
       if (amount >= 50) return `${name}派が大きく強まった`;
       if (amount >= 20) return `${name}派が強まった`;
@@ -1041,7 +1040,7 @@ export class Game {
 
     if (result === 'win') {
       // 成功: 相手の思想をプレイヤーの支持方向にシフト
-      const newSupport = applyWinShift(student, this.state.candidate, battle.barPosition);
+      const newSupport = applyWinShift(student, this.state.faction, battle.barPosition);
       shiftAmount = Math.abs(battle.barPosition);
       const updatedStudents = this.state.students.map(s => {
         if (s.id !== student.id) return s;
@@ -1051,8 +1050,8 @@ export class Game {
       // 成功時: プレイヤー自身の支持候補の思想も少し強化
       const playerSup = { ...this.state.playerSupport };
       const boostAmount = 3;
-      const candidate = this.state.candidate;
-      const otherKeys = (['conservative', 'progressive', 'sports'] as CandidateId[]).filter(k => k !== candidate);
+      const candidate = this.state.faction;
+      const otherKeys = (['conservative', 'progressive', 'sports'] as FactionId[]).filter(k => k !== candidate);
       playerSup[candidate] += boostAmount;
       for (const key of otherKeys) {
         playerSup[key] = Math.max(0, playerSup[key] - boostAmount / 2);
@@ -1060,14 +1059,14 @@ export class Game {
       // 合計を100に正規化
       const pTotal = playerSup.conservative + playerSup.progressive + playerSup.sports;
       if (pTotal > 0) {
-        for (const key of ['conservative', 'progressive', 'sports'] as CandidateId[]) {
+        for (const key of ['conservative', 'progressive', 'sports'] as FactionId[]) {
           playerSup[key] = Math.round(playerSup[key] / pTotal * 100);
         }
       }
 
       const logEntry = battle.isDefending
-        ? `【防衛成功】${student.name}の説得を跳ね返した！（${describeShift(this.state.candidate, shiftAmount)}）`
-        : `【説得成功】${student.name}を説得した！（${describeShift(this.state.candidate, shiftAmount)}）`;
+        ? `【防衛成功】${student.name}の説得を跳ね返した！（${describeShift(this.state.faction, shiftAmount)}）`
+        : `【説得成功】${student.name}を説得した！（${describeShift(this.state.faction, shiftAmount)}）`;
       this.state = {
         ...this.state,
         screen: 'daily',
@@ -1086,15 +1085,15 @@ export class Game {
         this.state.playerSupport, student.support, battle.barPosition
       );
       shiftAmount = shiftPercent;
-      const enemyFaction = (['conservative', 'progressive', 'sports'] as CandidateId[])
+      const enemyFaction = (['conservative', 'progressive', 'sports'] as FactionId[])
         .reduce((a, b) => student.support[a] >= student.support[b] ? a : b);
       const logEntry = battle.isDefending
         ? `【防衛失敗】${student.name}に押されてしまった…（${describeShift(enemyFaction, shiftAmount)}）`
         : `【説得失敗】${student.name}に説得されてしまった…（${describeShift(enemyFaction, shiftAmount)}）`;
 
       // プレイヤーの支持候補が変わったかチェック
-      const newCandidate = getPlayerCandidate(newSupport);
-      if (newCandidate !== this.state.candidate) {
+      const newCandidate = getPlayerFaction(newSupport);
+      if (newCandidate !== this.state.faction) {
         this.state = {
           ...this.state,
           screen: 'gameover',
@@ -1122,12 +1121,12 @@ export class Game {
     } else if (result === 'timeout') {
       // タイムアウト: バー位置に応じて双方の思想をシフト
       const { studentSupport, playerNewSupport, shiftPercent } = applyTimeoutShift(
-        student, this.state.candidate, this.state.playerSupport, battle.barPosition
+        student, this.state.faction, this.state.playerSupport, battle.barPosition
       );
       shiftAmount = shiftPercent;
       const timeoutLabel = battle.barPosition > 0 ? '時間切れ（やや優勢）' : battle.barPosition < 0 ? '時間切れ（やや劣勢）' : '時間切れ（引き分け）';
-      const timeoutFaction = battle.barPosition >= 0 ? this.state.candidate
-        : (['conservative', 'progressive', 'sports'] as CandidateId[])
+      const timeoutFaction = battle.barPosition >= 0 ? this.state.faction
+        : (['conservative', 'progressive', 'sports'] as FactionId[])
             .reduce((a, b) => student.support[a] >= student.support[b] ? a : b);
       const logEntry = `【${timeoutLabel}】${student.name}との説得（${describeShift(timeoutFaction, shiftAmount)}）`;
 
@@ -1137,8 +1136,8 @@ export class Game {
       });
 
       // プレイヤーの支持候補が変わったかチェック
-      const newCandidate = getPlayerCandidate(playerNewSupport);
-      if (newCandidate !== this.state.candidate) {
+      const newCandidate = getPlayerFaction(playerNewSupport);
+      if (newCandidate !== this.state.faction) {
         this.state = {
           ...this.state,
           screen: 'gameover',

@@ -1,9 +1,9 @@
-import type { GameState, CandidateId } from '../types';
-import { CANDIDATES, FACTION_LABELS, renderSupportBar } from '../data';
+import type { GameState, FactionId } from '../types';
+import { FACTION_INFO, FACTION_LABELS, renderSupportBar } from '../data';
 import { ORGANIZATIONS } from '../data/organizations';
 import { getOrganizationVote } from '../logic/organizationLogic';
 
-const WINNER_MESSAGES: Record<CandidateId, string> = {
+const WINNER_MESSAGES: Record<FactionId, string> = {
   conservative: '伝統を守り抜く。それが、この学園の誇りだ。',
   progressive: '新しい風が吹く。学園は、もっと自由になれる。',
   sports: '仲間と汗を流した日々が、俺たちの勝利だ！',
@@ -25,7 +25,7 @@ export class EndingScreen {
     this.render();
   }
 
-  private calcResults(): { candidateId: string; name: string; votes: number; color: string }[] {
+  private calcResults(): { factionId: string; name: string; votes: number; color: string }[] {
     const voteCounts: Record<string, number> = { conservative: 0, progressive: 0, sports: 0 };
 
     // 組織ベースの投票
@@ -34,11 +34,11 @@ export class EndingScreen {
       voteCounts[vote] = (voteCounts[vote] ?? 0) + 1;
     }
 
-    return CANDIDATES.map(c => ({
-      candidateId: c.id,
-      name: c.name,
-      votes: voteCounts[c.id] ?? 0,
-      color: c.color,
+    return FACTION_INFO.map(f => ({
+      factionId: f.id,
+      name: f.platform,
+      votes: voteCounts[f.id] ?? 0,
+      color: f.color,
     })).sort((a, b) => b.votes - a.votes);
   }
 
@@ -69,10 +69,10 @@ export class EndingScreen {
   private renderGameOver(): void {
     const lastResult = this.state.lastBattleResult;
     const playerSupport = this.state.playerSupport;
-    const newTop = (['conservative', 'progressive', 'sports'] as CandidateId[])
+    const newTop = (['conservative', 'progressive', 'sports'] as FactionId[])
       .reduce((a, b) => playerSupport[a] >= playerSupport[b] ? a : b);
-    const newCandidate = CANDIDATES.find(c => c.id === newTop);
-    const originalCandidate = CANDIDATES.find(c => c.id === this.state.candidate);
+    const newFaction = FACTION_INFO.find(f => f.id === newTop);
+    const originalFaction = FACTION_INFO.find(f => f.id === this.state.faction);
 
     this.container.innerHTML = `
       <div style="max-width:480px; width:100%;">
@@ -95,8 +95,8 @@ export class EndingScreen {
           ">
             ${lastResult ? `<div style="margin-bottom:8px;">${lastResult.student.name}との説得に失敗</div>` : ''}
             <div style="margin-bottom:4px;">
-              <span style="color:${originalCandidate?.color ?? 'var(--game-text)'};">${FACTION_LABELS[this.state.candidate ?? ''] ?? ''}</span>派
-              → <span style="color:${newCandidate?.color ?? 'var(--game-text)'};">${FACTION_LABELS[newTop] ?? ''}</span>派に変化
+              <span style="color:${originalFaction?.color ?? 'var(--game-text)'};">${FACTION_LABELS[this.state.faction ?? 'conservative'] ?? ''}</span>派
+              → <span style="color:${newFaction?.color ?? 'var(--game-text)'};">${FACTION_LABELS[newTop] ?? ''}</span>派に変化
             </div>
             <div style="margin-top:8px; opacity:0.9;">
               ${renderSupportBar(playerSupport, 14)}
@@ -117,14 +117,13 @@ export class EndingScreen {
   private renderElectionResult(): void {
     const results = this.calcResults();
     const winner = results[0];
-    const winnerCandidate = CANDIDATES.find(c => c.id === winner.candidateId);
-    const playerCandidate = CANDIDATES.find(c => c.id === this.state.candidate);
-    const isVictory = winner.candidateId === this.state.candidate;
+    const winnerFaction = FACTION_INFO.find(f => f.id === winner.factionId);
+    const isVictory = winner.factionId === this.state.faction;
 
     // 組織ベースでプレイヤー候補を支持する組織数
     const supporterCount = ORGANIZATIONS.filter(org => {
       const vote = getOrganizationVote(org, this.state.students);
-      return vote === this.state.candidate;
+      return vote === this.state.faction;
     }).length;
 
     this.container.innerHTML = `
@@ -138,22 +137,22 @@ export class EndingScreen {
             ${isVictory ? '🎉' : '😔'}
           </div>
           <div style="font-size:1.5em; font-weight:bold; color:var(--game-text); margin-bottom:8px;">
-            ${isVictory ? '選挙に勝利！' : '選挙に敗北...'}
+            ${isVictory ? '投票に勝利！' : '投票に敗北...'}
           </div>
           <div style="color:var(--game-text-dim); font-size:0.9em; margin-bottom:16px;">
             ${this.state.day >= 30
-              ? '30日間の選挙活動が終わりました'
+              ? '30日間の活動が終わりました'
               : `${this.state.day}日目ですべての組織の支持が統一されました！`}
           </div>
           <div style="
-            background:${winnerCandidate ? `${winnerCandidate.color}15` : 'rgba(0,0,0,0.05)'};
-            border:1px solid ${winnerCandidate ? `${winnerCandidate.color}30` : 'rgba(0,0,0,0.1)'};
+            background:${winnerFaction ? `${winnerFaction.color}15` : 'rgba(0,0,0,0.05)'};
+            border:1px solid ${winnerFaction ? `${winnerFaction.color}30` : 'rgba(0,0,0,0.1)'};
             border-radius:10px; padding:14px;
             font-size:0.9em; color:var(--game-text);
             margin-bottom:12px;
           ">
-            <div style="font-style:italic; color:${winnerCandidate?.color ?? 'var(--game-text)'}; margin-bottom:8px;">
-              「${WINNER_MESSAGES[winner.candidateId as CandidateId] ?? ''}」
+            <div style="font-style:italic; color:${winnerFaction?.color ?? 'var(--game-text)'}; margin-bottom:8px;">
+              「${WINNER_MESSAGES[winner.factionId as FactionId] ?? ''}」
             </div>
             <div style="font-size:0.85em; text-align:right; color:var(--game-text-dim);">── ${winner.name}</div>
           </div>
@@ -162,8 +161,8 @@ export class EndingScreen {
             border-radius:10px; padding:12px;
             font-size:0.85em; color:var(--game-text);
           ">
-            <div>当選: <strong>${winner.name}</strong> (${winner.votes}組)</div>
-            <div>あなたの支持: <strong>${FACTION_LABELS[this.state.candidate ?? ''] ?? ''}派</strong></div>
+            <div>勝利派閥: <strong>${winner.name}</strong> (${winner.votes}組)</div>
+            <div>あなたの支持: <strong>${FACTION_LABELS[this.state.faction ?? 'conservative'] ?? ''}派</strong></div>
             <div>支持組織: <strong>${supporterCount}</strong>組 / ${ORGANIZATIONS.length}組</div>
           </div>
         </div>
@@ -172,7 +171,7 @@ export class EndingScreen {
           margin-bottom:20px;
         ">
           <h3 style="font-size:0.95em; color:var(--game-heading); margin-bottom:14px; text-align:center; font-weight:bold;">
-            選挙結果
+            投票結果
           </h3>
           ${results.map((r, i) => `
             <div style="
@@ -188,7 +187,7 @@ export class EndingScreen {
               ">${i + 1}</div>
               <div style="flex:1; font-size:0.88em; color:var(--game-text);">
                 ${r.name}
-                ${r.candidateId === this.state.candidate ? '<span style="color:#4A90D9; font-size:0.8em;"> (支持)</span>' : ''}
+                ${r.factionId === this.state.faction ? '<span style="color:#4A90D9; font-size:0.8em;"> (支持)</span>' : ''}
               </div>
               <div style="
                 background:rgba(255,255,255,0.1);
@@ -214,8 +213,8 @@ export class EndingScreen {
           <h3 style="font-size:0.9em; color:var(--game-heading); margin-bottom:10px; font-weight:bold;">組織別投票結果</h3>
           ${ORGANIZATIONS.map(org => {
             const vote = getOrganizationVote(org, this.state.students);
-            const sc = CANDIDATES.find(c => c.id === vote);
-            const isAlly = vote === this.state.candidate;
+            const sc = FACTION_INFO.find(f => f.id === vote);
+            const isAlly = vote === this.state.faction;
             const leader = this.state.students.find(s => s.id === org.leaderId);
             return `
               <div style="

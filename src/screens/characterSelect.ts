@@ -1,5 +1,5 @@
-import type { Student, CandidateId } from '../types';
-import { CANDIDATES, CANDIDATE_INFO, FACTION_LABELS, getCatchphrase, renderInitialIcon } from '../data';
+import type { Student, FactionId } from '../types';
+import { FACTION_INFO, FACTION_LABELS, getCatchphrase, renderInitialIcon } from '../data';
 import dailyBg from '../../assets/backgrounds/daily.jpg';
 
 const PERSONALITY_LABELS: Record<string, string> = {
@@ -18,7 +18,7 @@ export class CharacterSelectScreen {
   private container: HTMLDivElement;
   private students: Student[];
   private callbacks: CharacterSelectCallbacks;
-  private activeTab: CandidateId | null = null;
+  private activeTab: FactionId | null = null;
 
   constructor(students: Student[], callbacks: CharacterSelectCallbacks) {
     this.students = students;
@@ -27,8 +27,8 @@ export class CharacterSelectScreen {
     this.render();
   }
 
-  private getSupportFaction(s: Student): CandidateId {
-    return (['conservative', 'progressive', 'sports'] as CandidateId[])
+  private getSupportFaction(s: Student): FactionId {
+    return (['conservative', 'progressive', 'sports'] as FactionId[])
       .reduce((a, b) => s.support[a] >= s.support[b] ? a : b);
   }
 
@@ -42,11 +42,10 @@ export class CharacterSelectScreen {
       overflow:hidden; box-sizing:border-box;
     `;
 
-    const activeInfo = this.activeTab ? CANDIDATE_INFO.find(c => c.id === this.activeTab)! : null;
-    const activeCandidate = this.activeTab ? CANDIDATES.find(c => c.id === this.activeTab) : null;
+    const activeInfo = this.activeTab ? FACTION_INFO.find(c => c.id === this.activeTab)! : null;
 
     // タブ
-    const tabsHtml = CANDIDATE_INFO.map(info => {
+    const tabsHtml = FACTION_INFO.map(info => {
       const active = info.id === this.activeTab;
       const count = this.students.filter(s => this.getSupportFaction(s) === info.id).length;
       return `<button class="faction-tab" data-faction="${info.id}" style="
@@ -73,30 +72,12 @@ export class CharacterSelectScreen {
         <div class="game-panel-light" style="
           border-left:4px solid ${activeInfo.color};
           margin:0 16px 12px;
-          display:flex; align-items:center; gap:12px;
         ">
-          ${activeCandidate?.portrait
-            ? `<img src="${activeCandidate.portrait}" alt="${activeCandidate.name}" style="
-                width:128px; height:128px; border-radius:4px;
-                object-fit:cover; object-position:top;
-                border:2px solid ${activeInfo.color};
-                flex-shrink:0;
-                box-shadow:0 2px 8px rgba(0,0,0,0.4);
-              "/>`
-            : ''
-          }
-          <div style="flex:1;">
-            <div style="font-weight:bold; color:${activeInfo.color}; font-size:0.9em; margin-bottom:4px;">
-              ${activeInfo.platform}
-            </div>
-            <div style="font-size:0.8em; color:var(--game-text-dim); line-height:1.6;">
-              ${activeInfo.description}
-            </div>
-            ${activeCandidate ? `
-              <div style="font-size:0.78em; color:var(--game-text-dim); margin-top:6px;">
-                候補者: <span style="font-weight:bold; color:${activeInfo.color};">${activeCandidate.name}</span>
-              </div>
-            ` : ''}
+          <div style="font-weight:bold; color:${activeInfo.color}; font-size:0.9em; margin-bottom:4px;">
+            ${activeInfo.platform}
+          </div>
+          <div style="font-size:0.8em; color:var(--game-text-dim); line-height:1.6;">
+            ${activeInfo.description}
           </div>
         </div>
       `;
@@ -147,7 +128,7 @@ export class CharacterSelectScreen {
     // タブイベント
     this.container.querySelectorAll<HTMLButtonElement>('.faction-tab').forEach(btn => {
       btn.addEventListener('pointerup', () => {
-        const faction = btn.dataset['faction'] as CandidateId;
+        const faction = btn.dataset['faction'] as FactionId;
         if (faction && faction !== this.activeTab) {
           this.activeTab = faction;
           this.render();
@@ -176,24 +157,24 @@ export class CharacterSelectScreen {
       </div>
     `;
 
-    const supportCandidateId = this.activeTab;
-    const supportCandidate = CANDIDATES.find(c => c.id === supportCandidateId);
+    const supportFactionId = this.activeTab;
+    const supportFaction = supportFactionId ? FACTION_INFO.find(f => f.id === supportFactionId) : null;
 
     return `
       <button data-student-id="${s.id}" class="game-chara-card" style="
         cursor:pointer; text-align:left;
         font-family:var(--game-font);
-      " onpointerenter="this.style.borderColor='${supportCandidate?.color ?? '#4A90D9'}';this.style.boxShadow='0 0 12px ${supportCandidate?.color ?? '#4A90D9'}40'"
+      " onpointerenter="this.style.borderColor='${supportFaction?.color ?? '#4A90D9'}';this.style.boxShadow='0 0 12px ${supportFaction?.color ?? '#4A90D9'}40'"
          onpointerleave="this.style.borderColor='#b0c0d8';this.style.boxShadow='0 2px 4px rgba(0,0,0,0.08)'">
         <div style="display:flex; align-items:flex-start; gap:12px; margin-bottom:10px;">
           ${s.portrait
             ? `<img src="${s.portrait}" alt="${s.name}" style="
                 width:112px; height:112px; border-radius:4px;
                 object-fit:cover; object-position:top;
-                border:2px solid ${supportCandidate?.color ?? '#b0c0d8'}; flex-shrink:0;
+                border:2px solid ${supportFaction?.color ?? '#b0c0d8'}; flex-shrink:0;
                 box-shadow:0 2px 4px rgba(0,0,0,0.12);
               "/>`
-            : renderInitialIcon(s.name, s.personality, 112, supportCandidate?.color ?? '#4a6090')
+            : renderInitialIcon(s.name, s.personality, 112, supportFaction?.color ?? '#4a6090')
           }
           <div style="flex:1; min-width:0;">
             <div style="display:flex; align-items:center; gap:6px;">

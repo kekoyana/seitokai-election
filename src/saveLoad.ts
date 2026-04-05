@@ -1,7 +1,7 @@
 import type { GameState, HobbyTopic, PreferenceAttr } from './types';
 import { ORGANIZATIONS } from './data/organizations';
 
-const SAVE_KEY = 'seitokai-election-save';
+const SAVE_KEY = 'gakuensai-vote-save';
 
 /** Set を配列に変換した Student の JSON 表現 */
 interface StudentJSON {
@@ -14,7 +14,7 @@ interface StudentJSON {
 /** GameState の JSON 表現（battle は保存しない） */
 interface GameStateJSON {
   screen: GameState['screen'];
-  candidate: GameState['candidate'];
+  faction: GameState['faction'];
   students: StudentJSON[];
   day: number;
   currentTime: number;
@@ -31,13 +31,13 @@ interface GameStateJSON {
   version: number;
 }
 
-const SAVE_VERSION = 1;
+const SAVE_VERSION = 2;
 
 /** GameState を localStorage に保存 */
 export function saveGame(state: GameState): void {
   const json: GameStateJSON = {
     screen: state.screen,
-    candidate: state.candidate,
+    faction: state.faction,
     students: state.students.map(s => ({
       ...s,
       revealedHobbies: [...s.revealedHobbies],
@@ -72,7 +72,7 @@ export function loadGame(): GameState | null {
 
     const state: GameState = {
       screen: json.screen,
-      candidate: json.candidate,
+      faction: json.faction,
       students: json.students.map(s => ({
         ...s,
         revealedHobbies: new Set<HobbyTopic>(s.revealedHobbies),

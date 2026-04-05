@@ -1,6 +1,6 @@
 import type {
-  CandidateInfo, CandidateId, CandidateStudent, Location, Student, HobbyTopic, HobbyPreference,
-  HairStyle, Attribute, PreferenceAttr, Personality, LocationId, Floor, Gender
+  FactionInfo, FactionId, Location, Student, HobbyTopic, HobbyPreference,
+  HairStyle, Attribute, PreferenceAttr, Personality, LocationId, Floor
 } from './types';
 
 import tanakaDaikiPortrait from '../assets/portraits/tanaka_daiki.png';
@@ -45,8 +45,8 @@ import noguchiSakiPortrait from '../assets/portraits/noguchi_saki.png';
 import ishikawaYusukePortrait from '../assets/portraits/ishikawa_yusuke.png';
 import iwataDaichiPortrait from '../assets/portraits/iwata_daichi.png';
 
-// 候補者の表示情報（色・公約）
-export const CANDIDATE_INFO: CandidateInfo[] = [
+// 派閥の表示情報（色・方針）
+export const FACTION_INFO: FactionInfo[] = [
   {
     id: 'conservative',
     color: '#1B3A6B',
@@ -71,9 +71,9 @@ export const CANDIDATE_INFO: CandidateInfo[] = [
 ];
 
 
-// CandidateIdからCandidateInfoを取得するヘルパー
-export function getCandidateInfo(id: CandidateId): CandidateInfo {
-  return CANDIDATE_INFO.find(c => c.id === id)!;
+// FactionIdからFactionInfoを取得するヘルパー
+export function getFactionInfo(id: FactionId): FactionInfo {
+  return FACTION_INFO.find(c => c.id === id)!;
 }
 
 export const LOCATIONS: Location[] = [
@@ -224,7 +224,7 @@ export const STUDENTS: Student[] = [
     affinity: 0,
     talkCount: 0,
     portrait: tanakaDaikiPortrait,
-    candidateId: null,
+
     playable: true,
   },
   {
@@ -249,7 +249,7 @@ export const STUDENTS: Student[] = [
     affinity: 0,
     talkCount: 0,
     portrait: yamamotoRenPortrait,
-    candidateId: null,
+
     playable: true,
   },
   {
@@ -274,7 +274,7 @@ export const STUDENTS: Student[] = [
     affinity: 0,
     talkCount: 0,
     portrait: satoYuiPortrait,
-    candidateId: null,
+
     playable: true,
   },
   {
@@ -299,7 +299,7 @@ export const STUDENTS: Student[] = [
     affinity: 0,
     talkCount: 0,
     portrait: watanabeAoiPortrait,
-    candidateId: null,
+
     playable: true,
   },
   {
@@ -324,7 +324,7 @@ export const STUDENTS: Student[] = [
     affinity: 0,
     talkCount: 0,
     portrait: nakamuraSakuraPortrait,
-    candidateId: null,
+
     playable: true,
   },
   // 追加7名
@@ -350,7 +350,7 @@ export const STUDENTS: Student[] = [
     affinity: 0,
     talkCount: 0,
     portrait: takahashiYutoPortrait,
-    candidateId: null,
+
     playable: true,
   },
   {
@@ -375,7 +375,7 @@ export const STUDENTS: Student[] = [
     affinity: 0,
     talkCount: 0,
     portrait: matsumotoKentaPortrait,
-    candidateId: null,
+
     playable: true,
   },
   {
@@ -400,7 +400,7 @@ export const STUDENTS: Student[] = [
     affinity: 0,
     talkCount: 0,
     portrait: miyazakiAkanePortrait,
-    candidateId: null,
+
     playable: true,
   },
   {
@@ -425,7 +425,7 @@ export const STUDENTS: Student[] = [
     affinity: 0,
     talkCount: 0,
     portrait: hashimotoTsubasaPortrait,
-    candidateId: null,
+
     playable: true,
   },
   {
@@ -450,7 +450,7 @@ export const STUDENTS: Student[] = [
     affinity: 0,
     talkCount: 0,
     portrait: katoMitsukiPortrait,
-    candidateId: null,
+
     playable: true,
   },
   {
@@ -475,7 +475,7 @@ export const STUDENTS: Student[] = [
     affinity: 0,
     talkCount: 0,
     portrait: suzukiShotaPortrait,
-    candidateId: null,
+
     playable: true,
   },
   {
@@ -500,7 +500,7 @@ export const STUDENTS: Student[] = [
     affinity: 0,
     talkCount: 0,
     portrait: saitoManabuPortrait,
-    candidateId: null,
+
     playable: true,
   },
   // === 追加キャラクター（サブリーダー・メンバー、ポートレートなし） ===
@@ -527,7 +527,7 @@ export const STUDENTS: Student[] = [
     affinity: 0,
     talkCount: 0,
     portrait: ogawaHarukaPortrait,
-    candidateId: null,
+
     playable: false,
   },
   // 1-A メンバー
@@ -553,7 +553,7 @@ export const STUDENTS: Student[] = [
     affinity: 0,
     talkCount: 0,
     portrait: inoueMomokaPortrait,
-    candidateId: null,
+
     playable: false,
   },
   // 1-B サブリーダー
@@ -579,7 +579,7 @@ export const STUDENTS: Student[] = [
     affinity: 0,
     talkCount: 0,
     portrait: endoRyotaPortrait,
-    candidateId: null,
+
     playable: false,
   },
   // 1-B メンバー
@@ -605,7 +605,7 @@ export const STUDENTS: Student[] = [
     affinity: 0,
     talkCount: 0,
     portrait: shimizuNanaPortrait,
-    candidateId: null,
+
     playable: false,
   },
   // 1-C サブリーダー
@@ -631,7 +631,7 @@ export const STUDENTS: Student[] = [
     affinity: 0,
     talkCount: 0,
     portrait: aokiSoraPortrait,
-    candidateId: null,
+
     playable: false,
   },
   // 1-C メンバー
@@ -657,7 +657,7 @@ export const STUDENTS: Student[] = [
     affinity: 0,
     talkCount: 0,
     portrait: moritaChihiroPortrait,
-    candidateId: null,
+
     playable: false,
   },
   // 1-D サブリーダー
@@ -683,7 +683,7 @@ export const STUDENTS: Student[] = [
     affinity: 0,
     talkCount: 0,
     portrait: nishidaKaitoPortrait,
-    candidateId: null,
+
     playable: false,
   },
   // 1-D メンバー
@@ -709,7 +709,7 @@ export const STUDENTS: Student[] = [
     affinity: 0,
     talkCount: 0,
     portrait: hayashiRikoPortrait,
-    candidateId: null,
+
     playable: false,
   },
   // 2-A サブリーダー
@@ -735,7 +735,7 @@ export const STUDENTS: Student[] = [
     affinity: 0,
     talkCount: 0,
     portrait: fujitaMeiPortrait,
-    candidateId: null,
+
     playable: false,
   },
   // 2-A メンバー
@@ -761,7 +761,7 @@ export const STUDENTS: Student[] = [
     affinity: 0,
     talkCount: 0,
     portrait: uedaTakumiPortrait,
-    candidateId: null,
+
     playable: false,
   },
   // 2-B サブリーダー
@@ -787,7 +787,7 @@ export const STUDENTS: Student[] = [
     affinity: 0,
     talkCount: 0,
     portrait: kimuraYunaPortrait,
-    candidateId: null,
+
     playable: false,
   },
   // 2-B メンバー
@@ -813,7 +813,7 @@ export const STUDENTS: Student[] = [
     affinity: 0,
     talkCount: 0,
     portrait: murakamiSotaPortrait,
-    candidateId: null,
+
     playable: false,
   },
   // 2-C サブリーダー
@@ -839,7 +839,7 @@ export const STUDENTS: Student[] = [
     affinity: 0,
     talkCount: 0,
     portrait: yoshidaHinataPortrait,
-    candidateId: null,
+
     playable: false,
   },
   // 2-C メンバー
@@ -865,7 +865,7 @@ export const STUDENTS: Student[] = [
     affinity: 0,
     talkCount: 0,
     portrait: okamotoRinPortrait,
-    candidateId: null,
+
     playable: false,
   },
   // 2-D サブリーダー
@@ -891,7 +891,7 @@ export const STUDENTS: Student[] = [
     affinity: 0,
     talkCount: 0,
     portrait: gotoHayatoPortrait,
-    candidateId: null,
+
     playable: false,
   },
   // 2-D メンバー
@@ -917,7 +917,7 @@ export const STUDENTS: Student[] = [
     affinity: 0,
     talkCount: 0,
     portrait: sakamotoMiuPortrait,
-    candidateId: null,
+
     playable: false,
   },
   // 3-A サブリーダー
@@ -943,7 +943,7 @@ export const STUDENTS: Student[] = [
     affinity: 0,
     talkCount: 0,
     portrait: yamaguchiRyoPortrait,
-    candidateId: null,
+
     playable: false,
   },
   // 3-A メンバー
@@ -969,7 +969,7 @@ export const STUDENTS: Student[] = [
     affinity: 0,
     talkCount: 0,
     portrait: ikedaKotonePortrait,
-    candidateId: null,
+
     playable: false,
   },
   // 3-B サブリーダー
@@ -995,7 +995,7 @@ export const STUDENTS: Student[] = [
     affinity: 0,
     talkCount: 0,
     portrait: otsukaItsukiPortrait,
-    candidateId: null,
+
     playable: false,
   },
   // 3-B メンバー
@@ -1021,7 +1021,7 @@ export const STUDENTS: Student[] = [
     affinity: 0,
     talkCount: 0,
     portrait: tanabeMisakiPortrait,
-    candidateId: null,
+
     playable: false,
   },
   // 3-C サブリーダー
@@ -1047,7 +1047,7 @@ export const STUDENTS: Student[] = [
     affinity: 0,
     talkCount: 0,
     portrait: kawanoShioriPortrait,
-    candidateId: null,
+
     playable: false,
   },
   // 3-C メンバー
@@ -1073,7 +1073,7 @@ export const STUDENTS: Student[] = [
     affinity: 0,
     talkCount: 0,
     portrait: maedaTaigaPortrait,
-    candidateId: null,
+
     playable: false,
   },
   // 3-D サブリーダー
@@ -1099,7 +1099,7 @@ export const STUDENTS: Student[] = [
     affinity: 0,
     talkCount: 0,
     portrait: noguchiSakiPortrait,
-    candidateId: null,
+
     playable: false,
   },
   // 3-D メンバー
@@ -1125,7 +1125,7 @@ export const STUDENTS: Student[] = [
     affinity: 0,
     talkCount: 0,
     portrait: ishikawaYusukePortrait,
-    candidateId: null,
+
     playable: false,
   },
   {
@@ -1150,10 +1150,9 @@ export const STUDENTS: Student[] = [
     affinity: 0,
     talkCount: 0,
     portrait: iwataDaichiPortrait,
-    candidateId: null,
+
     playable: false,
   },
-  // 候補者（説得不可）
   {
     id: 'takayama_seiichi',
     name: '鷹山誠一',
@@ -1176,8 +1175,7 @@ export const STUDENTS: Student[] = [
     affinity: 0,
     talkCount: 0,
     portrait: takayamaSeiichiPortrait,
-    candidateId: 'conservative' as CandidateId,
-    playable: false,
+    playable: true,
   },
   {
     id: 'yuuki_akari',
@@ -1186,7 +1184,7 @@ export const STUDENTS: Student[] = [
     gender: 'female',
     className: '3-C',
     clubId: 'art',
-    description: '3年生ながら誰よりも行動力がある。新しいことに挑戦するのが好きで、最後の学園祭を最高のものにするため生徒会長選挙に立候補した。SNSでの発信力が武器。',
+    description: '3年生ながら誰よりも行動力がある。新しいことに挑戦するのが好きで、最後の学園祭を最高のものにしたいと考えている。SNSでの発信力が武器。',
     hairStyle: 'ponytail' as HairStyle,
     personality: 'passionate' as Personality,
     hobbies: makeHobbies(['sns', 'fashion'], ['study']),
@@ -1201,8 +1199,7 @@ export const STUDENTS: Student[] = [
     affinity: 0,
     talkCount: 0,
     portrait: yuukiAkariPortrait,
-    candidateId: 'progressive' as CandidateId,
-    playable: false,
+    playable: true,
   },
   {
     id: 'shido_tsuyoshi',
@@ -1226,26 +1223,9 @@ export const STUDENTS: Student[] = [
     affinity: 0,
     talkCount: 0,
     portrait: shidoTsuyoshiPortrait,
-    candidateId: 'sports' as CandidateId,
-    playable: false,
+    playable: true,
   },
 ];
-
-// 候補者生徒配列（STUDENTS の candidateId !== null のものに CandidateInfo を統合）
-export const CANDIDATES: CandidateStudent[] = STUDENTS
-  .filter((s): s is Student & { candidateId: CandidateId } => s.candidateId !== null)
-  .map(s => {
-    const info = CANDIDATE_INFO.find(c => c.id === s.candidateId)!;
-    return {
-      ...s,
-      id: s.candidateId,
-      candidateId: s.candidateId,
-      color: info.color,
-      accentColor: info.accentColor,
-      description: info.description,
-      platform: info.platform,
-    };
-  });
 
 // クラス名からLocationIdを返す
 const CLASS_LOCATION_MAP: Record<string, LocationId> = {
@@ -1286,6 +1266,9 @@ const CLUB_LOCATION_MAP: Record<string, LocationId> = {
   maeda_taiga: 'track_field',
   noguchi_saki: 'baseball_field',
   iwata_daichi: 'baseball_field',
+  // 元候補者
+  yuuki_akari: 'art_room',
+  shido_tsuyoshi: 'track_field',
 };
 
 // 生徒の場所スケジュール（currentTime: 0=15:00, 240=19:00）
@@ -1343,35 +1326,7 @@ export function getStudentLocation(studentId: string, _timeSlot: string, day: nu
   return 'library';
 }
 
-// 候補者の場所スケジュール（候補者は選挙期間中なので帰宅しない）
-export function getCandidateLocation(candidateId: CandidateId, _timeSlot: string, day: number, currentTime: number = 0): LocationId {
-  const seed = day * 7 + candidateId.charCodeAt(0);
-  const classMap: Record<CandidateId, LocationId> = {
-    conservative: 'class3a',
-    progressive: 'class3c',
-    sports: 'class3d',
-  };
-  const classLoc = classMap[candidateId];
-
-  const clubMap: Partial<Record<CandidateId, LocationId>> = {
-    progressive: 'art_room',
-    sports: 'track_field',
-  };
-
-  // 15:00-16:00: 教室で選挙準備 or 中庭で演説
-  if (currentTime < 60) {
-    return seed % 2 === 0 ? classLoc : 'courtyard';
-  }
-  // 16:00-17:30: 部活がある候補者は部活、ない候補者は中庭・食堂で活動
-  if (currentTime < 150) {
-    return clubMap[candidateId] ?? (seed % 2 === 0 ? 'courtyard' : 'cafeteria');
-  }
-  // 17:30-19:00: 中庭や廊下で最後の選挙活動
-  const lateOptions: LocationId[] = ['courtyard', 'cafeteria', 'library'];
-  return lateOptions[seed % lateOptions.length];
-}
-
-export const FACTION_LABELS: Record<string, string> = {
+export const FACTION_LABELS: Record<FactionId, string> = {
   conservative: '保守',
   progressive: '革新',
   sports: '体育',
@@ -1461,9 +1416,9 @@ export function renderSupportBar(
   const cPct = Math.round(support.conservative / total * 100);
   const pPct = Math.round(support.progressive / total * 100);
   const sPct = 100 - cPct - pPct;
-  const cColor = CANDIDATE_INFO[0].color;
-  const pColor = CANDIDATE_INFO[1].color;
-  const sColor = CANDIDATE_INFO[2].color;
+  const cColor = FACTION_INFO[0].color;
+  const pColor = FACTION_INFO[1].color;
+  const sColor = FACTION_INFO[2].color;
   const fontSize = Math.max(9, Math.round(height * 0.65));
   const seg = (pct: number, color: string, label: string, radius: string) =>
     pct > 0 ? `<div style="

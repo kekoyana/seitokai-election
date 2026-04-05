@@ -8,7 +8,7 @@
  */
 
 import type {
-  Student, PlayerAttitude, Topic, Stance, CandidateId,
+  Student, PlayerAttitude, Topic, Stance, FactionId,
   HobbyTopic, HobbyPreference, EnemyMood, PreferenceAttr, Attribute,
 } from '../src/types';
 import {
@@ -51,6 +51,7 @@ function makeStudent(params: {
   return {
     id: params.name,
     name: params.name,
+    nickname: params.name,
     gender: 'male',
     className: '1-A',
     clubId: null,
@@ -61,13 +62,14 @@ function makeStudent(params: {
     revealedHobbies: params.revealedHobbies,
     support: params.support,
     attributes: params.attributes,
+    revealedLikes: [],
+    revealedDislikes: [],
     likedAttributes: [],
     dislikedAttributes: [],
     stats: { ...params.stats, maxHp: 100 },
     affinity: params.affinity,
     talkCount: 0,
     portrait: null,
-    candidateId: null,
     playable: false,
   };
 }
@@ -85,7 +87,7 @@ interface SimState {
 type Strategy = (
   state: SimState,
   student: Student,
-  playerCandidate: CandidateId,
+  playerFaction: FactionId,
 ) => { attitude: PlayerAttitude; topic: Topic; stance: Stance };
 
 /** 未使用 or 使用回数が少ない好き趣味を返す */
@@ -110,12 +112,12 @@ function findUnknownHobby(student: Student): HobbyTopic | null {
 }
 
 /** 戦略A: 自候補を肯定（運動依存） — 複数趣味を使い分け */
-const strategyPositive: Strategy = (state, student, playerCandidate) => {
+const strategyPositive: Strategy = (state, student, playerFaction) => {
   const moodIdx = MOOD_ORDER.indexOf(state.mood);
 
   // 機嫌が好意的以上: 情熱的に候補者話題
   if (moodIdx >= 3 && state.stamina >= 8) {
-    return { attitude: 'strong', topic: playerCandidate, stance: 'positive' };
+    return { attitude: 'strong', topic: playerFaction, stance: 'positive' };
   }
 
   // 機嫌が平常以上: 普通に候補者話題（柔らかくなら機嫌ペナ0）
@@ -131,7 +133,7 @@ const strategyPositive: Strategy = (state, student, playerCandidate) => {
       return { attitude: 'normal', topic: unknown, stance: 'positive' };
     }
     // 趣味が尽きた: 柔らかく候補者（機嫌ペナ0）
-    return { attitude: 'friendly', topic: playerCandidate, stance: 'positive' };
+    return { attitude: 'friendly', topic: playerFaction, stance: 'positive' };
   }
 
   // 機嫌が低い: 趣味で回復
@@ -143,13 +145,13 @@ const strategyPositive: Strategy = (state, student, playerCandidate) => {
   if (unknown) {
     return { attitude: 'friendly', topic: unknown, stance: 'positive' };
   }
-  return { attitude: 'friendly', topic: playerCandidate, stance: 'positive' };
+  return { attitude: 'friendly', topic: playerFaction, stance: 'positive' };
 };
 
 /** 戦略B: 相手の最強候補を否定（知性依存） — 複数趣味を使い分け */
-const strategyNegative: Strategy = (state, student, _playerCandidate) => {
+const strategyNegative: Strategy = (state, student, _playerFaction) => {
   const moodIdx = MOOD_ORDER.indexOf(state.mood);
-  const enemyTop = (['conservative', 'progressive', 'sports'] as CandidateId[])
+  const enemyTop = (['conservative', 'progressive', 'sports'] as FactionId[])
     .reduce((a, b) => student.support[a] >= student.support[b] ? a : b);
 
   if (moodIdx >= 3 && state.stamina >= 8) {
@@ -184,7 +186,7 @@ const strategyNegative: Strategy = (state, student, _playerCandidate) => {
 function simulate(
   label: string,
   student: Student,
-  playerCandidate: CandidateId,
+  playerFaction: FactionId,
   playerLikedAttrs: PreferenceAttr[],
   playerStats: { speech: number; athletic: number; intel: number },
   playerGender: 'male' | 'female',
@@ -218,7 +220,7 @@ function simulate(
     const action = strategy(
       { round: battle.round, bar: battle.barPosition, mood: battle.enemyMood, stamina, topicUseCounts: battle.topicUseCounts },
       student,
-      playerCandidate,
+      playerFaction,
     );
 
     const prevMood = battle.enemyMood;
@@ -230,7 +232,7 @@ function simulate(
       action.attitude,
       action.topic,
       action.stance,
-      playerCandidate,
+      playerFaction,
       playerLikedAttrs,
       playerStats,
       playerGender,
@@ -240,8 +242,8 @@ function simulate(
     const { newBattle: afterEnemy, enemyEffect } = resolveEnemyTurn(afterPlayer);
     battle = checkBattleEnd(afterEnemy);
 
-    const isCandidateTopic = ['conservative', 'progressive', 'sports'].includes(action.topic);
-    const topicLabel = isCandidateTopic ? `思想[${action.topic}]` : `雑談[${action.topic}]`;
+    const isFactionTopic = ['conservative', 'progressive', 'sports'].includes(action.topic);
+    const topicLabel = isFactionTopic ? `思想[${action.topic}]` : `雑談[${action.topic}]`;
     const stanceLabel = action.stance === 'positive' ? '肯定' : '否定';
 
     console.log(

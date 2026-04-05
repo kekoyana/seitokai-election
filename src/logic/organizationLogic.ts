@@ -1,4 +1,4 @@
-import type { Organization, Student, CandidateId } from '../types';
+import type { Organization, Student, FactionId } from '../types';
 
 type SupportVec = { conservative: number; progressive: number; sports: number };
 
@@ -7,8 +7,8 @@ function getStudentSupport(id: string, students: Student[]): SupportVec | null {
   return s ? s.support : null;
 }
 
-function getSupportCandidate(vec: SupportVec): CandidateId {
-  return (['conservative', 'progressive', 'sports'] as CandidateId[])
+function getSupportFaction(vec: SupportVec): FactionId {
+  return (['conservative', 'progressive', 'sports'] as FactionId[])
     .reduce((a, b) => vec[a] >= vec[b] ? a : b);
 }
 
@@ -48,7 +48,7 @@ function weightedBlend(vecs: { vec: SupportVec; weight: number }[]): SupportVec 
   };
 }
 
-// 組織の支持候補を計算する
+// 組織の支持派閥を計算する
 export function calcOrganizationSupport(
   org: Organization,
   students: Student[]
@@ -118,7 +118,7 @@ export function calcOrganizationSupport(
         sports: 0,
       };
       for (const sv of allSupports) {
-        counts[getSupportCandidate(sv)]++;
+        counts[getSupportFaction(sv)]++;
       }
       return counts;
     }
@@ -128,19 +128,19 @@ export function calcOrganizationSupport(
   }
 }
 
-// 組織の支持候補(CandidateId)を返す
+// 組織の支持候補(FactionId)を返す
 export function getOrganizationVote(
   org: Organization,
   students: Student[]
-): CandidateId {
+): FactionId {
   const support = calcOrganizationSupport(org, students);
   const maxVal = Math.max(support.conservative, support.progressive, support.sports);
-  const winners = (['conservative', 'progressive', 'sports'] as CandidateId[])
+  const winners = (['conservative', 'progressive', 'sports'] as FactionId[])
     .filter(k => support[k] === maxVal);
   // 同数時は代表の支持で決定（majority以外では通常発生しない）
   if (winners.length > 1) {
     const leaderSupport = getStudentSupport(org.leaderId, students);
-    if (leaderSupport) return getSupportCandidate(leaderSupport);
+    if (leaderSupport) return getSupportFaction(leaderSupport);
   }
   return winners[0];
 }

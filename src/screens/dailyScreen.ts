@@ -1698,12 +1698,75 @@ export class DailyScreen {
     // 翌日ボタン（体力切れ時）
     const nextDayBtn = this.container.querySelector<HTMLButtonElement>('#next-day-btn');
     nextDayBtn?.addEventListener('pointerup', () => {
-      this.callbacks.onNextDay();
+      this.showNextDayConfirm();
     });
 
     // 翌日ボタン（常時表示）
     const nextDayBtnAlways = this.container.querySelector<HTMLButtonElement>('#next-day-btn-always');
     nextDayBtnAlways?.addEventListener('pointerup', () => {
+      this.showNextDayConfirm();
+    });
+  }
+
+  private showNextDayConfirm(): void {
+    // 既に表示中なら何もしない
+    if (this.container.querySelector('#next-day-confirm')) return;
+
+    const overlay = document.createElement('div');
+    overlay.id = 'next-day-confirm';
+    overlay.style.cssText = `
+      position:absolute; inset:0; z-index:200;
+      background:rgba(0,0,0,0.6);
+      display:flex; align-items:center; justify-content:center;
+      animation: fadeIn 0.3s ease;
+    `;
+    overlay.innerHTML = `
+      <div style="
+        background:linear-gradient(180deg, #2a2040 0%, #1a1030 100%);
+        border:2px solid #8070a0;
+        border-radius:16px;
+        padding:28px 36px;
+        text-align:center;
+        box-shadow:0 8px 32px rgba(0,0,0,0.5);
+        max-width:300px;
+        font-family:var(--game-font);
+      ">
+        <p style="color:#e0d8f0; font-size:0.95em; line-height:1.6; margin:0 0 20px 0;">
+          翌日に進みますか？
+        </p>
+        <div style="display:flex; gap:12px; justify-content:center;">
+          <button id="next-day-cancel" style="
+            padding:10px 28px;
+            background:linear-gradient(135deg,#555,#444);
+            color:#ccc; border:2px solid #777;
+            border-radius:50px;
+            font-size:0.9em; font-weight:bold;
+            cursor:pointer; font-family:inherit;
+            transition: transform 0.1s;
+            white-space:nowrap;
+          ">やめる</button>
+          <button id="next-day-ok" style="
+            padding:10px 28px;
+            background:linear-gradient(135deg,#6a5acd,#483d8b);
+            color:#fff; border:2px solid #8878c8;
+            border-radius:50px;
+            font-size:0.9em; font-weight:bold;
+            cursor:pointer; font-family:inherit;
+            box-shadow:0 4px 12px rgba(72,61,139,0.4);
+            transition: transform 0.1s;
+            white-space:nowrap;
+          ">翌日へ →</button>
+        </div>
+      </div>
+    `;
+
+    this.container.appendChild(overlay);
+
+    overlay.querySelector('#next-day-cancel')?.addEventListener('pointerup', () => {
+      overlay.remove();
+    });
+    overlay.querySelector('#next-day-ok')?.addEventListener('pointerup', () => {
+      overlay.remove();
       this.callbacks.onNextDay();
     });
   }

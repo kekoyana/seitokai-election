@@ -859,6 +859,24 @@ export class Game {
         if (s.id !== student.id) return s;
         return { ...s, support: newSupport };
       });
+
+      // 成功時: プレイヤー自身の支持候補の思想も少し強化
+      const playerSup = { ...this.state.playerSupport };
+      const boostAmount = 3;
+      const candidate = this.state.candidate;
+      const otherKeys = (['conservative', 'progressive', 'sports'] as CandidateId[]).filter(k => k !== candidate);
+      playerSup[candidate] += boostAmount;
+      for (const key of otherKeys) {
+        playerSup[key] = Math.max(0, playerSup[key] - boostAmount / 2);
+      }
+      // 合計を100に正規化
+      const pTotal = playerSup.conservative + playerSup.progressive + playerSup.sports;
+      if (pTotal > 0) {
+        for (const key of ['conservative', 'progressive', 'sports'] as CandidateId[]) {
+          playerSup[key] = Math.round(playerSup[key] / pTotal * 100);
+        }
+      }
+
       const logEntry = battle.isDefending
         ? `【防衛成功】${student.name}の説得を跳ね返した！\n${battleLogLines.join('\n')}\n→ 相手の思想シフト ${shiftAmount}`
         : `【説得成功】${student.name}を説得した！\n${battleLogLines.join('\n')}\n→ 思想シフト ${shiftAmount}`;
@@ -866,11 +884,13 @@ export class Game {
         ...this.state,
         screen: 'daily',
         students: updatedStudents,
+        playerSupport: playerSup,
         battle: null,
         lastBattleResult: { student, win: true, shiftAmount },
         currentTime: timeAfterBattle,
         actionLogs: [...this.state.actionLogs, logEntry],
       };
+      this.state = { ...this.state, students: this.syncPlayerSupport(this.state.students) };
       if (this.isAllOrganizationsUnified()) {
         this.showEnding();
       } else {
@@ -986,6 +1006,39 @@ export class Game {
   }
 
   private showEnding(): void {
+    // 全組織統一時は中間メッセージを表示してから結果画面へ
+    if (this.state.day < 30 && this.isAllOrganizationsUnified()) {
+      this.clearScreens();
+      const overlay = document.createElement('div');
+      overlay.style.cssText = `
+        position:fixed; inset:0;
+        background:linear-gradient(160deg, rgba(26,40,64,0.95), rgba(40,56,80,0.95));
+        display:flex; flex-direction:column; align-items:center; justify-content:center;
+        font-family:var(--game-font); z-index:100;
+      `;
+      overlay.innerHTML = `
+        <div style="font-size:2.5em; margin-bottom:16px;">🏛️</div>
+        <div style="font-size:1.4em; font-weight:bold; color:#f0d060; margin-bottom:12px;">
+          全組織の思想が統一された！
+        </div>
+        <div style="color:rgba(255,255,255,0.8); font-size:0.95em; margin-bottom:24px;">
+          ${this.state.day}日目──学園の意思がひとつにまとまった
+        </div>
+        <button id="to-result-btn" class="game-btn game-btn-primary" style="
+          padding:14px 40px; font-size:1em; font-family:var(--game-font);
+        ">結果を見る</button>
+      `;
+      this.root.appendChild(overlay);
+      overlay.querySelector('#to-result-btn')?.addEventListener('pointerup', () => {
+        overlay.remove();
+        this.transitionToEnding();
+      });
+    } else {
+      this.transitionToEnding();
+    }
+  }
+
+  private transitionToEnding(): void {
     this.clearScreens();
     this.state = { ...this.state, screen: 'ending' };
     this.endingScreen = new EndingScreen(this.state, {

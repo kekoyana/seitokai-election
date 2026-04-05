@@ -1,7 +1,13 @@
 import type { GameState, CandidateId } from '../types';
-import { CANDIDATES, FACTION_LABELS, renderSupportBar } from '../data';
+import { CANDIDATES, CANDIDATE_INFO, FACTION_LABELS, renderSupportBar } from '../data';
 import { ORGANIZATIONS } from '../data/organizations';
 import { getOrganizationVote } from '../logic/organizationLogic';
+
+const WINNER_MESSAGES: Record<CandidateId, string> = {
+  conservative: '伝統を守り抜く。それが、この学園の誇りだ。',
+  progressive: '新しい風が吹く。学園は、もっと自由になれる。',
+  sports: '仲間と汗を流した日々が、俺たちの勝利だ！',
+};
 
 export interface EndingCallbacks {
   onRestart: () => void;
@@ -111,6 +117,7 @@ export class EndingScreen {
   private renderElectionResult(): void {
     const results = this.calcResults();
     const winner = results[0];
+    const winnerCandidate = CANDIDATES.find(c => c.id === winner.candidateId);
     const playerCandidate = CANDIDATES.find(c => c.id === this.state.candidate);
     const isVictory = winner.candidateId === this.state.candidate;
 
@@ -130,18 +137,30 @@ export class EndingScreen {
           <div style="font-size:2.5em; margin-bottom:8px;">
             ${isVictory ? '🎉' : '😔'}
           </div>
-          <div style="font-size:1.5em; font-weight:bold; color:#fff; margin-bottom:8px;">
+          <div style="font-size:1.5em; font-weight:bold; color:var(--game-text); margin-bottom:8px;">
             ${isVictory ? '選挙に勝利！' : '選挙に敗北...'}
           </div>
-          <div style="color:rgba(255,255,255,0.8); font-size:0.9em; margin-bottom:16px;">
+          <div style="color:var(--game-text-dim); font-size:0.9em; margin-bottom:16px;">
             ${this.state.day >= 30
               ? '30日間の選挙活動が終わりました'
               : `${this.state.day}日目ですべての組織の支持が統一されました！`}
           </div>
           <div style="
-            background:rgba(255,255,255,0.15);
+            background:${winnerCandidate ? `${winnerCandidate.color}15` : 'rgba(0,0,0,0.05)'};
+            border:1px solid ${winnerCandidate ? `${winnerCandidate.color}30` : 'rgba(0,0,0,0.1)'};
+            border-radius:10px; padding:14px;
+            font-size:0.9em; color:var(--game-text);
+            margin-bottom:12px;
+          ">
+            <div style="font-style:italic; color:${winnerCandidate?.color ?? 'var(--game-text)'}; margin-bottom:8px;">
+              「${WINNER_MESSAGES[winner.candidateId as CandidateId] ?? ''}」
+            </div>
+            <div style="font-size:0.85em; text-align:right; color:var(--game-text-dim);">── ${winner.name}</div>
+          </div>
+          <div style="
+            background:rgba(0,0,0,0.05);
             border-radius:10px; padding:12px;
-            font-size:0.85em; color:#fff;
+            font-size:0.85em; color:var(--game-text);
           ">
             <div>当選: <strong>${winner.name}</strong> (${winner.votes}組)</div>
             <div>あなたの支持: <strong>${FACTION_LABELS[this.state.candidate ?? ''] ?? ''}派</strong></div>

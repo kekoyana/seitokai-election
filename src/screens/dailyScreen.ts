@@ -1,7 +1,7 @@
 import type { GameState, Student, LocationId, ActionType, CandidateId, Floor } from '../types';
 import {
   LOCATIONS, CANDIDATES, FACTION_LABELS, getStudentLocation, getCandidateLocation,
-  HOBBY_LABELS, ATTRIBUTE_LABELS, TIME_LABELS, getCatchphrase, renderInitialIcon,
+  HOBBY_LABELS, TIME_LABELS, getCatchphrase, renderInitialIcon,
   isCorridorLocation, getFloorFromLocation, FLOOR_ROOMS, FLOOR_ADJACENCY,
   FLOOR_LABELS, MOVE_COST, getFloorMoveCost, renderSupportBar, MAX_TIME, TIME_COST,
 } from '../data';
@@ -11,6 +11,7 @@ import { bgm } from '../bgm';
 import dailyBg from '../../assets/backgrounds/daily.jpg';
 import type { ConversationStep, ConversationResult } from '../logic/conversationGenerator';
 import { ConversationOverlay } from './conversationOverlay';
+import { showConfirmDialog } from '../ui/gameDialog';
 
 /** Day番号(1〜30)を「9/1」形式の日付文字列に変換（9月1日スタート） */
 function dayToDate(day: number): string {
@@ -1405,10 +1406,6 @@ export class DailyScreen {
       ? this.getCandidateColor()
       : (CANDIDATES.find(c => c.id === Object.entries(s.support).sort((a, b) => b[1] - a[1])[0][0])?.color ?? '#d0e0f0');
 
-    const attrsHtml = s.attributes.map(a =>
-      `<span style="background:#e8f0fa; color:#3a5080; border-radius:12px; padding:2px 8px; font-size:0.75em;">${ATTRIBUTE_LABELS[a] ?? a}</span>`
-    ).join(' ');
-
     const hobbiesHtml = Object.entries(s.hobbies).map(([hobby, pref]) => {
       const isRevealed = isPlayer || s.revealedHobbies.has(hobby as import('../types').HobbyTopic);
       const prefColor = pref === 'like' ? '#27AE60' : pref === 'dislike' ? '#C0392B' : '#888';
@@ -1429,13 +1426,6 @@ export class DailyScreen {
       `;
     }).join('');
 
-    const likedHtml = s.likedAttributes.map(a =>
-      `<span style="background:rgba(39,174,96,0.1); color:#27AE60; border-radius:10px; padding:2px 7px; font-size:0.75em;">${ATTRIBUTE_LABELS[a] ?? a}</span>`
-    ).join(' ');
-    const dislikedHtml = s.dislikedAttributes.map(a =>
-      `<span style="background:rgba(192,57,43,0.1); color:#C0392B; border-radius:10px; padding:2px 7px; font-size:0.75em;">${ATTRIBUTE_LABELS[a] ?? a}</span>`
-    ).join(' ');
-
     const statsBar = (label: string, value: number, color: string) => `
       <div style="display:flex; align-items:center; gap:6px; font-size:0.8em;">
         <span style="width:28px; color:#888;">${label}</span>
@@ -1448,7 +1438,7 @@ export class DailyScreen {
 
     // ヘッダー部（ポートレート + 名前 + 所属情報を横並び）
     const closeBtnId = isPlayer ? 'close-player-btn' : 'close-info-btn';
-    const portraitSize = 80;
+    const portraitSize = 180;
     const portraitImgHtml = s.portrait
       ? `<img src="${s.portrait}" alt="${s.name}" style="
             width:${portraitSize}px; height:${portraitSize}px; border-radius:8px;
@@ -1501,24 +1491,16 @@ export class DailyScreen {
     // 生徒用: 好感度 + 会話回数 + 思想（student.support）
     const supportData = isPlayer ? this.state.playerSupport : s.support;
     const statusGridHtml = isPlayer
-      ? `<div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:8px;">
+      ? `<div style="margin-bottom:8px;">
           <div style="background:rgba(240,245,255,0.8); border-radius:8px; padding:6px; font-size:0.78em;">
             <div style="color:#888;">スタミナ</div>
             <div style="font-weight:bold;">${this.state.stamina} / 100</div>
           </div>
-          <div style="background:rgba(240,245,255,0.8); border-radius:8px; padding:6px; font-size:0.78em;">
-            <div style="color:#888;">会話</div>
-            <div style="font-weight:bold;">${s.talkCount}回</div>
-          </div>
         </div>`
-      : `<div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:8px;">
+      : `<div style="margin-bottom:8px;">
           <div style="background:rgba(240,245,255,0.8); border-radius:8px; padding:6px; font-size:0.78em;">
             <div style="color:#888;">好感度</div>
             <div style="font-weight:bold; color:${s.affinity >= 0 ? '#27AE60' : '#C0392B'};">${s.affinity > 0 ? '+' : ''}${s.affinity}</div>
-          </div>
-          <div style="background:rgba(240,245,255,0.8); border-radius:8px; padding:6px; font-size:0.78em;">
-            <div style="color:#888;">会話</div>
-            <div style="font-weight:bold;">${s.talkCount}回</div>
           </div>
         </div>`;
 
@@ -1539,22 +1521,6 @@ export class DailyScreen {
           ${statsBar('弁舌', s.stats.speech, '#4A90D9')}
           ${statsBar('運動', s.stats.athletic, '#E74C3C')}
           ${statsBar('知性', s.stats.intel, '#27AE60')}
-        </div>
-
-        <div style="margin-bottom:12px;">
-          <div style="font-size:0.8em; color:#888; margin-bottom:6px;">属性</div>
-          <div style="display:flex; flex-wrap:wrap; gap:4px;">${attrsHtml}</div>
-        </div>
-
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px;">
-          <div>
-            <div style="font-size:0.8em; color:#27AE60; margin-bottom:4px;">好み属性</div>
-            <div style="display:flex; flex-wrap:wrap; gap:3px;">${likedHtml}</div>
-          </div>
-          <div>
-            <div style="font-size:0.8em; color:#C0392B; margin-bottom:4px;">苦手属性</div>
-            <div style="display:flex; flex-wrap:wrap; gap:3px;">${dislikedHtml}</div>
-          </div>
         </div>
 
         <div>
@@ -1778,64 +1744,16 @@ export class DailyScreen {
 
   private showNextDayConfirm(): void {
     // 既に表示中なら何もしない
-    if (this.container.querySelector('#next-day-confirm')) return;
+    if (this.container.querySelector('.game-dialog-overlay')) return;
 
-    const overlay = document.createElement('div');
-    overlay.id = 'next-day-confirm';
-    overlay.style.cssText = `
-      position:absolute; inset:0; z-index:200;
-      background:rgba(0,0,0,0.6);
-      display:flex; align-items:center; justify-content:center;
-      animation: fadeIn 0.3s ease;
-    `;
-    overlay.innerHTML = `
-      <div style="
-        background:linear-gradient(180deg, #2a2040 0%, #1a1030 100%);
-        border:2px solid #8070a0;
-        border-radius:16px;
-        padding:28px 36px;
-        text-align:center;
-        box-shadow:0 8px 32px rgba(0,0,0,0.5);
-        max-width:300px;
-        font-family:var(--game-font);
-      ">
-        <p style="color:#e0d8f0; font-size:0.95em; line-height:1.6; margin:0 0 20px 0;">
-          翌日に進みますか？
-        </p>
-        <div style="display:flex; gap:12px; justify-content:center;">
-          <button id="next-day-cancel" style="
-            padding:10px 28px;
-            background:linear-gradient(135deg,#555,#444);
-            color:#ccc; border:2px solid #777;
-            border-radius:50px;
-            font-size:0.9em; font-weight:bold;
-            cursor:pointer; font-family:inherit;
-            transition: transform 0.1s;
-            white-space:nowrap;
-          ">やめる</button>
-          <button id="next-day-ok" style="
-            padding:10px 28px;
-            background:linear-gradient(135deg,#6a5acd,#483d8b);
-            color:#fff; border:2px solid #8878c8;
-            border-radius:50px;
-            font-size:0.9em; font-weight:bold;
-            cursor:pointer; font-family:inherit;
-            box-shadow:0 4px 12px rgba(72,61,139,0.4);
-            transition: transform 0.1s;
-            white-space:nowrap;
-          ">翌日へ →</button>
-        </div>
-      </div>
-    `;
-
-    this.container.appendChild(overlay);
-
-    overlay.querySelector('#next-day-cancel')?.addEventListener('pointerup', () => {
-      overlay.remove();
-    });
-    overlay.querySelector('#next-day-ok')?.addEventListener('pointerup', () => {
-      overlay.remove();
-      this.callbacks.onNextDay();
+    showConfirmDialog(this.container, {
+      title: '翌日へ',
+      message: '翌日に進みますか？',
+      okLabel: '翌日へ →',
+      cancelLabel: 'やめる',
+      okStyle: 'warning',
+    }).then(ok => {
+      if (ok) this.callbacks.onNextDay();
     });
   }
 

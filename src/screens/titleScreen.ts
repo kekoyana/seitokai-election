@@ -13,6 +13,7 @@ export class TitleScreen {
   private callbacks: TitleCallbacks;
   private showVolumeDialog: boolean = false;
   private showNewGameConfirm: boolean = false;
+  private showHowToPlay: boolean = false;
 
   constructor(callbacks: TitleCallbacks) {
     this.callbacks = callbacks;
@@ -31,6 +32,11 @@ export class TitleScreen {
     `;
 
     this.container.innerHTML = `
+      <span id="bgm-icon" style="
+        position:absolute; top:12px; right:12px; z-index:10;
+        cursor:pointer; padding:6px; font-size:1.2em; opacity:0.7;
+      ">${bgm.volume > 0 ? '🔊' : '🔇'}</span>
+
       <div style="text-align:center; max-width:480px; width:100%;">
         <div class="game-panel" style="
           padding: 32px 24px;
@@ -40,68 +46,65 @@ export class TitleScreen {
           <div class="game-title" style="font-size:2.8em; font-weight:900; letter-spacing:0.15em; margin-bottom:8px;">
             学園祭投票
           </div>
-          <div style="font-size:1.1em; color:var(--game-heading-accent); letter-spacing:0.2em; margin-bottom:4px;">
+          <div style="font-size:1.1em; color:var(--game-heading-accent); letter-spacing:0.2em;">
             〜30日間の説得戦〜
           </div>
-          <div class="game-divider"></div>
-          <p style="color:var(--game-text-dim); font-size:0.85em; line-height:1.7;">
-            あなたは学園の1生徒。<br>
-            支持する派閥の勝利を目指し、<br>
-            30日間で仲間を増やしていこう。
-          </p>
         </div>
 
-        <div class="game-panel-light" style="
-          padding: 16px 20px;
-          margin-bottom: 24px;
-          text-align: left;
-          font-size: 0.82em;
-          line-height: 1.8;
-        ">
-          <div style="font-weight:bold; color:var(--game-heading); margin-bottom:8px; font-size:1.05em;">遊び方</div>
-          <div style="color:var(--game-text);">・生徒を1人選んで活動を開始</div>
-          <div style="color:var(--game-text);">・体力の続く限り移動・会話・説得を繰り返す</div>
-          <div style="color:var(--game-text);">・説得バトルでターン制の綱引きに勝てば支持を獲得</div>
-          <div style="color:var(--game-text);">・30日後、組織の多数票を獲得した派閥が勝利！</div>
-        </div>
-
-        ${hasSaveData() ? `
-        <button id="continue-btn" class="game-btn game-btn-primary" style="
-          padding: 16px 48px;
-          font-size: 1.2em;
-          letter-spacing: 0.15em;
-          transition: transform 0.05s;
-          margin-bottom: 12px;
-        ">
-          つづきから
-        </button>
-        ` : ''}
-        <button id="start-btn" class="game-btn game-btn-primary" style="
-          padding: ${hasSaveData() ? '12px 48px' : '16px 48px'};
-          font-size: ${hasSaveData() ? '1.0em' : '1.2em'};
-          letter-spacing: 0.15em;
-          transition: transform 0.05s;
-        ">
-          ${hasSaveData() ? 'はじめから' : 'ゲームスタート'}
-        </button>
-
-        <div style="margin-top:16px;">
-          <button id="persuade-tutorial-btn" style="
-            background:none; border:none; color:var(--game-text-dim);
-            font-size:0.82em; cursor:pointer; padding:6px 12px;
-            font-family:var(--game-font);
-            text-decoration:underline; text-underline-offset:3px;
-          ">説得バトルの遊び方</button>
-        </div>
-
-        <div style="
-          display:flex; align-items:center; justify-content:center; gap:8px;
-          margin-top:12px; color:var(--game-text); font-size:0.9em;
-        ">
-          <span id="bgm-icon" style="cursor:pointer; padding:4px;">${bgm.volume > 0 ? '🔊' : '🔇'}</span>
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 4px; margin-top: 24px;">
+          ${hasSaveData() ? `
+          <button id="continue-btn" class="game-btn-etrian">
+            つづきから
+          </button>
+          ` : ''}
+          <button id="start-btn" class="game-btn-etrian">
+            ${hasSaveData() ? 'はじめから' : 'ゲームスタート'}
+          </button>
+          <button id="howto-btn" class="game-btn-etrian-sub">
+            このゲームの遊び方
+          </button>
+          <button id="persuade-tutorial-btn" class="game-btn-etrian-sub">
+            説得バトルの遊び方
+          </button>
         </div>
       </div>
     `;
+
+    // このゲームの遊び方ダイアログ
+    if (this.showHowToPlay) {
+      const howtoHtml = `
+        <div class="game-dialog-overlay" style="
+          position:absolute; inset:0; z-index:200;
+          background:rgba(0,0,20,0.4);
+          display:flex; align-items:center; justify-content:center;
+          animation: fadeIn 0.2s ease;
+        ">
+          <div class="game-panel" style="width:340px; max-width:90vw; padding:24px; text-align:left;">
+            <div style="font-weight:bold; color:var(--game-heading); margin-bottom:12px; font-size:1.1em; text-align:center;">このゲームの遊び方</div>
+            <p style="color:var(--game-text-dim); font-size:0.85em; line-height:1.7; margin-bottom:12px;">
+              あなたは学園の1生徒。<br>
+              支持する派閥の勝利を目指し、<br>
+              30日間で仲間を増やしていこう。
+            </p>
+            <div style="font-size:0.85em; line-height:1.8; color:var(--game-text);">
+              <div>・生徒を1人選んで活動を開始</div>
+              <div>・体力の続く限り移動・会話・説得を繰り返す</div>
+              <div>・説得バトルでターン制の綱引きに勝てば支持を獲得</div>
+              <div>・30日後、組織の多数票を獲得した派閥が勝利！</div>
+            </div>
+            <div style="text-align:center; margin-top:16px;">
+              <button id="close-howto" class="game-btn game-btn-primary" style="padding:10px 32px;">閉じる</button>
+            </div>
+          </div>
+        </div>
+      `;
+      this.container.insertAdjacentHTML('beforeend', howtoHtml);
+
+      this.container.querySelector('#close-howto')?.addEventListener('pointerup', () => {
+        this.showHowToPlay = false;
+        this.render();
+      });
+    }
 
     // はじめから確認ダイアログ
     if (this.showNewGameConfirm) {
@@ -165,24 +168,13 @@ export class TitleScreen {
 
     const continueBtn = this.container.querySelector<HTMLButtonElement>('#continue-btn');
     if (continueBtn) {
-      continueBtn.addEventListener('pointerdown', () => {
-        continueBtn.style.transform = 'scale(0.97)';
-      });
       continueBtn.addEventListener('pointerup', () => {
-        continueBtn.style.transform = 'scale(1)';
         this.callbacks.onContinue();
-      });
-      continueBtn.addEventListener('pointerleave', () => {
-        continueBtn.style.transform = 'scale(1)';
       });
     }
 
-    const btn = this.container.querySelector<HTMLButtonElement>('#start-btn')!;
-    btn.addEventListener('pointerdown', () => {
-      btn.style.transform = 'scale(0.97)';
-    });
-    btn.addEventListener('pointerup', () => {
-      btn.style.transform = 'scale(1)';
+    const startBtn = this.container.querySelector<HTMLButtonElement>('#start-btn')!;
+    startBtn.addEventListener('pointerup', () => {
       if (hasSaveData()) {
         this.showNewGameConfirm = true;
         this.render();
@@ -190,8 +182,11 @@ export class TitleScreen {
         this.callbacks.onStart();
       }
     });
-    btn.addEventListener('pointerleave', () => {
-      btn.style.transform = 'scale(1)';
+
+    // このゲームの遊び方ボタン
+    this.container.querySelector('#howto-btn')?.addEventListener('pointerup', () => {
+      this.showHowToPlay = true;
+      this.render();
     });
 
     // 説得チュートリアルボタン

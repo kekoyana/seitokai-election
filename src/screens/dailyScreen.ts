@@ -127,6 +127,8 @@ export interface DailyCallbacks {
   onDeliverErrand: () => void;
   onNextDay: () => void;
   onPersuadeTutorial: () => void;
+  onSave: () => void;
+  onLoad: () => void;
 }
 
 export class DailyScreen {
@@ -137,6 +139,7 @@ export class DailyScreen {
   private showPlayerInfo: boolean = false;
   private showLog: boolean = false;
   private showVolumeDialog: boolean = false;
+  private showSystemMenu: boolean = false;
   // 情報パネル: タブ + ドリルダウン（組織詳細 or 生徒一覧→生徒詳細）
   private infoPanel: {
     tab: 'class' | 'club';
@@ -228,10 +231,45 @@ export class DailyScreen {
           <span style="opacity:0.3;">|</span>
           <span>⚡<strong>${this.state.stamina}</strong></span>
           <span style="opacity:0.3;">|</span>
-          <span id="bgm-icon" style="cursor:pointer; font-size:1.1em; line-height:1; padding:2px;">${bgm.volume > 0 ? '🔊' : '🔇'}</span>
+          <span id="system-menu-btn" style="cursor:pointer; font-size:0.8em; line-height:1; padding:2px 6px; border:1px solid rgba(0,0,0,0.15); border-radius:4px;">⚙</span>
         </div>
       </div>
     `;
+
+    // システムメニューダイアログ
+    let systemMenuHtml = '';
+    if (this.showSystemMenu) {
+      const volPct = Math.round(bgm.volume * 100);
+      systemMenuHtml = `
+        <div class="game-dialog-overlay" id="system-menu-overlay" style="
+          position:absolute; inset:0; z-index:200;
+          background:rgba(0,0,20,0.4);
+          display:flex; align-items:center; justify-content:center;
+          animation: fadeIn 0.2s ease;
+        ">
+          <div class="game-panel" style="width:300px; padding:24px; text-align:center;">
+            <div style="font-weight:bold; margin-bottom:16px; color:var(--game-heading); font-size:1.1em;">システム</div>
+            <div style="display:flex; flex-direction:column; gap:10px;">
+              <button id="sys-save-btn" class="game-btn game-btn-primary" style="padding:10px 16px; width:100%; font-family:var(--game-font);">セーブ</button>
+              <button id="sys-load-btn" class="game-btn game-btn-warning" style="padding:10px 16px; width:100%; font-family:var(--game-font);">ロード</button>
+              <div style="margin-top:4px;">
+                <div style="font-size:0.85em; color:var(--game-text); margin-bottom:8px;">音量調整</div>
+                <div style="display:flex; align-items:center; gap:10px;">
+                  <span id="sys-bgm-icon" style="font-size:1.2em;">${bgm.volume > 0 ? '🔊' : '🔇'}</span>
+                  <input id="sys-bgm-slider" type="range" min="0" max="100" value="${volPct}" style="
+                    flex:1; height:6px; cursor:pointer;
+                    accent-color:var(--game-accent);
+                  "/>
+                  <span id="sys-bgm-label" style="font-size:0.9em; width:35px; text-align:right;">${volPct}%</span>
+                </div>
+              </div>
+              <button id="sys-tutorial-btn" class="game-btn game-btn-success" style="padding:10px 16px; width:100%; font-family:var(--game-font);">チュートリアル（説得の遊び方）</button>
+              <button id="sys-close-btn" class="game-btn game-btn-disabled" style="padding:10px 16px; width:100%; font-family:var(--game-font); opacity:1; cursor:pointer;">閉じる</button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
 
     // 音量ダイアログ
     let volumeDialogHtml = '';
@@ -392,6 +430,7 @@ export class DailyScreen {
       ${logBoxHtml}
       ${timeUpModalHtml}
       ${volumeDialogHtml}
+      ${systemMenuHtml}
     `;
 
     this.attachEvents();
@@ -565,16 +604,7 @@ export class DailyScreen {
       </button>
     ` : '';
 
-    const tutorialBtnHtml = !isOverlay ? `
-      <button id="sidebar-tutorial-btn" style="
-        width:100%; padding:8px 12px;
-        background:none; border:1px solid rgba(255,255,255,0.2); border-radius:8px;
-        color:var(--game-text-dim); font-size:0.78em; cursor:pointer;
-        font-family:var(--game-font); text-align:center;
-      ">説得の遊び方</button>
-    ` : '';
-
-    return `${exitBtnHtml}${infoBtnHtml}${nextDayBtnHtml}${tutorialBtnHtml}`;
+    return `${exitBtnHtml}${infoBtnHtml}${nextDayBtnHtml}`;
   }
 
   private renderMainPanel(studentsHere: Student[], isOutOfStamina: boolean): string {
@@ -662,12 +692,6 @@ export class DailyScreen {
               <div style="font-size:0.75em; opacity:0.85;">${dayToDate(this.state.day)}</div>
             </button>
           </div>
-          <button id="mobile-tutorial-btn" style="
-            width:100%; margin-top:8px; padding:6px;
-            background:none; border:1px solid rgba(0,0,0,0.1); border-radius:6px;
-            color:var(--game-text-dim); font-size:0.75em; cursor:pointer;
-            font-family:var(--game-font);
-          ">説得の遊び方</button>
         </div>
       </div>
 
@@ -1533,14 +1557,43 @@ export class DailyScreen {
   }
 
   private attachEvents(): void {
-    // BGM音量アイコン -> ダイアログ表示
-    const bgmIcon = this.container.querySelector<HTMLElement>('#bgm-icon');
-    bgmIcon?.addEventListener('pointerup', () => {
-      this.showVolumeDialog = true;
+    // システムメニューボタン
+    this.container.querySelector('#system-menu-btn')?.addEventListener('pointerup', () => {
+      this.showSystemMenu = true;
       this.render();
     });
 
-    // BGM音量ダイアログ
+    // システムメニューダイアログ
+    if (this.showSystemMenu) {
+      this.container.querySelector('#sys-save-btn')?.addEventListener('pointerup', () => {
+        this.callbacks.onSave();
+        this.showSystemMenu = false;
+        this.render();
+      });
+      this.container.querySelector('#sys-load-btn')?.addEventListener('pointerup', () => {
+        this.showSystemMenu = false;
+        this.callbacks.onLoad();
+      });
+      const sysSlider = this.container.querySelector<HTMLInputElement>('#sys-bgm-slider');
+      const sysLabel = this.container.querySelector<HTMLElement>('#sys-bgm-label');
+      sysSlider?.addEventListener('input', () => {
+        const v = parseInt(sysSlider.value, 10) / 100;
+        bgm.setVolume(v);
+        if (sysLabel) sysLabel.textContent = `${Math.round(v * 100)}%`;
+        const icon = this.container.querySelector<HTMLElement>('#sys-bgm-icon');
+        if (icon) icon.textContent = v > 0 ? '🔊' : '🔇';
+      });
+      this.container.querySelector('#sys-tutorial-btn')?.addEventListener('pointerup', () => {
+        this.showSystemMenu = false;
+        this.callbacks.onPersuadeTutorial();
+      });
+      this.container.querySelector('#sys-close-btn')?.addEventListener('pointerup', () => {
+        this.showSystemMenu = false;
+        this.render();
+      });
+    }
+
+    // BGM音量ダイアログ（レガシー：音量ダイアログ単体は不要だが互換用に残す）
     if (this.showVolumeDialog) {
       const bgmSlider = this.container.querySelector<HTMLInputElement>('#bgm-volume-dialog');
       const volLabel = this.container.querySelector<HTMLElement>('#bgm-volume-label');
@@ -1661,14 +1714,6 @@ export class DailyScreen {
     // PC用サイドバー: 翌日ボタン
     this.container.querySelector<HTMLButtonElement>('#sidebar-next-day-btn')?.addEventListener('pointerup', () => {
       this.showNextDayConfirm();
-    });
-
-    // 説得チュートリアルボタン（PC / モバイル共通）
-    this.container.querySelector('#sidebar-tutorial-btn')?.addEventListener('pointerup', () => {
-      this.callbacks.onPersuadeTutorial();
-    });
-    this.container.querySelector('#mobile-tutorial-btn')?.addEventListener('pointerup', () => {
-      this.callbacks.onPersuadeTutorial();
     });
 
     // 部屋に入る

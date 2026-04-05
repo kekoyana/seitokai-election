@@ -249,6 +249,20 @@ export class Game {
       onDeliverErrand: () => this.handleDeliverErrand(),
       onNextDay: () => this.handleNextDay(),
       onPersuadeTutorial: () => this.showPersuadeTutorial('daily'),
+      onSave: () => {
+        saveGame(this.state);
+        if (this.dailyScreen) {
+          showInfoDialog(this.root, { title: 'セーブ', message: 'セーブしました。' });
+        }
+      },
+      onLoad: () => {
+        const saved = loadGame();
+        if (saved) {
+          this.state = saved;
+          this.state.screen = 'daily';
+          this.showDaily();
+        }
+      },
     });
     this.dailyScreen.mount(this.root);
 

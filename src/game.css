@@ -26,6 +26,14 @@
   --game-font: 'M PLUS Rounded 1c', 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif;
 }
 
+/* 共通ベース設定 (スマホ向け) */
+body {
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+}
+
 /* ゲームパネル - ときメモ風ウィンドウ（白背景+太枠+角丸小） */
 .game-panel {
   background: var(--game-panel-bg);

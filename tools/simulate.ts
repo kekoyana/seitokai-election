@@ -23,7 +23,7 @@ const MOOD_LABELS: Record<EnemyMood, string> = {
 };
 
 const ALL_HOBBIES: HobbyTopic[] = [
-  'love', 'game', 'sns', 'sports_hobby', 'study', 'video', 'music', 'reading', 'fashion',
+  'love', 'game', 'sns', 'sports_hobby', 'study', 'video', 'music', 'reading', 'fashion', 'fortune',
 ];
 
 function makeHobbies(

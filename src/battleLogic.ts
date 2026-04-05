@@ -410,6 +410,7 @@ function buildPlayerLogText(
     music: '音楽',
     reading: '読書',
     fashion: 'ファッション',
+    fortune: '占い',
   };
   const stanceLabel = stance === 'positive' ? '肯定' : '否定';
   const sign = effect >= 0 ? '+' : '';

@@ -93,6 +93,40 @@ export function formatTime(currentTime: number): string {
   return `${h}:${String(m).padStart(2, '0')}`;
 }
 
+// 好感度7段階
+export type AffinityLevel = 'devoted' | 'trust' | 'friendly' | 'neutral' | 'wary' | 'dislike' | 'hostile';
+
+export interface AffinityInfo {
+  level: AffinityLevel;
+  label: string;
+  color: string;
+}
+
+const AFFINITY_LEVELS: { min: number; level: AffinityLevel; label: string; color: string }[] = [
+  { min:  60, level: 'devoted',  label: '心酔', color: '#1B8A3A' },
+  { min:  35, level: 'trust',    label: '信頼', color: '#27AE60' },
+  { min:  15, level: 'friendly', label: '好意', color: '#7EC850' },
+  { min: -14, level: 'neutral',  label: '普通', color: '#888888' },
+  { min: -34, level: 'wary',     label: '警戒', color: '#C8A030' },
+  { min: -59, level: 'dislike',  label: '不快', color: '#D07020' },
+  { min: -Infinity, level: 'hostile', label: '敵意', color: '#C0392B' },
+];
+
+export function getAffinityInfo(affinity: number): AffinityInfo {
+  for (const entry of AFFINITY_LEVELS) {
+    if (affinity >= entry.min) {
+      return { level: entry.level, label: entry.label, color: entry.color };
+    }
+  }
+  return AFFINITY_LEVELS[AFFINITY_LEVELS.length - 1];
+}
+
+export const AFFINITY_LABELS: Record<AffinityLevel, string> = {
+  devoted: '心酔', trust: '信頼', friendly: '好意',
+  neutral: '普通',
+  wary: '警戒', dislike: '不快', hostile: '敵意',
+};
+
 // 性格ごとのイニシャルアイコン背景色
 export const PERSONALITY_ICON_COLORS: Record<string, string> = {
   passionate: '#E74C3C',

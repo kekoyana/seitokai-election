@@ -4,7 +4,7 @@ import {
   HOBBY_LABELS, getCatchphrase, renderInitialIcon,
   isCorridorLocation, getFloorFromLocation, FLOOR_LABELS, ALL_FACTION_IDS,
   renderSupportBar, MAX_TIME, TIME_COST,
-  CLUB_LABELS, dayToDate, formatTime,
+  CLUB_LABELS, dayToDate, formatTime, getAffinityInfo,
 } from '../data';
 import { ORGANIZATIONS } from '../data/organizations';
 import { getOrganizationVote } from '../logic/organizationLogic';
@@ -436,14 +436,17 @@ export class DailyScreen implements Screen {
     const li = this.state.lostItem;
     if (li) {
       const owner = this.state.students.find(s => s.id === li.ownerId);
-      items.push(`<span style="color:#D4A017;">📦 ${li.itemName}を所持中（${li.hint}）</span>`);
-      if (owner) items[items.length - 1] = `<span style="color:#D4A017;">📦 ${owner.name}の${li.itemName}を所持中</span>`;
+      if (owner) {
+        items.push(`<span id="lostitem-indicator" style="color:#D4A017; cursor:pointer; text-decoration:underline; text-underline-offset:3px;" data-target-id="${li.ownerId}">📦 ${owner.name}の${li.itemName}を所持中</span>`);
+      } else {
+        items.push(`<span style="color:#D4A017;">📦 ${li.itemName}を所持中（${li.hint}）</span>`);
+      }
     }
     const er = this.state.errand;
     if (er) {
       const from = this.state.students.find(s => s.id === er.fromId);
       const to = this.state.students.find(s => s.id === er.toId);
-      items.push(`<span style="color:#4A90D9;">📨 ${from?.name ?? '?'}の${er.itemName}を${to?.name ?? '?'}に届ける</span>`);
+      items.push(`<span id="errand-indicator" style="color:#4A90D9; cursor:pointer; text-decoration:underline; text-underline-offset:3px;" data-target-id="${er.toId}">📨 ${from?.name ?? '?'}の${er.itemName}を${to?.name ?? '?'}に届ける</span>`);
     }
     if (items.length === 0) return '';
     return `
@@ -659,8 +662,9 @@ export class DailyScreen implements Screen {
     const canTalk = this.state.stamina >= talkCost;
     const canPersuade = s.talkCount > 0;
 
-    const affinityColor = s.affinity >= 20 ? '#27AE60' : s.affinity <= -20 ? '#C0392B' : '#888';
-    const affinityLabel = s.affinity >= 20 ? '好意的' : s.affinity <= -20 ? '不快' : '普通';
+    const aff = getAffinityInfo(s.affinity);
+    const affinityColor = aff.color;
+    const affinityLabel = aff.label;
 
     return `
       <div class="game-chara-card" style="
@@ -846,7 +850,7 @@ export class DailyScreen implements Screen {
       : `<div style="margin-bottom:8px;">
           <div style="background:rgba(240,245,255,0.8); border-radius:8px; padding:6px; font-size:0.78em;">
             <div style="color:#888;">好感度</div>
-            <div style="font-weight:bold; color:${s.affinity >= 20 ? '#27AE60' : s.affinity <= -20 ? '#C0392B' : '#888'};">${s.affinity >= 20 ? '好意的' : s.affinity <= -20 ? '不快' : '普通'}</div>
+            <div style="font-weight:bold; color:${getAffinityInfo(s.affinity).color};">${getAffinityInfo(s.affinity).label}</div>
           </div>
         </div>`;
 
@@ -1038,6 +1042,28 @@ export class DailyScreen implements Screen {
     // おつかいを届けるボタン
     onDataAttr(this.container, 'data-deliver-errand', () => {
       this.callbacks.onDeliverErrand();
+    });
+
+    // クエストインジケータークリック → 対象生徒の詳細表示
+    const errandInd = this.container.querySelector<HTMLElement>('#errand-indicator');
+    errandInd?.addEventListener('pointerup', () => {
+      const targetId = errandInd.dataset['targetId'];
+      const student = this.state.students.find(s => s.id === targetId);
+      if (student) {
+        this.showStudentInfo = student;
+        this.showPlayerInfo = false;
+        this.render();
+      }
+    });
+    const lostitemInd = this.container.querySelector<HTMLElement>('#lostitem-indicator');
+    lostitemInd?.addEventListener('pointerup', () => {
+      const targetId = lostitemInd.dataset['targetId'];
+      const student = this.state.students.find(s => s.id === targetId);
+      if (student) {
+        this.showStudentInfo = student;
+        this.showPlayerInfo = false;
+        this.render();
+      }
     });
 
     // 趣味の会話ボタン

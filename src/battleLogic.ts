@@ -115,7 +115,7 @@ export function initBattle(
   let isInLove = false;
   if (playerGender && playerAttrs && playerGender !== student.gender) {
     const compat = calcCompatibilityScore(playerAttrs, student);
-    isInLove = compat >= 30 && student.affinity >= 30;
+    isInLove = compat >= 30 && student.affinity >= 35; // 「信頼」以上
   }
   return {
     student,

@@ -5,7 +5,7 @@ import type {
 import {
   STUDENTS, getFloorFromLocation, getCorridorForFloor,
   FLOOR_ADJACENCY, MOVE_COST, getFloorMoveCost, TIME_COST, MAX_TIME,
-  getStudentLocation, FACTION_LABELS, CLASS_LOCATION_MAP, ALL_FACTION_IDS,
+  getStudentLocation, FACTION_LABELS, CLASS_LOCATION_MAP, ALL_FACTION_IDS, CLUB_LABELS,
 } from './data';
 import { generateConversationData, generateTalkLogSummary, generateChitchatData, generateGossipData, generateGossipLogSummary } from './logic/conversationGenerator';
 import type { GossipReveal } from './logic/conversationGenerator';
@@ -473,7 +473,7 @@ export class Game {
     const items: { name: string; hint: (s: Student) => string }[] = [
       { name: '手帳', hint: (s) => `${s.name}と名前が書いてある` },
       { name: 'ハンカチ', hint: (s) => `「${s.name.charAt(0)}」のイニシャル入り` },
-      { name: 'お守り', hint: (s) => s.clubId ? `${s.clubId}部のマークが付いている` : `${s.className}のシールが貼ってある` },
+      { name: 'お守り', hint: (s) => s.clubId ? `${CLUB_LABELS[s.clubId] ?? s.clubId}のマークが付いている` : `${s.className}のシールが貼ってある` },
       { name: 'ペンケース', hint: (s) => `${s.className}のシールが貼ってある` },
     ];
     const item = items[Math.floor(Math.random() * items.length)];
@@ -499,7 +499,18 @@ export class Game {
     const owner = this.state.students.find(s => s.id === li.ownerId);
     if (!owner) return;
 
+    const pc = this.state.playerCharacter;
     const AFFINITY_GAIN = 15;
+
+    const steps: import('./logic/conversationGenerator').ConversationStep[] = [
+      { speaker: 'player', name: pc?.name ?? 'あなた', portrait: pc?.portrait ?? null, text: `「これ、${owner.name}さんの${li.itemName}じゃない？」` },
+      { speaker: 'student', name: owner.name, portrait: owner.portrait, text: `「あっ、探してたの！ わざわざありがとう！」` },
+    ];
+    const result: import('./logic/conversationGenerator').ConversationResult = {
+      text: `${owner.name}に${li.itemName}を届けた。`,
+      effectHtml: `<span style="color:#7EC850;">${owner.name}の好感度+${AFFINITY_GAIN}</span>`,
+    };
+
     this.updateState({
       students: this.state.students.map(s =>
         s.id === li.ownerId ? { ...s, affinity: Math.min(100, s.affinity + AFFINITY_GAIN) } : s
@@ -508,6 +519,7 @@ export class Game {
       actionLogs: [...this.state.actionLogs, `${owner.name}に${li.itemName}を届けた。<span style="color:#7EC850;">好感度+${AFFINITY_GAIN}</span>`],
     });
     this.dailyScreen?.update(this.state);
+    this.dailyScreen?.showConversation(steps, result, () => {});
   }
 
   /** おつかいを届ける */
@@ -519,7 +531,19 @@ export class Game {
     const to = this.state.students.find(s => s.id === er.toId);
     if (!from || !to) return;
 
+    const pc = this.state.playerCharacter;
     const AFFINITY_GAIN = 8;
+
+    const steps: import('./logic/conversationGenerator').ConversationStep[] = [
+      { speaker: 'player', name: pc?.name ?? 'あなた', portrait: pc?.portrait ?? null, text: `「${from.name}さんから${er.itemName}を預かってきたよ」` },
+      { speaker: 'student', name: to.name, portrait: to.portrait, text: `「わざわざ届けてくれたの？ ありがとう！」` },
+      { speaker: 'student', name: to.name, portrait: to.portrait, text: `「${from.name}にもお礼言っておくね」` },
+    ];
+    const result: import('./logic/conversationGenerator').ConversationResult = {
+      text: `${from.name}の${er.itemName}を${to.name}に届けた。`,
+      effectHtml: `<span style="color:#7EC850;">${from.name}の好感度+${AFFINITY_GAIN}</span><br><span style="color:#7EC850;">${to.name}の好感度+${AFFINITY_GAIN}</span>`,
+    };
+
     this.updateState({
       students: this.state.students.map(s => {
         if (s.id === er.fromId || s.id === er.toId) {
@@ -532,12 +556,13 @@ export class Game {
       actionLogs: [...this.state.actionLogs, `${from.name}の${er.itemName}を${to.name}に届けた。<span style="color:#7EC850;">双方の好感度+${AFFINITY_GAIN}</span>`],
     });
     this.dailyScreen?.update(this.state);
+    this.dailyScreen?.showConversation(steps, result, () => {});
   }
 
   /** おつかいイベント発生（会話後 20%） */
   private tryErrand(student: Student): void {
     if (this.state.errand) return; // 既に受注中
-    if (student.affinity < 10) return;
+    if (student.affinity < 15) return; // 「好意」以上で発生
     if (Math.random() > 0.20) return;
 
     const pc = this.state.playerCharacter;
@@ -634,8 +659,8 @@ export class Game {
   private handleGossip(student: Student): void {
     if (this.state.stamina < 5 || this.isTimeUp()) return;
 
-    // 親しくない（好感度 < 20）場合は情報を得られない
-    if (student.affinity < 20) {
+    // 「好意」未満では噂話を教えてもらえない
+    if (student.affinity < 15) {
       const pc = this.state.playerCharacter;
       const refuseSteps: import('./logic/conversationGenerator').ConversationStep[] = [
         { speaker: 'player', name: pc?.name ?? 'あなた', portrait: pc?.portrait ?? null, text: '「周りの人について何か知ってる？」' },

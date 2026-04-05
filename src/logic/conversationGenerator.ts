@@ -1,7 +1,7 @@
 import type { Student, HobbyTopic, Personality, Gender, PreferenceAttr } from '../types';
 import { HOBBY_LABELS, ATTRIBUTE_LABELS } from '../data';
 import {
-  getTalkLines, getPlayerLines, NARRATION_RESULTS, getAffinityLevel,
+  getTalkLines, getPlayerLines, NARRATION_RESULTS, getTalkAffinityGroup,
   getChitchatLines, CHITCHAT_NARRATIONS,
 } from '../data/conversationLines';
 
@@ -40,7 +40,7 @@ export function generateConversationData(
   const steps: ConversationStep[] = [];
   const studentLines = getTalkLines(student.personality, student.gender);
   const playerLines = getPlayerLines(playerPersonality, playerGender);
-  const level = getAffinityLevel(student.affinity);
+  const level = getTalkAffinityGroup(student.affinity);
 
   // 1. プレイヤーが話しかける
   steps.push({
@@ -258,7 +258,7 @@ export function generateGossipData(
   const steps: ConversationStep[] = [];
   const studentLines = getTalkLines(student.personality, student.gender);
   const playerLines = getPlayerLines(playerPersonality, playerGender);
-  const level = getAffinityLevel(student.affinity);
+  const level = getTalkAffinityGroup(student.affinity);
 
   // 1. プレイヤーが話しかける
   const askLines = [

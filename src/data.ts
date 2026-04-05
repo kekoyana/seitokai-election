@@ -9,8 +9,9 @@ export { TIME_COST, MAX_TIME } from './data/constants';
 export {
   HAIRSTYLE_LABELS, HOBBY_LABELS, ATTRIBUTE_LABELS, MOOD_LABELS, TIME_LABELS,
   PERSONALITY_LABELS, CLUB_LABELS, dayToDate, formatTime,
-  PERSONALITY_ICON_COLORS,
+  PERSONALITY_ICON_COLORS, getAffinityInfo, AFFINITY_LABELS,
 } from './data/labels';
+export type { AffinityLevel, AffinityInfo } from './data/labels';
 export { renderSupportBar, renderInitialIcon } from './data/render';
 export {
   STUDENTS, getTutorialOpponent, getStudentLocation, getCatchphrase,

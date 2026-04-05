@@ -29,7 +29,7 @@ export class PrologueScreen implements Screen {
             9月――
           </div>
           <div style="font-size:1.3em; font-weight:900; text-align:center; margin-bottom:20px; color:var(--game-text); letter-spacing:0.1em;">
-            私立翔陽学園
+            翠風学園
           </div>
           <p style="color:var(--game-text); line-height:2; font-size:0.95em;">
             毎年恒例の学園祭。<br>

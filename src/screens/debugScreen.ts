@@ -1,5 +1,5 @@
 import type { GameState, Student, PreferenceAttr, FactionId } from '../types';
-import { FACTION_INFO, FACTION_LABELS, HAIRSTYLE_LABELS, HOBBY_LABELS, ATTRIBUTE_LABELS, getCatchphrase, renderInitialIcon, renderSupportBar, getStudentLocation, ALL_FACTION_IDS, CLUB_LABELS, PERSONALITY_LABELS, dayToDate } from '../data';
+import { FACTION_INFO, FACTION_LABELS, HAIRSTYLE_LABELS, HOBBY_LABELS, ATTRIBUTE_LABELS, getCatchphrase, renderInitialIcon, renderSupportBar, getStudentLocation, ALL_FACTION_IDS, CLUB_LABELS, PERSONALITY_LABELS, dayToDate, getAffinityInfo } from '../data';
 import { ORGANIZATIONS, ORGANIZATION_TYPE_LABELS } from '../data/organizations';
 import { getOrganizationVote } from '../logic/organizationLogic';
 import { getStudentFaction } from '../logic/activistLogic';
@@ -385,7 +385,7 @@ export class DebugScreen implements Screen {
             <span style="color:#888;">能力</span> 弁${s.stats.speech} 運${s.stats.athletic} 知${s.stats.intel}
           </div>
           <div style="background:rgba(255,255,255,0.05); border-radius:6px; padding:3px 6px;">
-            <span style="color:#888;">好感度</span> <span style="color:${s.affinity >= 0 ? '#4f8' : '#f66'};">${s.affinity > 0 ? '+' : ''}${s.affinity}</span>
+            <span style="color:#888;">好感度</span> <span style="color:${getAffinityInfo(s.affinity).color};">${s.affinity > 0 ? '+' : ''}${s.affinity}(${getAffinityInfo(s.affinity).label})</span>
             <span style="color:#888; margin-left:4px;">相性</span> <span style="color:${compatColor}; font-weight:bold;">${compatSign}${compat.score}</span>
           </div>
           <div style="background:rgba(255,255,255,0.05); border-radius:6px; padding:3px 6px;">

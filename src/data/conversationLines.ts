@@ -1,11 +1,20 @@
 import type { Personality, HobbyPreference, Gender } from '../types';
+import type { AffinityLevel } from './labels';
+import { getAffinityInfo } from './labels';
 
-type AffinityLevel = 'high' | 'mid' | 'low';
+/** 会話テキスト用の3段階グループ（7段階AffinityLevelからマッピング） */
+type TalkAffinityGroup = 'high' | 'mid' | 'low';
+
+function affinityLevelToGroup(level: AffinityLevel): TalkAffinityGroup {
+  if (level === 'devoted' || level === 'trust') return 'high';
+  if (level === 'friendly' || level === 'neutral') return 'mid';
+  return 'low'; // wary, dislike, hostile
+}
 
 export interface TalkLineSet {
-  greeting: Record<AffinityLevel, string[]>;
+  greeting: Record<TalkAffinityGroup, string[]>;
   hobbyReaction: Record<HobbyPreference, string[]>;
-  farewell: Record<AffinityLevel, string[]>;
+  farewell: Record<TalkAffinityGroup, string[]>;
 }
 
 export interface PlayerLineSet {
@@ -442,11 +451,10 @@ export function getPlayerLines(personality: Personality, gender: Gender): Player
   return PLAYER_LINES_DATA[personality][gender];
 }
 
-/** 好感度からレベルを判定 */
-export function getAffinityLevel(affinity: number): AffinityLevel {
-  if (affinity >= 50) return 'high';
-  if (affinity >= 0) return 'mid';
-  return 'low';
+/** 好感度から会話テキスト用の3段階グループを返す */
+export function getTalkAffinityGroup(affinity: number): TalkAffinityGroup {
+  const { level } = getAffinityInfo(affinity);
+  return affinityLevelToGroup(level);
 }
 
 /** ナレーション用の会話結果文（好感度変化別） */

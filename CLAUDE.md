@@ -19,6 +19,7 @@ npx tsx tools/simulate.ts # 説得バトルシミュレーション
 
 ## プロジェクト構成
 ```
+README.md             # プロジェクト概要・開発ガイド
 src/
   main.ts               # エントリ
   game.ts               # 状態マシン（画面遷移管理）

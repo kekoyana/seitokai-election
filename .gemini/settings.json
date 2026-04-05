@@ -1,0 +1,21 @@
+{
+  "security": {
+    "folderTrust": {
+      "enabled": true
+    },
+    "environmentVariableRedaction": {
+      "enabled": true,
+      "patterns": [
+        "TOKEN",
+        "SECRET",
+        "KEY",
+        "PASSWORD",
+        "BACKLOG_API_KEY",
+        "NOTION_API_KEY"
+      ]
+    }
+  },
+  "tools": {
+    "sandbox": true
+  }
+}

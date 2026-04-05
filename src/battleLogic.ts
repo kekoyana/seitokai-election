@@ -3,6 +3,7 @@ import type {
   EnemyMood, HobbyTopic, FactionId, BattleLog, PreferenceAttr, Gender, Personality
 } from './types';
 import { getCatchphrase } from './catchphrase';
+import { ALL_FACTION_IDS } from './data';
 
 // 態度倍率（思想話題のバー効果に適用）
 const ATTITUDE_MULTIPLIER: Record<PlayerAttitude, number> = {
@@ -292,7 +293,7 @@ export function resolvePlayerTurn(
 
   // 基礎効果計算
   let baseEffect: number;
-  const isFactionTopic = ['conservative', 'progressive', 'sports'].includes(topic);
+  const isFactionTopic = (ALL_FACTION_IDS as readonly string[]).includes(topic);
 
   if (isFactionTopic) {
     const topicFaction = topic as FactionId;
@@ -498,19 +499,19 @@ export function applyWinShift(
   const shiftAmount = total * shiftPercent / 100;
 
   // プレイヤーの支持する派閥の軸を増やし、他の2軸から均等に引く
-  const others = (['conservative', 'progressive', 'sports'] as FactionId[]).filter(k => k !== playerFaction);
+  const others = ALL_FACTION_IDS.filter(k => k !== playerFaction);
   support[playerFaction] += shiftAmount;
   for (const key of others) {
     support[key] -= shiftAmount / 2;
   }
 
   // 負にならないようクランプし、合計を100に正規化
-  for (const key of ['conservative', 'progressive', 'sports'] as FactionId[]) {
+  for (const key of ALL_FACTION_IDS) {
     support[key] = Math.max(0, support[key]);
   }
   const newTotal = support.conservative + support.progressive + support.sports;
   if (newTotal > 0) {
-    for (const key of ['conservative', 'progressive', 'sports'] as FactionId[]) {
+    for (const key of ALL_FACTION_IDS) {
       support[key] = Math.round(support[key] / newTotal * 100);
     }
   }
@@ -527,25 +528,25 @@ export function applyLoseShift(
   const shiftPercent = calcShiftPercent(barPosition);
 
   // 相手の最大軸の方向にプレイヤーの思想をシフト
-  const maxKey = (['conservative', 'progressive', 'sports'] as FactionId[])
+  const maxKey = ALL_FACTION_IDS
     .reduce((a, b) => studentSupport[a] >= studentSupport[b] ? a : b);
 
   const support = { ...playerSupport };
   const total = support.conservative + support.progressive + support.sports;
   const shiftAmount = total * shiftPercent / 100;
 
-  const others = (['conservative', 'progressive', 'sports'] as FactionId[]).filter(k => k !== maxKey);
+  const others = ALL_FACTION_IDS.filter(k => k !== maxKey);
   support[maxKey] += shiftAmount;
   for (const key of others) {
     support[key] -= shiftAmount / 2;
   }
 
-  for (const key of ['conservative', 'progressive', 'sports'] as FactionId[]) {
+  for (const key of ALL_FACTION_IDS) {
     support[key] = Math.max(0, support[key]);
   }
   const newTotal = support.conservative + support.progressive + support.sports;
   if (newTotal > 0) {
-    for (const key of ['conservative', 'progressive', 'sports'] as FactionId[]) {
+    for (const key of ALL_FACTION_IDS) {
       support[key] = Math.round(support[key] / newTotal * 100);
     }
   }
@@ -575,41 +576,41 @@ export function applyTimeoutShift(
     const total = support.conservative + support.progressive + support.sports;
     const shiftAmount = total * shiftPercent / 100;
 
-    const others = (['conservative', 'progressive', 'sports'] as FactionId[]).filter(k => k !== playerFaction);
+    const others = ALL_FACTION_IDS.filter(k => k !== playerFaction);
     support[playerFaction] += shiftAmount;
     for (const key of others) {
       support[key] -= shiftAmount / 2;
     }
-    for (const key of ['conservative', 'progressive', 'sports'] as FactionId[]) {
+    for (const key of ALL_FACTION_IDS) {
       support[key] = Math.max(0, support[key]);
     }
     const newTotal = support.conservative + support.progressive + support.sports;
     if (newTotal > 0) {
-      for (const key of ['conservative', 'progressive', 'sports'] as FactionId[]) {
+      for (const key of ALL_FACTION_IDS) {
         support[key] = Math.round(support[key] / newTotal * 100);
       }
     }
     return { studentSupport: support, playerNewSupport: { ...playerSupport }, shiftPercent };
   } else if (barPosition < 0) {
     // 相手有利: プレイヤーの思想をシフト
-    const maxKey = (['conservative', 'progressive', 'sports'] as FactionId[])
+    const maxKey = ALL_FACTION_IDS
       .reduce((a, b) => student.support[a] >= student.support[b] ? a : b);
 
     const support = { ...playerSupport };
     const total = support.conservative + support.progressive + support.sports;
     const shiftAmount = total * shiftPercent / 100;
 
-    const others = (['conservative', 'progressive', 'sports'] as FactionId[]).filter(k => k !== maxKey);
+    const others = ALL_FACTION_IDS.filter(k => k !== maxKey);
     support[maxKey] += shiftAmount;
     for (const key of others) {
       support[key] -= shiftAmount / 2;
     }
-    for (const key of ['conservative', 'progressive', 'sports'] as FactionId[]) {
+    for (const key of ALL_FACTION_IDS) {
       support[key] = Math.max(0, support[key]);
     }
     const newTotal = support.conservative + support.progressive + support.sports;
     if (newTotal > 0) {
-      for (const key of ['conservative', 'progressive', 'sports'] as FactionId[]) {
+      for (const key of ALL_FACTION_IDS) {
         support[key] = Math.round(support[key] / newTotal * 100);
       }
     }

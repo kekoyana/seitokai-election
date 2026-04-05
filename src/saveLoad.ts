@@ -94,7 +94,6 @@ export function loadGame(): GameState | null {
       organizations: ORGANIZATIONS,
       actionLogs: json.actionLogs,
       activists: json.activists,
-      pendingActivistBattle: null,
       lostItem: json.lostItem,
       errand: json.errand,
       tutorial: json.tutorial,

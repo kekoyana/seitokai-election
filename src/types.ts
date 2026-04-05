@@ -174,7 +174,6 @@ export interface GameState {
   organizations: Organization[];
   actionLogs: string[];
   activists: string[];  // 活動家の生徒IDリスト
-  pendingActivistBattle: { activistId: string; faction: FactionId } | null;
   // 探索イベント
   lostItem: { itemName: string; hint: string; ownerId: string } | null;
   errand: { fromId: string; toId: string; itemName: string } | null;

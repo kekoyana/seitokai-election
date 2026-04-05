@@ -71,10 +71,6 @@ export const FACTION_INFO: FactionInfo[] = [
 ];
 
 
-// FactionIdからFactionInfoを取得するヘルパー
-export function getFactionInfo(id: FactionId): FactionInfo {
-  return FACTION_INFO.find(c => c.id === id)!;
-}
 
 export const LOCATIONS: Location[] = [
   { id: 'class1a', name: '教室 1-A' },
@@ -1241,7 +1237,7 @@ export function getTutorialOpponent(): Student {
 }
 
 // クラス名からLocationIdを返す
-const CLASS_LOCATION_MAP: Record<string, LocationId> = {
+export const CLASS_LOCATION_MAP: Record<string, LocationId> = {
   '1-A': 'class1a',
   '1-B': 'class1b',
   '1-C': 'class1c',
@@ -1279,7 +1275,6 @@ const CLUB_LOCATION_MAP: Record<string, LocationId> = {
   maeda_taiga: 'track_field',
   noguchi_saki: 'baseball_field',
   iwata_daichi: 'baseball_field',
-  // 元候補者
   yuuki_akari: 'art_room',
   shido_tsuyoshi: 'track_field',
 };
@@ -1338,6 +1333,8 @@ export function getStudentLocation(studentId: string, _timeSlot: string, day: nu
   if (rand < 4) return null;
   return 'library';
 }
+
+export const ALL_FACTION_IDS: FactionId[] = ['conservative', 'progressive', 'sports'];
 
 export const FACTION_LABELS: Record<FactionId, string> = {
   conservative: '保守',

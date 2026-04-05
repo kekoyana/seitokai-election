@@ -1,5 +1,5 @@
 import type { GameState, FactionId } from '../types';
-import { FACTION_INFO, FACTION_LABELS, renderSupportBar } from '../data';
+import { FACTION_INFO, FACTION_LABELS, renderSupportBar, ALL_FACTION_IDS } from '../data';
 import { ORGANIZATIONS } from '../data/organizations';
 import { getOrganizationVote } from '../logic/organizationLogic';
 
@@ -69,7 +69,7 @@ export class EndingScreen {
   private renderGameOver(): void {
     const lastResult = this.state.lastBattleResult;
     const playerSupport = this.state.playerSupport;
-    const newTop = (['conservative', 'progressive', 'sports'] as FactionId[])
+    const newTop = ALL_FACTION_IDS
       .reduce((a, b) => playerSupport[a] >= playerSupport[b] ? a : b);
     const newFaction = FACTION_INFO.find(f => f.id === newTop);
     const originalFaction = FACTION_INFO.find(f => f.id === this.state.faction);

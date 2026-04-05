@@ -15,6 +15,7 @@ import {
   initBattle, resolvePlayerTurn, resolveEnemyTurn,
   checkBattleEnd, getAttitudeCost, shouldPass, MOOD_ORDER,
 } from '../src/battleLogic';
+import { ALL_FACTION_IDS } from '../src/data';
 
 // ── ヘルパー ──
 
@@ -151,7 +152,7 @@ const strategyPositive: Strategy = (state, student, playerFaction) => {
 /** 戦略B: 相手の最強候補を否定（知性依存） — 複数趣味を使い分け */
 const strategyNegative: Strategy = (state, student, _playerFaction) => {
   const moodIdx = MOOD_ORDER.indexOf(state.mood);
-  const enemyTop = (['conservative', 'progressive', 'sports'] as FactionId[])
+  const enemyTop = ALL_FACTION_IDS
     .reduce((a, b) => student.support[a] >= student.support[b] ? a : b);
 
   if (moodIdx >= 3 && state.stamina >= 8) {
@@ -242,7 +243,7 @@ function simulate(
     const { newBattle: afterEnemy, enemyEffect } = resolveEnemyTurn(afterPlayer);
     battle = checkBattleEnd(afterEnemy);
 
-    const isFactionTopic = ['conservative', 'progressive', 'sports'].includes(action.topic);
+    const isFactionTopic = (ALL_FACTION_IDS as readonly string[]).includes(action.topic);
     const topicLabel = isFactionTopic ? `思想[${action.topic}]` : `雑談[${action.topic}]`;
     const stanceLabel = action.stance === 'positive' ? '肯定' : '否定';
 

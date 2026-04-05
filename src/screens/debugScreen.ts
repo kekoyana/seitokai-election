@@ -1,5 +1,5 @@
 import type { GameState, Student, PreferenceAttr, FactionId } from '../types';
-import { FACTION_INFO, FACTION_LABELS, HAIRSTYLE_LABELS, HOBBY_LABELS, ATTRIBUTE_LABELS, getCatchphrase, renderInitialIcon, renderSupportBar, getStudentLocation } from '../data';
+import { FACTION_INFO, FACTION_LABELS, HAIRSTYLE_LABELS, HOBBY_LABELS, ATTRIBUTE_LABELS, getCatchphrase, renderInitialIcon, renderSupportBar, getStudentLocation, ALL_FACTION_IDS } from '../data';
 import { ORGANIZATIONS, ORGANIZATION_TYPE_LABELS } from '../data/organizations';
 import { getOrganizationVote } from '../logic/organizationLogic';
 import { getStudentFaction } from '../logic/activistLogic';
@@ -53,7 +53,7 @@ export class DebugScreen {
   }
 
   private getSupportFaction(s: Student): { id: FactionId; label: string; color: string } {
-    const top = (['conservative', 'progressive', 'sports'] as FactionId[])
+    const top = ALL_FACTION_IDS
       .reduce((a, b) => s.support[a] >= s.support[b] ? a : b);
     const f = FACTION_INFO.find(f => f.id === top);
     return { id: top, label: FACTION_LABELS[top] ?? '', color: f?.color ?? '#888' };
@@ -120,7 +120,7 @@ export class DebugScreen {
     } else if (this.activeTab === 'students') {
       const playerId = this.state.playerCharacter?.id;
       const allStudents = this.state.students.filter(s => s.id !== playerId);
-      const factionFilters: string[] = ['conservative', 'progressive', 'sports'];
+      const factionFilters: string[] = [...ALL_FACTION_IDS];
       const filtered = this.studentFilter === 'all' ? allStudents
         : this.studentFilter === 'activist' ? allStudents.filter(s => this.state.activists.includes(s.id))
         : factionFilters.includes(this.studentFilter) ? allStudents.filter(s => getStudentFaction(s) === this.studentFilter)

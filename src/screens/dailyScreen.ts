@@ -4,6 +4,7 @@ import {
   HOBBY_LABELS, TIME_LABELS, getCatchphrase, renderInitialIcon,
   isCorridorLocation, getFloorFromLocation, FLOOR_ROOMS, FLOOR_ADJACENCY,
   FLOOR_LABELS, MOVE_COST, getFloorMoveCost, renderSupportBar, MAX_TIME, TIME_COST,
+  ALL_FACTION_IDS,
 } from '../data';
 import { ORGANIZATIONS, SPORTS_CLUB_IDS, CULTURE_CLUB_IDS } from '../data/organizations';
 import { getOrganizationVote, calcOrganizationSupport } from '../logic/organizationLogic';
@@ -138,7 +139,6 @@ export class DailyScreen {
   private showStudentInfo: Student | null = null;
   private showPlayerInfo: boolean = false;
   private showLog: boolean = false;
-  private showVolumeDialog: boolean = false;
   private showSystemMenu: boolean = false;
   // 情報パネル: タブ + ドリルダウン（組織詳細 or 生徒一覧→生徒詳細）
   private infoPanel: {
@@ -266,33 +266,6 @@ export class DailyScreen {
               <button id="sys-tutorial-btn" class="game-btn game-btn-success" style="padding:10px 16px; width:100%; font-family:var(--game-font);">チュートリアル（説得の遊び方）</button>
               <button id="sys-close-btn" class="game-btn game-btn-disabled" style="padding:10px 16px; width:100%; font-family:var(--game-font); opacity:1; cursor:pointer;">閉じる</button>
             </div>
-          </div>
-        </div>
-      `;
-    }
-
-    // 音量ダイアログ
-    let volumeDialogHtml = '';
-    if (this.showVolumeDialog) {
-      const volPct = Math.round(bgm.volume * 100);
-      volumeDialogHtml = `
-        <div class="game-dialog-overlay" style="
-          position:absolute; inset:0; z-index:200;
-          background:rgba(0,0,20,0.4);
-          display:flex; align-items:center; justify-content:center;
-          animation: fadeIn 0.2s ease;
-        ">
-          <div class="game-panel" style="width:240px; padding:20px; text-align:center;">
-            <div style="font-weight:bold; margin-bottom:15px; color:var(--game-text);">BGM音量</div>
-            <div style="display:flex; align-items:center; gap:10px; margin-bottom:20px;">
-              <span id="bgm-dialog-icon" style="font-size:1.2em;">${bgm.volume > 0 ? '🔊' : '🔇'}</span>
-              <input id="bgm-volume-dialog" type="range" min="0" max="100" value="${volPct}" style="
-                flex:1; height:6px; cursor:pointer;
-                accent-color:var(--game-accent);
-              "/>
-              <span id="bgm-volume-label" style="font-size:0.9em; width:35px; text-align:right;">${volPct}%</span>
-            </div>
-            <button id="close-volume-dialog" class="game-btn game-btn-primary" style="padding:8px 24px;">閉じる</button>
           </div>
         </div>
       `;
@@ -429,7 +402,6 @@ export class DailyScreen {
       ${this.renderQuestIndicator()}
       ${logBoxHtml}
       ${timeUpModalHtml}
-      ${volumeDialogHtml}
       ${systemMenuHtml}
     `;
 
@@ -466,6 +438,26 @@ export class DailyScreen {
       </div>
       <div style="font-size:0.72em; color:var(--game-text-dim); margin-bottom:6px; line-height:1.5;">${org.description}</div>
       ${renderSupportBar(orgSupport, 14, true)}
+    `;
+  }
+
+  private renderEndDayPanel(isOutOfStamina: boolean): string {
+    if (!isOutOfStamina || this.state.currentTime >= MAX_TIME) return '';
+    return `
+      <div style="
+        background:rgba(255,255,255,0.9);
+        border-radius:12px; padding:16px;
+        margin-top:12px; text-align:center;
+        border:2px solid #F0A030;
+      ">
+        <p style="color:#888; font-size:0.85em; margin-bottom:12px;">体力が尽きました</p>
+        <button id="next-day-btn" style="
+          padding:12px 32px;
+          background:linear-gradient(135deg,#F0A030,#D08010);
+          color:#fff; border:none; border-radius:50px;
+          font-size:1em; font-weight:bold; cursor:pointer; font-family:inherit;
+        ">翌日へ →</button>
+      </div>
     `;
   }
 
@@ -612,22 +604,7 @@ export class DailyScreen {
       ? `<div style="text-align:center; color:#aaa; padding:20px; font-size:0.9em;">ここには誰もいない</div>`
       : studentsHere.map(s => this.renderStudentCard(s)).join('');
 
-    const endDayHtml = (isOutOfStamina && !(this.state.currentTime >= MAX_TIME)) ? `
-      <div style="
-        background:rgba(255,255,255,0.9);
-        border-radius:12px; padding:16px;
-        margin-top:12px; text-align:center;
-        border:2px solid #F0A030;
-      ">
-        <p style="color:#888; font-size:0.85em; margin-bottom:12px;">体力が尽きました</p>
-        <button id="next-day-btn" style="
-          padding:12px 32px;
-          background:linear-gradient(135deg,#F0A030,#D08010);
-          color:#fff; border:none; border-radius:50px;
-          font-size:1em; font-weight:bold; cursor:pointer; font-family:inherit;
-        ">翌日へ →</button>
-      </div>
-    ` : '';
+    const endDayHtml = this.renderEndDayPanel(isOutOfStamina);
 
     const orgInfoHtml = this.renderRoomOrgInfo();
 
@@ -752,7 +729,7 @@ export class DailyScreen {
           </div>
           <div style="font-size:0.72em; color:${affinityColor};">好感度: ${affinityLabel}</div>
           ${(() => {
-            const maxKey = (['conservative', 'progressive', 'sports'] as const)
+            const maxKey = ALL_FACTION_IDS
               .reduce((a, b) => s.support[a] >= s.support[b] ? a : b);
             const sc = FACTION_INFO.find(f => f.id === maxKey);
             const isAlly = maxKey === this.state.faction;
@@ -976,7 +953,7 @@ export class DailyScreen {
 
     const memberRows = members.map(({ student: s, role }) => {
       const sup = s.support;
-      const maxKey = (['conservative', 'progressive', 'sports'] as const)
+      const maxKey = ALL_FACTION_IDS
         .reduce((a, b) => sup[a] >= sup[b] ? a : b);
       const sc = FACTION_INFO.find(f => f.id === maxKey);
       const roleColor = role === '代表' ? '#E74C3C' : role === '副代表' ? '#E07820' : 'var(--game-text-dim)';
@@ -1039,7 +1016,7 @@ export class DailyScreen {
     `;
   }
 
-  private renderInfoStudentDetail(s: Student, fromOrgId: string): string {
+  private renderInfoStudentDetail(s: Student, _fromOrgId: string): string {
     return this.renderStudentDetailCard(s, 'back-to-org');
   }
 
@@ -1156,22 +1133,7 @@ export class DailyScreen {
     const isOutOfStamina = this.state.stamina <= 0 || isCorridorTimeUp;
     const canEnter = !isCorridorTimeUp && this.state.stamina >= MOVE_COST.ENTER_ROOM;
 
-    const endDayHtml = (isOutOfStamina && !(this.state.currentTime >= MAX_TIME)) ? `
-      <div style="
-        background:rgba(255,255,255,0.9);
-        border-radius:12px; padding:16px;
-        margin-top:12px; text-align:center;
-        border:2px solid #F0A030;
-      ">
-        <p style="color:#888; font-size:0.85em; margin-bottom:12px;">体力が尽きました</p>
-        <button id="next-day-btn" style="
-          padding:12px 32px;
-          background:linear-gradient(135deg,#F0A030,#D08010);
-          color:#fff; border:none; border-radius:50px;
-          font-size:1em; font-weight:bold; cursor:pointer; font-family:inherit;
-        ">翌日へ →</button>
-      </div>
-    ` : '';
+    const endDayHtml = this.renderEndDayPanel(isOutOfStamina);
 
     return `
       <div class="game-panel" style="
@@ -1589,23 +1551,6 @@ export class DailyScreen {
       });
       this.container.querySelector('#sys-close-btn')?.addEventListener('pointerup', () => {
         this.showSystemMenu = false;
-        this.render();
-      });
-    }
-
-    // BGM音量ダイアログ（レガシー：音量ダイアログ単体は不要だが互換用に残す）
-    if (this.showVolumeDialog) {
-      const bgmSlider = this.container.querySelector<HTMLInputElement>('#bgm-volume-dialog');
-      const volLabel = this.container.querySelector<HTMLElement>('#bgm-volume-label');
-      bgmSlider?.addEventListener('input', () => {
-        const v = parseInt(bgmSlider.value, 10) / 100;
-        bgm.setVolume(v);
-        if (volLabel) volLabel.textContent = `${Math.round(v * 100)}%`;
-        const dialogIcon = this.container.querySelector<HTMLElement>('#bgm-dialog-icon');
-        if (dialogIcon) dialogIcon.textContent = v > 0 ? '🔊' : '🔇';
-      });
-      this.container.querySelector('#close-volume-dialog')?.addEventListener('pointerup', () => {
-        this.showVolumeDialog = false;
         this.render();
       });
     }

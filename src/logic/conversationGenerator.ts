@@ -16,6 +16,7 @@ export interface ConversationStep {
 export interface ConversationResult {
   text: string;
   effectHtml: string;
+  affinityGain?: number;
 }
 
 export interface ConversationData {
@@ -202,6 +203,7 @@ export function generateChitchatData(
   const result: ConversationResult = {
     text: pick(CHITCHAT_NARRATIONS),
     effectHtml: resultEffectParts.join('<br>'),
+    affinityGain,
   };
 
   return { steps, result };

@@ -1,4 +1,5 @@
 import type { Organization, Student, FactionId } from '../types';
+import { ALL_FACTION_IDS } from '../data';
 
 type SupportVec = { conservative: number; progressive: number; sports: number };
 
@@ -8,7 +9,7 @@ function getStudentSupport(id: string, students: Student[]): SupportVec | null {
 }
 
 function getSupportFaction(vec: SupportVec): FactionId {
-  return (['conservative', 'progressive', 'sports'] as FactionId[])
+  return ALL_FACTION_IDS
     .reduce((a, b) => vec[a] >= vec[b] ? a : b);
 }
 
@@ -135,7 +136,7 @@ export function getOrganizationVote(
 ): FactionId {
   const support = calcOrganizationSupport(org, students);
   const maxVal = Math.max(support.conservative, support.progressive, support.sports);
-  const winners = (['conservative', 'progressive', 'sports'] as FactionId[])
+  const winners = ALL_FACTION_IDS
     .filter(k => support[k] === maxVal);
   // 同数時は代表の支持で決定（majority以外では通常発生しない）
   if (winners.length > 1) {

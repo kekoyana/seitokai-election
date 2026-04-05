@@ -43,11 +43,11 @@ export class TitleScreen {
           margin-bottom: 24px;
           text-align: center;
         ">
-          <div class="game-title" style="font-size:2.8em; font-weight:900; letter-spacing:0.15em; margin-bottom:8px;">
-            学園祭投票
+          <div class="game-title" style="font-size:2.2em; font-weight:900; letter-spacing:0.08em; margin-bottom:8px; font-style:italic;">
+            Academy Tempest
           </div>
-          <div style="font-size:1.1em; color:var(--game-heading-accent); letter-spacing:0.2em;">
-            〜30日間の説得戦〜
+          <div style="font-size:0.95em; color:var(--game-heading-accent); letter-spacing:0.15em;">
+            〜学園の風〜
           </div>
         </div>
 

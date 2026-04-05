@@ -17,7 +17,7 @@ export function electActivists(
   playerCharacterId: string,
   playerFaction: FactionId,
 ): string[] {
-  const factions: FactionId[] = ['conservative', 'progressive', 'sports'];
+  const factions = ALL_FACTION_IDS;
   const result: string[] = [];
 
   for (const faction of factions) {
@@ -42,11 +42,9 @@ export function electActivists(
   return result;
 }
 
-export const FACTION_LABELS: Record<FactionId, string> = {
-  conservative: '保守',
-  progressive: '革新',
-  sports: '体育',
-};
+// re-export for backward compatibility
+export { FACTION_LABELS } from '../data';
+import { FACTION_LABELS, ALL_FACTION_IDS } from '../data';
 
 export interface SingleActivistResult {
   updatedStudents: Student[];
@@ -131,7 +129,7 @@ export function processOneActivist(
 /** 指定した派閥方向に思想をシフトする（3軸合計100を維持） */
 function applyFactionShift(student: Student, faction: FactionId, amount: number): Student {
   const support = { ...student.support };
-  const others = (['conservative', 'progressive', 'sports'] as FactionId[]).filter(f => f !== faction);
+  const others = ALL_FACTION_IDS.filter(f => f !== faction);
 
   support[faction] = Math.min(100, support[faction] + amount);
   const excess = support.conservative + support.progressive + support.sports - 100;

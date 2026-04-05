@@ -5,11 +5,11 @@ import type {
 import {
   STUDENTS, getFloorFromLocation, getCorridorForFloor,
   FLOOR_ADJACENCY, MOVE_COST, getFloorMoveCost, TIME_COST, MAX_TIME,
-  getStudentLocation, FACTION_LABELS,
+  getStudentLocation, FACTION_LABELS, CLASS_LOCATION_MAP, ALL_FACTION_IDS,
 } from './data';
 import { generateConversationData, generateTalkLogSummary, generateChitchatData, generateGossipData, generateGossipLogSummary } from './logic/conversationGenerator';
 import type { GossipReveal } from './logic/conversationGenerator';
-import { electActivists, processOneActivist, FACTION_LABELS as ACTIVIST_FACTION_LABELS } from './logic/activistLogic';
+import { electActivists, processOneActivist } from './logic/activistLogic';
 import { ORGANIZATIONS } from './data/organizations';
 import { getOrganizationVote } from './logic/organizationLogic';
 import {
@@ -52,7 +52,6 @@ function createInitialState(): GameState {
     organizations: ORGANIZATIONS,
     actionLogs: [],
     activists: [],
-    pendingActivistBattle: null,
     lostItem: null,
     errand: null,
     tutorial: {
@@ -103,7 +102,7 @@ export class Game {
       }
       this.previousScreen = null;
     } else {
-      // 候補者選択後のみデバッグ表示可能
+      // 派閥選択後のみデバッグ表示可能
       if (!this.state.faction) return;
       this.previousScreen = this.state.screen;
       this.clearScreens();
@@ -188,15 +187,10 @@ export class Game {
     this.characterScreen = new CharacterSelectScreen(playableStudents, {
       onSelect: (selected: Student) => {
         // 選んだ生徒の思想軸の最大値が支持候補になる
-        const factionId = (['conservative', 'progressive', 'sports'] as FactionId[])
+        const factionId = ALL_FACTION_IDS
           .reduce((a, b) => selected.support[a] >= selected.support[b] ? a : b);
         // 選んだ生徒をプレイヤーに（studentsには全員残す＝組織の代表計算に必要）
-        const classMap: Record<string, LocationId> = {
-          '1-A': 'class1a', '1-B': 'class1b', '1-C': 'class1c', '1-D': 'class1d',
-          '2-A': 'class2a', '2-B': 'class2b', '2-C': 'class2c', '2-D': 'class2d',
-          '3-A': 'class3a', '3-B': 'class3b', '3-C': 'class3c', '3-D': 'class3d',
-        };
-        const startLocation = classMap[selected.className] ?? 'class1b';
+        const startLocation = CLASS_LOCATION_MAP[selected.className] ?? 'class1b';
         this.state = {
           ...createInitialState(),
           screen: 'daily',
@@ -374,7 +368,7 @@ export class Game {
     const pc = this.state.playerCharacter;
     if (!pc) return;
 
-    const factionLabel = ACTIVIST_FACTION_LABELS[faction];
+    const factionLabel = FACTION_LABELS[faction];
     const openerLines: Record<string, string[]> = {
       passionate: ['おい、ちょっと待てよ！話があるんだ！', 'よう！逃がさないぜ、聞いてくれ！'],
       cautious: ['すみません…少しお時間いただけますか？大事な話があって。', 'あの…どうしても伝えたいことがあるんです。'],
@@ -446,7 +440,7 @@ export class Game {
     );
 
     // 好感度を微量上昇
-    const affinityGain = convData.result.effectHtml.includes('+2') ? 2 : 1;
+    const affinityGain = convData.result.affinityGain ?? 1;
     const updatedStudents = this.state.students.map(s =>
       s.id === student.id
         ? { ...s, affinity: Math.min(100, s.affinity + affinityGain), revealedHobbies: newRevealed }
@@ -878,12 +872,7 @@ export class Game {
 
   private getPlayerClassLocation(): LocationId {
     const className = this.state.playerCharacter?.className ?? '1-B';
-    const map: Record<string, LocationId> = {
-      '1-A': 'class1a', '1-B': 'class1b', '1-C': 'class1c', '1-D': 'class1d',
-      '2-A': 'class2a', '2-B': 'class2b', '2-C': 'class2c', '2-D': 'class2d',
-      '3-A': 'class3a', '3-B': 'class3b', '3-C': 'class3c', '3-D': 'class3d',
-    };
-    return map[className] ?? 'class1b';
+    return CLASS_LOCATION_MAP[className] ?? 'class1b';
   }
 
   private handleNextDay(): void {
@@ -909,8 +898,7 @@ export class Game {
       timeSlot: 'afterschool',
       activists,
       actionLogs: [],
-      pendingActivistBattle: null,
-      lostItem: null,
+        lostItem: null,
       errand: null,
     };
 
@@ -928,8 +916,7 @@ export class Game {
     this.state = {
       ...this.state,
       battle,
-      pendingActivistBattle: null,
-    };
+      };
     this.showBattle();
   }
 
@@ -1124,7 +1111,7 @@ export class Game {
       const playerSup = { ...this.state.playerSupport };
       const boostAmount = 3;
       const candidate = this.state.faction;
-      const otherKeys = (['conservative', 'progressive', 'sports'] as FactionId[]).filter(k => k !== candidate);
+      const otherKeys = ALL_FACTION_IDS.filter(k => k !== candidate);
       playerSup[candidate] += boostAmount;
       for (const key of otherKeys) {
         playerSup[key] = Math.max(0, playerSup[key] - boostAmount / 2);
@@ -1132,7 +1119,7 @@ export class Game {
       // 合計を100に正規化
       const pTotal = playerSup.conservative + playerSup.progressive + playerSup.sports;
       if (pTotal > 0) {
-        for (const key of ['conservative', 'progressive', 'sports'] as FactionId[]) {
+        for (const key of ALL_FACTION_IDS) {
           playerSup[key] = Math.round(playerSup[key] / pTotal * 100);
         }
       }
@@ -1158,7 +1145,7 @@ export class Game {
         this.state.playerSupport, student.support, battle.barPosition
       );
       shiftAmount = shiftPercent;
-      const enemyFaction = (['conservative', 'progressive', 'sports'] as FactionId[])
+      const enemyFaction = ALL_FACTION_IDS
         .reduce((a, b) => student.support[a] >= student.support[b] ? a : b);
       const logEntry = battle.isDefending
         ? `【防衛失敗】${student.name}に押されてしまった…（${describeShift(enemyFaction, shiftAmount)}）`
@@ -1199,7 +1186,7 @@ export class Game {
       shiftAmount = shiftPercent;
       const timeoutLabel = battle.barPosition > 0 ? '時間切れ（やや優勢）' : battle.barPosition < 0 ? '時間切れ（やや劣勢）' : '時間切れ（引き分け）';
       const timeoutFaction = battle.barPosition >= 0 ? this.state.faction
-        : (['conservative', 'progressive', 'sports'] as FactionId[])
+        : ALL_FACTION_IDS
             .reduce((a, b) => student.support[a] >= student.support[b] ? a : b);
       const logEntry = `【${timeoutLabel}】${student.name}との説得（${describeShift(timeoutFaction, shiftAmount)}）`;
 

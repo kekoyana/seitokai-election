@@ -113,7 +113,6 @@ export class PersuadeTutorial {
       organizations: ORGANIZATIONS,
       actionLogs: [],
       activists: [],
-      pendingActivistBattle: null,
       lostItem: null,
       errand: null,
       tutorial: { seenPrologue: true, seenMove: true, seenTalk: true },

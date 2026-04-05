@@ -1,5 +1,5 @@
 import type { Student, FactionId } from '../types';
-import { FACTION_INFO, FACTION_LABELS, getCatchphrase, renderInitialIcon } from '../data';
+import { FACTION_INFO, FACTION_LABELS, getCatchphrase, renderInitialIcon, ALL_FACTION_IDS } from '../data';
 import dailyBg from '../../assets/backgrounds/daily.jpg';
 
 const PERSONALITY_LABELS: Record<string, string> = {
@@ -28,7 +28,7 @@ export class CharacterSelectScreen {
   }
 
   private getSupportFaction(s: Student): FactionId {
-    return (['conservative', 'progressive', 'sports'] as FactionId[])
+    return ALL_FACTION_IDS
       .reduce((a, b) => s.support[a] >= s.support[b] ? a : b);
   }
 

@@ -193,15 +193,22 @@ export class DailyScreen implements Screen {
           border-color:${candidateColor};
           padding:3px 10px 3px 3px;
         ">
-          ${pc ? (pc.portrait
-            ? `<img src="${pc.portrait}" alt="${pc.name}" style="
-                width:28px; height:28px; border-radius:3px;
-                object-fit:cover; object-position:top;
-                border:1px solid rgba(255,255,255,0.5);
-              "/>`
-            : renderInitialIcon(pc.name, pc.personality, 28, 'rgba(255,255,255,0.5)')
-          ) : ''}
-          <span style="font-weight:bold; color:#fff; font-size:0.85em;">${pc?.name ?? ''}</span>
+          ${pc ? (() => {
+            const pcStudent = this.state.students.find(s => s.id === pc.id);
+            const pcDisplayName = pcStudent ? getStudentName(pcStudent) : pc.name;
+            return pc.portrait
+              ? `<img src="${pc.portrait}" alt="${pcDisplayName}" style="
+                  width:28px; height:28px; border-radius:3px;
+                  object-fit:cover; object-position:top;
+                  border:1px solid rgba(255,255,255,0.5);
+                "/>`
+              : renderInitialIcon(pcDisplayName, pc.personality, 28, 'rgba(255,255,255,0.5)');
+          })() : ''}
+          <span style="font-weight:bold; color:#fff; font-size:0.85em;">${(() => {
+            if (!pc) return '';
+            const pcStudent = this.state.students.find(s => s.id === pc.id);
+            return pcStudent ? getStudentName(pcStudent) : pc.name;
+          })()}</span>
           <span style="opacity:0.8; font-size:0.75em; color:#fff;">${FACTION_LABELS[this.state.faction ?? 'conservative'] ?? ''}${t('daily.factionSuffix')}</span>
         </div>
         <div class="game-hud-badge" style="

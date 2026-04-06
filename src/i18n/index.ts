@@ -18,6 +18,7 @@ export function getLang(): Lang {
 export function setLang(lang: Lang): void {
   currentLang = lang;
   localStorage.setItem(STORAGE_KEY, lang);
+  document.documentElement.lang = lang;
   for (const fn of listeners) fn();
 }
 

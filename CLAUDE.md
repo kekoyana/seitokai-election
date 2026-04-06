@@ -75,8 +75,6 @@ docs/
   compatibility-analysis.md # 相性の非対称性分析（片思いペア一覧）
 assets/
   portraits/            # キャラクターポートレート画像（Vite importで使用）
-    bust/               # バストショット画像（384x384）
-    face/               # 顔切り抜き画像（256x256）
     raw/                # 生成元の生画像（gitignore対象）
   backgrounds/          # 背景画像
   bgm/                  # BGM

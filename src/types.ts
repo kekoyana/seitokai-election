@@ -98,7 +98,6 @@ export interface Student {
   affinity: number;
   role: string | null;            // 役職（学級委員長・部長など）
   portrait: string | null;
-  portrait: string | null;
   playable: boolean;            // プレイヤーとして選択可能か
 }
 
@@ -139,7 +138,6 @@ export interface PlayerCharacter {
   likedAttributes: PreferenceAttr[];
   dislikedAttributes: PreferenceAttr[];
   stats: { speech: number; athletic: number; intel: number; maxHp: number };
-  portrait: string | null;
   portrait: string | null;
 }
 

@@ -231,7 +231,6 @@ export class Game {
             dislikedAttributes: [...selected.dislikedAttributes],
             stats: { ...selected.stats },
             portrait: selected.portrait,
-            portrait: selected.portrait,
           },
           playerAttributes: [...selected.attributes, selected.hairStyle],
           playerSupport: { ...selected.support },

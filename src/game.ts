@@ -622,23 +622,19 @@ export class Game {
     const line = errandLines.find(l => l.item === itemName) ?? errandLines[0];
     const steps: import('./logic/conversationGenerator').ConversationStep[] = [
       { speaker: 'student', name: student.name, bustPortrait: student.bustPortrait, facePortrait: student.facePortrait, text: line.text },
-      { speaker: 'player', name: pc?.name ?? 'あなた', bustPortrait: pc?.bustPortrait ?? null, facePortrait: pc?.facePortrait ?? null, text: '「…？」' },
       { speaker: 'student', name: student.name, bustPortrait: student.bustPortrait, facePortrait: student.facePortrait, text: `「${target.name}、今どこにいるかわかんないんだよね。お願いできる？」` },
+      { speaker: 'player', name: pc?.name ?? 'あなた', bustPortrait: pc?.bustPortrait ?? null, facePortrait: pc?.facePortrait ?? null, text: '「わかった、届けておくよ。」' },
     ];
     const result: import('./logic/conversationGenerator').ConversationResult = {
-      text: `${student.name}からおつかいを頼まれた`,
+      text: `${student.name}から${target.name}への${itemName}を預かった`,
       effectHtml: `<span style="color:#4A90D9;">📨 ${target.name}に${itemName}を届ける</span>`,
     };
     this.dailyScreen?.showConversation(steps, result, () => {
-      this.dailyScreen?.showErrandRequest(student, target, itemName, (accepted) => {
-        if (accepted) {
-          this.updateState({
-            errand: { fromId: student.id, toId: target.id, itemName },
-            actionLogs: [...this.state.actionLogs, `${student.name}から${target.name}への${itemName}を預かった。`],
-          });
-          this.dailyScreen?.update(this.state);
-        }
+      this.updateState({
+        errand: { fromId: student.id, toId: target.id, itemName },
+        actionLogs: [...this.state.actionLogs, `${student.name}から${target.name}への${itemName}を預かった。`],
       });
+      this.dailyScreen?.update(this.state);
     });
   }
 

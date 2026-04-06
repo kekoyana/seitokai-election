@@ -1274,15 +1274,6 @@ export class DailyScreen implements Screen {
     });
   }
 
-  showErrandRequest(from: Student, to: Student, itemName: string, callback: (accepted: boolean) => void): void {
-    showConfirmDialog(this.container, {
-      title: 'おつかい依頼',
-      message: `${from.name}から${to.name}へ${itemName}を届けてほしいと頼まれた。`,
-      okLabel: '引き受ける',
-      cancelLabel: '断る',
-    }).then(callback);
-  }
-
   mount(parent: HTMLElement): void {
     parent.appendChild(this.container);
   }

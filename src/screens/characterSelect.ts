@@ -5,6 +5,7 @@ import {
 } from '../data';
 import { ORGANIZATIONS } from '../data/organizations';
 import { showConfirmDialog } from '../ui/gameDialog';
+import { t } from '../i18n';
 import dailyBg from '../../assets/backgrounds/daily.jpg';
 import type { Screen } from './Screen';
 
@@ -16,8 +17,8 @@ function getAffiliationLabels(studentId: string, className: string, clubId: stri
   let classRole = '';
   for (const org of ORGANIZATIONS) {
     if (org.name.startsWith(className)) {
-      if (org.leaderId === studentId) classRole = ' 代表';
-      else if (org.subLeaderIds.includes(studentId)) classRole = ' 副代表';
+      if (org.leaderId === studentId) classRole = ` ${t('charSelect.representative')}`;
+      else if (org.subLeaderIds.includes(studentId)) classRole = ` ${t('charSelect.viceRepresentative')}`;
       break;
     }
   }
@@ -29,8 +30,8 @@ function getAffiliationLabels(studentId: string, className: string, clubId: stri
     let clubRole = '';
     for (const org of ORGANIZATIONS) {
       if (org.id === `club_${clubId}` || org.id === clubId) {
-        if (org.leaderId === studentId) clubRole = ' 代表';
-        else if (org.subLeaderIds.includes(studentId)) clubRole = ' 副代表';
+        if (org.leaderId === studentId) clubRole = ` ${t('charSelect.representative')}`;
+        else if (org.subLeaderIds.includes(studentId)) clubRole = ` ${t('charSelect.viceRepresentative')}`;
         break;
       }
     }
@@ -83,11 +84,12 @@ export class CharacterSelectScreen implements Screen {
     const selIdx = this.students.indexOf(sel);
     const isFirst = selIdx <= 0;
     const isLast = selIdx >= this.students.length - 1;
-    // Compute prev/next faction for edge arrows
     const factionIds = FACTION_INFO.map(f => f.id);
     const fIdx = factionIds.indexOf(this.faction);
     const prevFaction = FACTION_INFO[(fIdx - 1 + factionIds.length) % factionIds.length];
     const nextFaction = FACTION_INFO[(fIdx + 1) % factionIds.length];
+
+    const fSuffix = t('charSelect.factionSuffix');
 
     // --- Faction header bar ---
     const headerHtml = `
@@ -98,13 +100,13 @@ export class CharacterSelectScreen implements Screen {
           background:linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.05) 100%);
           border-left-color:rgba(255,255,255,0.3);
           padding:6px 12px; font-size:0.8em; color:rgba(255,255,255,0.7);
-        ">◀ 戻る</button>
+        ">${t('charSelect.back')}</button>
         <div style="flex:1; text-align:center;">
           <h1 style="
             font-size:1.1em; margin:0; font-weight:900;
             color:#e0e8f0; text-shadow:0 2px 4px rgba(0,0,0,0.5);
             letter-spacing:0.1em;
-          ">キャラクター選択</h1>
+          ">${t('charSelect.title')}</h1>
         </div>
         <div style="width:60px;"></div>
       </div>
@@ -126,16 +128,14 @@ export class CharacterSelectScreen implements Screen {
       display:flex; flex-direction:column; align-items:center; gap:2px;
     `;
 
-    // Left arrow: at edge → show prev faction label
     const prevColor = isFirst ? prevFaction.color : 'rgba(255,255,255,0.5)';
     const prevLabel = isFirst
-      ? `<span style="font-size:0.55em; color:${prevFaction.accentColor}; white-space:nowrap;">${FACTION_LABELS[prevFaction.id]}派</span>`
+      ? `<span style="font-size:0.55em; color:${prevFaction.accentColor}; white-space:nowrap;">${FACTION_LABELS[prevFaction.id]}${fSuffix}</span>`
       : '';
 
-    // Right arrow: at edge → show next faction label
     const nextColor = isLast ? nextFaction.color : 'rgba(255,255,255,0.5)';
     const nextLabel = isLast
-      ? `<span style="font-size:0.55em; color:${nextFaction.accentColor}; white-space:nowrap;">${FACTION_LABELS[nextFaction.id]}派</span>`
+      ? `<span style="font-size:0.55em; color:${nextFaction.accentColor}; white-space:nowrap;">${FACTION_LABELS[nextFaction.id]}${fSuffix}</span>`
       : '';
 
     // --- Character showcase ---
@@ -171,7 +171,7 @@ export class CharacterSelectScreen implements Screen {
               font-size:0.65em; font-weight:bold; padding:1px 10px;
               border-radius:4px; white-space:nowrap;
               box-shadow:0 2px 4px rgba(0,0,0,0.3);
-            ">${FACTION_LABELS[info.id]}派</div>
+            ">${FACTION_LABELS[info.id]}${fSuffix}</div>
           </div>
 
           <!-- Name & info -->
@@ -201,9 +201,9 @@ export class CharacterSelectScreen implements Screen {
           <div style="
             display:flex; gap:12px; align-items:center; justify-content:center;
           ">
-            ${this.renderStatInline('弁舌', sel.stats.speech, '#5baef5')}
-            ${this.renderStatInline('運動', sel.stats.athletic, '#E74C3C')}
-            ${this.renderStatInline('知性', sel.stats.intel, '#2ECC71')}
+            ${this.renderStatInline(t('charSelect.statSpeech'), sel.stats.speech, '#5baef5')}
+            ${this.renderStatInline(t('charSelect.statAthletic'), sel.stats.athletic, '#E74C3C')}
+            ${this.renderStatInline(t('charSelect.statIntel'), sel.stats.intel, '#2ECC71')}
           </div>
 
           <!-- Select button -->
@@ -214,7 +214,7 @@ export class CharacterSelectScreen implements Screen {
             font-size:0.95em;
             box-shadow:0 0 15px ${info.color}40, 2px 2px 4px rgba(0,0,0,0.3);
             flex-shrink:0;
-          ">この生徒を選ぶ</button>
+          ">${t('charSelect.selectBtn')}</button>
         </div>
 
         <!-- Right arrow -->
@@ -280,10 +280,10 @@ export class CharacterSelectScreen implements Screen {
     this.bindEvents();
   }
 
-  private renderStatInline(label: string, value: number, color: string): string {
+  private renderStatInline(statLabel: string, value: number, color: string): string {
     return `
       <div style="display:flex; align-items:center; gap:4px;">
-        <span style="font-size:0.65em; color:rgba(255,255,255,0.5);">${label}</span>
+        <span style="font-size:0.65em; color:rgba(255,255,255,0.5);">${statLabel}</span>
         <div style="
           width:48px; height:5px; background:rgba(255,255,255,0.1);
           border-radius:3px; overflow:hidden;
@@ -308,7 +308,6 @@ export class CharacterSelectScreen implements Screen {
       this.selectedStudent = this.students[next];
       this.render();
     } else {
-      // 端 → 次/前の派閥へ
       this.callbacks.onChangeFaction(delta, delta === 1 ? 'first' : 'last');
     }
   }
@@ -360,10 +359,10 @@ export class CharacterSelectScreen implements Screen {
       const student = this.selectedStudent;
       selectBtn.addEventListener('pointerup', () => {
         showConfirmDialog(this.container, {
-          title: 'キャラクター確認',
-          message: `<strong>${student.name}</strong>でゲームを始めますか？`,
-          okLabel: '決定',
-          cancelLabel: '戻る',
+          title: t('charSelect.confirmTitle'),
+          message: t('charSelect.confirmMsg', { name: student.name }),
+          okLabel: t('charSelect.confirmOk'),
+          cancelLabel: t('charSelect.confirmCancel'),
           okStyle: 'primary',
         }).then((confirmed) => {
           if (confirmed) this.callbacks.onSelect(student);

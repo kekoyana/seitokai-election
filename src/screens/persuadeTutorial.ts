@@ -8,6 +8,7 @@ import {
   getAttitudeCost,
 } from '../battleLogic';
 import type { Screen } from './Screen';
+import { t } from '../i18n';
 
 interface PersuadeTutorialCallbacks {
   onFinish: () => void;
@@ -30,56 +31,49 @@ const FORCED_CHOICES: Partial<Record<TutorialStep, ForcedChoice>> = {
   r2_stance:   null,
 };
 
-const GUIDE_MESSAGES: Record<TutorialStep, { title: string; text: string; btn?: string }> = {
-  r1_attitude: {
-    title: 'まず雑談で機嫌を上げよう',
-    text: 'いきなり思想を語っても通じにくい。まずは<strong style="color:#F0D070;">雑談</strong>で相手の機嫌を良くしよう！<br>' +
-      '<strong style="color:#4A90D9;">「普通に」</strong>を選んでね。',
-  },
-  r1_topic: {
-    title: '趣味の話題を選ぼう',
-    text: '趣味の横の <span style="color:#7EC850;">♥</span> は好き、<span style="color:#F07070;">✗</span> は嫌い。<br>' +
-      'あおいの好きな<strong style="color:#7EC850;">「SNS」</strong>を選ぼう！',
-  },
-  r1_stance: {
-    title: '立場を選ぼう',
-    text: '好きな話題は<strong style="color:#7EC850;">「肯定」</strong>すると機嫌がアップ！',
-  },
-  r1_result: {
-    title: '機嫌が上がった！',
-    text: '機嫌が良いほど、思想説得の効果が<strong>大きく</strong>なる！<br>' +
-      '次はいよいよ派閥の政策で説得しよう。',
-    btn: '次へ',
-  },
-  r2_attitude: {
-    title: '思想で説得しよう',
-    text: '機嫌が良くなったところで、<strong style="color:#7EC8F0;">派閥の政策</strong>で攻めよう！<br>' +
-      '今度は自由に選んでみて。',
-  },
-  r2_topic: {
-    title: '派閥の政策を選ぼう',
-    text: '<span style="color:#7EC8F0;">派閥の政策</span>はバーを大きく動かす直接攻撃！<br>' +
-      '自分の派閥を推すか、相手の派閥を攻撃しよう。',
-  },
-  r2_stance: {
-    title: '立場を選ぼう',
-    text: '自分の派閥なら<span style="color:#7EC850;">肯定</span>、相手の派閥なら<span style="color:#F07070;">否定</span>が有効！',
-  },
-  r2_result: {
-    title: 'バーが動いた！',
-    text: '雑談で機嫌を上げてから思想説得——これが基本の流れだ！<br>' +
-      '本番では<strong>10ラウンド</strong>繰り返して勝負がつく。',
-    btn: 'OK',
-  },
-  end: {
-    title: 'チュートリアル完了！',
-    text: '攻略のコツ：<br>' +
-      '・まず<strong>雑談で機嫌</strong>を上げてから思想説得<br>' +
-      '・事前に<strong>雑談で趣味</strong>を聞いておこう<br>' +
-      '・同じ話題の繰り返しは効果が下がる',
-    btn: '閉じる',
-  },
-};
+function getGuideMessages(): Record<TutorialStep, { title: string; text: string; btn?: string }> {
+  return {
+    r1_attitude: {
+      title: t('tutorial.r1AttitudeTitle'),
+      text: t('tutorial.r1AttitudeText'),
+    },
+    r1_topic: {
+      title: t('tutorial.r1TopicTitle'),
+      text: t('tutorial.r1TopicText'),
+    },
+    r1_stance: {
+      title: t('tutorial.r1StanceTitle'),
+      text: t('tutorial.r1StanceText'),
+    },
+    r1_result: {
+      title: t('tutorial.r1ResultTitle'),
+      text: t('tutorial.r1ResultText'),
+      btn: t('tutorial.r1ResultBtn'),
+    },
+    r2_attitude: {
+      title: t('tutorial.r2AttitudeTitle'),
+      text: t('tutorial.r2AttitudeText'),
+    },
+    r2_topic: {
+      title: t('tutorial.r2TopicTitle'),
+      text: t('tutorial.r2TopicText'),
+    },
+    r2_stance: {
+      title: t('tutorial.r2StanceTitle'),
+      text: t('tutorial.r2StanceText'),
+    },
+    r2_result: {
+      title: t('tutorial.r2ResultTitle'),
+      text: t('tutorial.r2ResultText'),
+      btn: t('tutorial.r2ResultBtn'),
+    },
+    end: {
+      title: t('tutorial.endTitle'),
+      text: t('tutorial.endText'),
+      btn: t('tutorial.endBtn'),
+    },
+  };
+}
 
 export class PersuadeTutorial implements Screen {
   private container: HTMLDivElement;
@@ -149,7 +143,7 @@ export class PersuadeTutorial implements Screen {
   /** ガイドメッセージを画面下に表示し、強制選択のハイライトを適用 */
   private showGuide(step: TutorialStep): void {
     this.step = step;
-    const msg = GUIDE_MESSAGES[step];
+    const msg = getGuideMessages()[step];
     const forced = FORCED_CHOICES[step];
 
     // バトル画面のボタンにハイライト/暗転を適用

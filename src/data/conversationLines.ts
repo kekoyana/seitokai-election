@@ -1,6 +1,8 @@
 import type { Personality, HobbyPreference, Gender } from '../types';
 import type { AffinityLevel } from './labels';
 import { getAffinityInfo } from './labels';
+import { getLang } from '../i18n';
+import { EN_TALK_LINES_DATA, EN_PLAYER_LINES_DATA, EN_CHITCHAT_LINES_DATA, EN_CHITCHAT_NARRATIONS, EN_NARRATION_RESULTS } from '../i18n/en-dialogue';
 
 /** 会話テキスト用の3段階グループ（7段階AffinityLevelからマッピング） */
 type TalkAffinityGroup = 'high' | 'mid' | 'low';
@@ -376,7 +378,8 @@ const TALK_LINES_DATA: Record<Personality, Record<Gender, TalkLineSet>> = {
 
 /** 相手のセリフを取得（性格×性別） */
 export function getTalkLines(personality: Personality, gender: Gender): TalkLineSet {
-  return TALK_LINES_DATA[personality][gender];
+  const data = getLang() === 'en' ? EN_TALK_LINES_DATA : TALK_LINES_DATA;
+  return data[personality][gender];
 }
 
 // ============================
@@ -448,7 +451,8 @@ const PLAYER_LINES_DATA: Record<Personality, Record<Gender, PlayerLineSet>> = {
 
 /** プレイヤーのセリフを取得（性格×性別） */
 export function getPlayerLines(personality: Personality, gender: Gender): PlayerLineSet {
-  return PLAYER_LINES_DATA[personality][gender];
+  const data = getLang() === 'en' ? EN_PLAYER_LINES_DATA : PLAYER_LINES_DATA;
+  return data[personality][gender];
 }
 
 /** 好感度から会話テキスト用の3段階グループを返す */
@@ -532,17 +536,18 @@ const CHITCHAT_LINES_DATA: Record<Personality, Record<Gender, ChitchatLineSet>> 
 };
 
 export function getChitchatLines(personality: Personality, gender: Gender): ChitchatLineSet {
-  return CHITCHAT_LINES_DATA[personality][gender];
+  const data = getLang() === 'en' ? EN_CHITCHAT_LINES_DATA : CHITCHAT_LINES_DATA;
+  return data[personality][gender];
 }
 
-export const CHITCHAT_NARRATIONS: string[] = [
+const CHITCHAT_NARRATIONS_JA: string[] = [
   '廊下で声をかけられた。',
   'ふと呼び止められた。',
   '通りすがりに話しかけられた。',
   '偶然すれ違って立ち話になった。',
 ];
 
-export const NARRATION_RESULTS: Record<'positive' | 'negative' | 'neutral', string[]> = {
+const NARRATION_RESULTS_JA: Record<'positive' | 'negative' | 'neutral', string[]> = {
   positive: [
     '少し打ち解けたようだ。',
     '距離が縮まった気がする。',
@@ -559,3 +564,17 @@ export const NARRATION_RESULTS: Record<'positive' | 'negative' | 'neutral', stri
     'まあまあの雰囲気だった。',
   ],
 };
+
+/** @deprecated Use getChitchatNarrations() for i18n support */
+export const CHITCHAT_NARRATIONS = CHITCHAT_NARRATIONS_JA;
+
+/** @deprecated Use getNarrationResults() for i18n support */
+export const NARRATION_RESULTS = NARRATION_RESULTS_JA;
+
+export function getChitchatNarrations(): string[] {
+  return getLang() === 'en' ? EN_CHITCHAT_NARRATIONS : CHITCHAT_NARRATIONS_JA;
+}
+
+export function getNarrationResults(): Record<'positive' | 'negative' | 'neutral', string[]> {
+  return getLang() === 'en' ? EN_NARRATION_RESULTS : NARRATION_RESULTS_JA;
+}

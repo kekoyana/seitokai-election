@@ -3,6 +3,8 @@ import type {
   HairStyle, Attribute, PreferenceAttr, Personality, LocationId
 } from '../types';
 import { CLASS_LOCATION_MAP } from './locations';
+import { getLang } from '../i18n';
+import { EN_STUDENT_DATA } from '../i18n/en-students';
 
 import tanakaDaikiPortrait from '../../assets/portraits/tanaka_daiki.webp';
 import yamamotoRenPortrait from '../../assets/portraits/yamamoto_ren.webp';
@@ -1144,4 +1146,25 @@ export function getStudentLocation(studentId: string, _timeSlot: string, day: nu
   // 帰宅組: 約80%が帰宅
   if (rand < 4) return null;
   return 'library';
+}
+
+export function getStudentName(student: Student): string {
+  if (getLang() === 'en') {
+    return EN_STUDENT_DATA[student.id]?.name ?? student.name;
+  }
+  return student.name;
+}
+
+export function getStudentNickname(student: Student): string {
+  if (getLang() === 'en') {
+    return EN_STUDENT_DATA[student.id]?.nickname ?? student.nickname;
+  }
+  return student.nickname;
+}
+
+export function getStudentDescription(student: Student): string {
+  if (getLang() === 'en') {
+    return EN_STUDENT_DATA[student.id]?.description ?? student.description;
+  }
+  return student.description;
 }

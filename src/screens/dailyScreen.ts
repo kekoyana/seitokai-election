@@ -1,4 +1,4 @@
-import type { GameState, Student, LocationId, ActionType, Floor } from '../types';
+import type { GameState, Student, LocationId, Floor } from '../types';
 import {
   LOCATIONS, FACTION_INFO, FACTION_LABELS, getStudentLocation,
   HOBBY_LABELS, getCatchphrase, renderInitialIcon,
@@ -8,7 +8,7 @@ import {
   CLASS_LOCATION_MAP,
 } from '../data';
 import { ORGANIZATIONS } from '../data/organizations';
-import { getOrganizationVote } from '../logic/organizationLogic';
+
 import { bgm } from '../bgm';
 import { se } from '../se';
 import dailyBg from '../../assets/backgrounds/daily.jpg';
@@ -20,6 +20,7 @@ import { renderInfoPanel, renderOrgInfoSection, renderInfoHeader } from './daily
 import type { InfoPanelState } from './daily/infoPanel';
 import { on, onDataAttr } from '../ui/dom';
 import type { Screen } from './Screen';
+import { t } from '../i18n';
 
 /** 時間帯に応じたオーバーレイCSS（夕焼け→夜） */
 function getTimeOverlayStyle(currentTime: number): string {
@@ -56,10 +57,10 @@ function getStudentRoleInfo(studentId: string, clubId: string | null): {
   for (const org of ORGANIZATIONS) {
     if (!org.id.startsWith('class')) continue;
     if (org.leaderId === studentId) {
-      badges.push({ label: `${org.name.replace('組', '')} 代表`, isLeader: true });
+      badges.push({ label: `${org.name.replace('組', '')} ${t('daily.representative')}`, isLeader: true });
       hasClassRole = true;
     } else if (org.subLeaderIds.includes(studentId)) {
-      badges.push({ label: `${org.name.replace('組', '')} 副代表`, isLeader: false });
+      badges.push({ label: `${org.name.replace('組', '')} ${t('daily.viceRepresentative')}`, isLeader: false });
       hasClassRole = true;
     }
   }
@@ -70,10 +71,10 @@ function getStudentRoleInfo(studentId: string, clubId: string | null): {
     const org = ORGANIZATIONS.find(o => o.id === orgId);
     if (org) {
       if (org.leaderId === studentId) {
-        badges.push({ label: `${clubName} 代表`, isLeader: true });
+        badges.push({ label: `${clubName} ${t('daily.representative')}`, isLeader: true });
         hasClubRole = true;
       } else if (org.subLeaderIds.includes(studentId)) {
-        badges.push({ label: `${clubName} 副代表`, isLeader: false });
+        badges.push({ label: `${clubName} ${t('daily.viceRepresentative')}`, isLeader: false });
         hasClubRole = true;
       }
     }
@@ -160,7 +161,6 @@ export class DailyScreen implements Screen {
   }
 
   private render(): void {
-    const factionInfo = FACTION_INFO.find(f => f.id === this.state.faction);
     const candidateColor = this.getFactionColor();
     const studentsHere = this.getStudentsAtLocation();
     const currentLocation = LOCATIONS.find(l => l.id === this.state.currentLocation);
@@ -201,13 +201,13 @@ export class DailyScreen implements Screen {
             : renderInitialIcon(pc.name, pc.personality, 28, 'rgba(255,255,255,0.5)')
           ) : ''}
           <span style="font-weight:bold; color:#fff; font-size:0.85em;">${pc?.name ?? ''}</span>
-          <span style="opacity:0.8; font-size:0.75em; color:#fff;">${FACTION_LABELS[this.state.faction ?? 'conservative'] ?? ''}派</span>
+          <span style="opacity:0.8; font-size:0.75em; color:#fff;">${FACTION_LABELS[this.state.faction ?? 'conservative'] ?? ''}${t('daily.factionSuffix')}</span>
         </div>
         <div class="game-hud-badge" style="
           pointer-events:auto;
           display:flex; gap:6px; align-items:center;
         ">
-          <span style="font-size:0.85em;">${isCorridorLocation(this.state.currentLocation) ? `${FLOOR_LABELS[getFloorFromLocation(this.state.currentLocation)]} 廊下` : currentLocation?.name ?? ''}</span>
+          <span style="font-size:0.85em;">${isCorridorLocation(this.state.currentLocation) ? `${FLOOR_LABELS[getFloorFromLocation(this.state.currentLocation)]} ${t('daily.corridor')}` : currentLocation?.name ?? ''}</span>
           <span style="opacity:0.3;">|</span>
           <div style="display:flex; flex-direction:column; align-items:center; line-height:1.1; font-size:0.75em; min-width:35px;">
             <strong>${dayToDate(this.state.day)}</strong>
@@ -234,13 +234,13 @@ export class DailyScreen implements Screen {
           animation: fadeIn 0.2s ease;
         ">
           <div class="game-panel" style="width:300px; padding:24px; text-align:center;">
-            <div style="font-weight:bold; margin-bottom:16px; color:var(--game-heading); font-size:1.1em;">システム</div>
+            <div style="font-weight:bold; margin-bottom:16px; color:var(--game-heading); font-size:1.1em;">${t('daily.system')}</div>
             <div style="display:flex; flex-direction:column; gap:10px;">
-              <button id="sys-save-btn" class="game-btn game-btn-primary" style="padding:10px 16px; width:100%; font-family:var(--game-font);">セーブ</button>
-              <button id="sys-load-btn" class="game-btn game-btn-warning" style="padding:10px 16px; width:100%; font-family:var(--game-font);">ロード</button>
+              <button id="sys-save-btn" class="game-btn game-btn-primary" style="padding:10px 16px; width:100%; font-family:var(--game-font);">${t('daily.save')}</button>
+              <button id="sys-load-btn" class="game-btn game-btn-warning" style="padding:10px 16px; width:100%; font-family:var(--game-font);">${t('daily.load')}</button>
               <div style="margin-top:4px;">
-                <div style="font-size:0.85em; color:var(--game-text); margin-bottom:8px;">音量調整</div>
-                <div style="font-size:0.78em; color:var(--game-text-dim); margin-bottom:4px; text-align:left;">BGM</div>
+                <div style="font-size:0.85em; color:var(--game-text); margin-bottom:8px;">${t('daily.volumeAdjust')}</div>
+                <div style="font-size:0.78em; color:var(--game-text-dim); margin-bottom:4px; text-align:left;">${t('daily.bgm')}</div>
                 <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
                   <span id="sys-bgm-icon" style="font-size:1.2em;">${bgm.volume > 0 ? '🔊' : '🔇'}</span>
                   <input id="sys-bgm-slider" type="range" min="0" max="100" value="${bgmPct}" style="
@@ -249,7 +249,7 @@ export class DailyScreen implements Screen {
                   "/>
                   <span id="sys-bgm-label" style="font-size:0.9em; width:35px; text-align:right;">${bgmPct}%</span>
                 </div>
-                <div style="font-size:0.78em; color:var(--game-text-dim); margin-bottom:4px; text-align:left;">効果音</div>
+                <div style="font-size:0.78em; color:var(--game-text-dim); margin-bottom:4px; text-align:left;">${t('daily.sfx')}</div>
                 <div style="display:flex; align-items:center; gap:10px;">
                   <span id="sys-se-icon" style="font-size:1.2em;">${se.volume > 0 ? '🔔' : '🔕'}</span>
                   <input id="sys-se-slider" type="range" min="0" max="100" value="${sePct}" style="
@@ -259,8 +259,8 @@ export class DailyScreen implements Screen {
                   <span id="sys-se-label" style="font-size:0.9em; width:35px; text-align:right;">${sePct}%</span>
                 </div>
               </div>
-              <button id="sys-tutorial-btn" class="game-btn game-btn-success" style="padding:10px 16px; width:100%; font-family:var(--game-font);">チュートリアル（説得の遊び方）</button>
-              <button id="sys-close-btn" class="game-btn game-btn-disabled" style="padding:10px 16px; width:100%; font-family:var(--game-font); opacity:1; cursor:pointer;">閉じる</button>
+              <button id="sys-tutorial-btn" class="game-btn game-btn-success" style="padding:10px 16px; width:100%; font-family:var(--game-font);">${t('daily.tutorial')}</button>
+              <button id="sys-close-btn" class="game-btn game-btn-disabled" style="padding:10px 16px; width:100%; font-family:var(--game-font); opacity:1; cursor:pointer;">${t('daily.close')}</button>
             </div>
           </div>
         </div>
@@ -356,7 +356,7 @@ export class DailyScreen implements Screen {
         ">
           <div style="font-size:1.5em; margin-bottom:12px;">🌙</div>
           <p style="color:#e0d8f0; font-size:0.95em; line-height:1.6; margin-bottom:20px;">
-            もう遅い時間だ…<br>今日はここまでにしよう
+            ${t('daily.timeUpMsg')}
           </p>
           <button id="timeup-next-day-btn" style="
             padding:12px 36px;
@@ -369,7 +369,7 @@ export class DailyScreen implements Screen {
             transition: transform 0.1s;
           " onpointerdown="this.style.transform='scale(0.95)'"
              onpointerup="this.style.transform='scale(1)'"
-          >翌日へ →</button>
+          >${t('daily.nextDayArrow')}</button>
         </div>
       </div>
     ` : '';
@@ -422,13 +422,13 @@ export class DailyScreen implements Screen {
         margin-top:12px; text-align:center;
         border:2px solid #F0A030;
       ">
-        <p style="color:#888; font-size:0.85em; margin-bottom:12px;">体力が尽きました</p>
+        <p style="color:#888; font-size:0.85em; margin-bottom:12px;">${t('daily.staminaExhausted')}</p>
         <button id="next-day-btn" style="
           padding:12px 32px;
           background:linear-gradient(135deg,#F0A030,#D08010);
           color:#fff; border:none; border-radius:50px;
           font-size:1em; font-weight:bold; cursor:pointer; font-family:inherit;
-        ">翌日へ →</button>
+        ">${t('daily.nextDayArrow')}</button>
       </div>
     `;
   }
@@ -452,16 +452,16 @@ export class DailyScreen implements Screen {
     if (li) {
       const owner = this.state.students.find(s => s.id === li.ownerId);
       if (owner) {
-        items.push(`<span id="lostitem-indicator" style="color:#D4A017; cursor:pointer; text-decoration:underline; text-underline-offset:3px;" data-target-id="${li.ownerId}">📦 ${owner.name}の${li.itemName}を所持中</span>`);
+        items.push(`<span id="lostitem-indicator" style="color:#D4A017; cursor:pointer; text-decoration:underline; text-underline-offset:3px;" data-target-id="${li.ownerId}">${t('daily.lostItemHolding', { name: owner.name, item: li.itemName })}</span>`);
       } else {
-        items.push(`<span style="color:#D4A017;">📦 ${li.itemName}を所持中（${li.hint}）</span>`);
+        items.push(`<span style="color:#D4A017;">${t('daily.lostItemHoldingNoOwner', { item: li.itemName, hint: li.hint })}</span>`);
       }
     }
     const er = this.state.errand;
     if (er) {
       const from = this.state.students.find(s => s.id === er.fromId);
       const to = this.state.students.find(s => s.id === er.toId);
-      items.push(`<span id="errand-indicator" style="color:#4A90D9; cursor:pointer; text-decoration:underline; text-underline-offset:3px;" data-target-id="${er.toId}">📨 ${from?.name ?? '?'}の${er.itemName}を${to?.name ?? '?'}に届ける</span>`);
+      items.push(`<span id="errand-indicator" style="color:#4A90D9; cursor:pointer; text-decoration:underline; text-underline-offset:3px;" data-target-id="${er.toId}">${t('daily.errandHolding', { from: from?.name ?? '?', item: er.itemName, to: to?.name ?? '?' })}</span>`);
     }
     if (items.length === 0) return '';
     return `
@@ -487,11 +487,11 @@ export class DailyScreen implements Screen {
     let info: TrainInfo | null = null;
 
     if (loc === 'broadcast_room' && pc) {
-      info = { stat: 'speech', label: '発声練習', statLabel: '弁舌', desc: 'マイクの前で発声練習をする', icon: '🎙️', current: pc.stats.speech, color: '#E07820' };
+      info = { stat: 'speech', label: t('daily.trainSpeech'), statLabel: t('daily.trainSpeechStat'), desc: t('daily.trainSpeechDesc'), icon: '🎙️', current: pc.stats.speech, color: '#E07820' };
     } else if ((loc === 'track_field' || loc === 'soccer_field' || loc === 'baseball_field' || loc === 'tennis_court') && pc) {
-      info = { stat: 'athletic', label: '運動', statLabel: '運動', desc: 'グラウンドで体を動かす', icon: '🏃', current: pc.stats.athletic, color: '#27AE60' };
+      info = { stat: 'athletic', label: t('daily.trainAthletic'), statLabel: t('daily.trainAthleticStat'), desc: t('daily.trainAthleticDesc'), icon: '🏃', current: pc.stats.athletic, color: '#27AE60' };
     } else if (loc === 'library' && pc) {
-      info = { stat: 'intel', label: '読書', statLabel: '知力', desc: '本を読んで知識を深める', icon: '📚', current: pc.stats.intel, color: '#2E5FAC' };
+      info = { stat: 'intel', label: t('daily.trainIntel'), statLabel: t('daily.trainIntelStat'), desc: t('daily.trainIntelDesc'), icon: '📚', current: pc.stats.intel, color: '#2E5FAC' };
     }
 
     if (!info) return '';
@@ -510,7 +510,7 @@ export class DailyScreen implements Screen {
           <button data-train="${info.stat}" class="game-btn ${canTrain ? 'game-btn-primary' : 'game-btn-disabled'}" style="
             padding:8px 16px;
             font-size:0.85em; font-family:var(--game-font);
-          ">${info.label}（⚡${trainCost} / ${timeCost}分）</button>
+          ">${t('daily.trainBtn', { label: info.label, cost: trainCost, min: timeCost })}</button>
         </div>
         <div style="display:flex; align-items:center; gap:8px;">
           <span style="font-size:0.78em; color:var(--game-text-dim); min-width:32px;">${info.statLabel}</span>
@@ -524,7 +524,7 @@ export class DailyScreen implements Screen {
           </div>
           <span style="font-size:0.82em; font-weight:bold; color:${info.color}; min-width:28px; text-align:right;">${info.current}</span>
         </div>
-        ${noTime ? '<div style="font-size:0.72em; color:#C0392B; margin-top:6px; text-align:right;">時間が足りない</div>' : ''}
+        ${noTime ? `<div style="font-size:0.72em; color:#C0392B; margin-top:6px; text-align:right;">${t('daily.noTime')}</div>` : ''}
       </div>
     `;
   }
@@ -542,8 +542,8 @@ export class DailyScreen implements Screen {
         font-size:0.85em; cursor:pointer;
         text-align:left; font-family:inherit;
       ">
-        <div style="font-weight:bold;">← ${getFloorFromLocation(this.state.currentLocation) === 'ground' ? 'グラウンドへ' : '廊下へ'}</div>
-        <div style="font-size:0.75em; opacity:0.85;">フロア移動</div>
+        <div style="font-weight:bold;">← ${getFloorFromLocation(this.state.currentLocation) === 'ground' ? t('daily.toGround') : t('daily.toCorridor')}</div>
+        <div style="font-size:0.75em; opacity:0.85;">${t('daily.floorMove')}</div>
       </button>
     ` : '';
 
@@ -555,8 +555,8 @@ export class DailyScreen implements Screen {
         font-size:0.85em;
         text-align:left; font-family:var(--game-font);
       ">
-        <div style="font-weight:bold;">情報</div>
-        <div style="font-size:0.75em; opacity:0.85;">クラス・部活</div>
+        <div style="font-weight:bold;">${t('daily.info')}</div>
+        <div style="font-size:0.75em; opacity:0.85;">${t('daily.infoClassClub')}</div>
       </button>
     ` : '';
 
@@ -566,7 +566,7 @@ export class DailyScreen implements Screen {
         font-size:0.85em;
         text-align:left; font-family:var(--game-font);
       ">
-        <div style="font-weight:bold;">翌日へ</div>
+        <div style="font-weight:bold;">${t('daily.nextDay')}</div>
         <div style="font-size:0.75em; opacity:0.85;">${dayToDate(this.state.day)}</div>
       </button>
     ` : '';
@@ -583,13 +583,13 @@ export class DailyScreen implements Screen {
       return `
         <div class="game-panel" style="margin-bottom:12px; text-align:center; padding:16px;">
           <div style="font-size:0.9em; color:var(--game-text); margin-bottom:8px;">
-            ベッドで横になって休憩できる
+            ${t('daily.nurseRestDesc')}
           </div>
           <button id="nurse-rest-btn" class="game-btn ${canRest ? 'game-btn-primary' : 'game-btn-disabled'}" style="
             padding:10px 24px;
             font-size:0.9em; font-family:var(--game-font);
-          ">休憩する（体力全回復 / ${TIME_COST.NURSE_REST}分）</button>
-          ${!canRest && !isOutOfStamina ? '<div style="font-size:0.72em; color:#C0392B; margin-top:6px;">時間が足りない</div>' : ''}
+          ">${t('daily.nurseRestBtn', { min: TIME_COST.NURSE_REST })}</button>
+          ${!canRest && !isOutOfStamina ? `<div style="font-size:0.72em; color:#C0392B; margin-top:6px;">${t('daily.noTime')}</div>` : ''}
         </div>
       `;
     }
@@ -603,13 +603,13 @@ export class DailyScreen implements Screen {
         return `
           <div class="game-panel" style="margin-bottom:12px; text-align:center; padding:16px;">
             <div style="font-size:0.9em; color:var(--game-text); margin-bottom:8px;">
-              自分の席で少し休める
+              ${t('daily.classroomRestDesc')}
             </div>
             <button id="classroom-rest-btn" class="game-btn ${canRest ? 'game-btn-primary' : 'game-btn-disabled'}" style="
               padding:10px 24px;
               font-size:0.9em; font-family:var(--game-font);
-            ">休憩する（体力+40 / ${TIME_COST.CLASSROOM_REST}分）</button>
-            ${!canRest && !isOutOfStamina ? '<div style="font-size:0.72em; color:#C0392B; margin-top:6px;">時間が足りない</div>' : ''}
+            ">${t('daily.classroomRestBtn', { min: TIME_COST.CLASSROOM_REST })}</button>
+            ${!canRest && !isOutOfStamina ? `<div style="font-size:0.72em; color:#C0392B; margin-top:6px;">${t('daily.noTime')}</div>` : ''}
           </div>
         `;
       }
@@ -621,13 +621,13 @@ export class DailyScreen implements Screen {
       return `
         <div class="game-panel" style="margin-bottom:12px; text-align:center; padding:16px;">
           <div style="font-size:0.9em; color:var(--game-text); margin-bottom:8px;">
-            風が気持ちいい…少し休もう
+            ${t('daily.rooftopRestDesc')}
           </div>
           <button id="rooftop-rest-btn" class="game-btn ${canRest ? 'game-btn-primary' : 'game-btn-disabled'}" style="
             padding:10px 24px;
             font-size:0.9em; font-family:var(--game-font);
-          ">一息つく（体力+10 / ${TIME_COST.ROOFTOP_REST}分）</button>
-          ${!canRest && !isOutOfStamina ? '<div style="font-size:0.72em; color:#C0392B; margin-top:6px;">時間が足りない</div>' : ''}
+          ">${t('daily.rooftopRestBtn', { min: TIME_COST.ROOFTOP_REST })}</button>
+          ${!canRest && !isOutOfStamina ? `<div style="font-size:0.72em; color:#C0392B; margin-top:6px;">${t('daily.noTime')}</div>` : ''}
         </div>
       `;
     }
@@ -637,7 +637,7 @@ export class DailyScreen implements Screen {
 
   private renderMainPanel(studentsHere: Student[], isOutOfStamina: boolean): string {
     const studentsHtml = studentsHere.length === 0
-      ? `<div style="text-align:center; color:#aaa; padding:20px; font-size:0.9em;">ここには誰もいない</div>`
+      ? `<div style="text-align:center; color:#aaa; padding:20px; font-size:0.9em;">${t('daily.nobodyHere')}</div>`
       : studentsHere.map(s => this.renderStudentCard(s)).join('');
 
     const endDayHtml = this.renderEndDayPanel(isOutOfStamina);
@@ -664,8 +664,8 @@ export class DailyScreen implements Screen {
               font-size:0.85em; cursor:pointer;
               text-align:left; font-family:inherit;
             ">
-              <div style="font-weight:bold;">← ${getFloorFromLocation(this.state.currentLocation) === 'ground' ? 'グラウンドへ' : '廊下へ'}</div>
-              <div style="font-size:0.75em; opacity:0.85;">フロア移動</div>
+              <div style="font-weight:bold;">← ${getFloorFromLocation(this.state.currentLocation) === 'ground' ? t('daily.toGround') : t('daily.toCorridor')}</div>
+              <div style="font-size:0.75em; opacity:0.85;">${t('daily.floorMove')}</div>
             </button>
             <button id="info-btn" class="game-btn" style="
               padding:10px 12px;
@@ -674,15 +674,15 @@ export class DailyScreen implements Screen {
               font-size:0.85em;
               text-align:left; font-family:var(--game-font);
             ">
-              <div style="font-weight:bold;">情報</div>
-              <div style="font-size:0.75em; opacity:0.85;">クラス・部活</div>
+              <div style="font-weight:bold;">${t('daily.info')}</div>
+              <div style="font-size:0.75em; opacity:0.85;">${t('daily.infoClassClub')}</div>
             </button>
             <button id="next-day-btn-always" class="game-btn game-btn-warning" style="
               padding:10px 12px;
               font-size:0.85em;
               text-align:left; font-family:var(--game-font);
             ">
-              <div style="font-weight:bold;">翌日へ</div>
+              <div style="font-weight:bold;">${t('daily.nextDay')}</div>
               <div style="font-size:0.75em; opacity:0.85;">${dayToDate(this.state.day)}</div>
             </button>
           </div>
@@ -690,34 +690,13 @@ export class DailyScreen implements Screen {
       </div>
 
       <div class="game-panel" style="margin-bottom:12px;">
-        <h3 style="font-size:0.9em; color:var(--game-heading); margin-bottom:10px; font-weight:bold;">この場所にいる生徒</h3>
+        <h3 style="font-size:0.9em; color:var(--game-heading); margin-bottom:10px; font-weight:bold;">${t('daily.studentsHere')}</h3>
         ${studentsHtml}
       </div>
 
       ${orgInfoHtml}
 
       ${endDayHtml}
-    `;
-  }
-
-  private renderActionButton(
-    type: ActionType, label: string, desc: string,
-    cost: string, color: string, disabled: boolean
-  ): string {
-    const canUse = !disabled;
-    return `
-      <button data-action="${type}" style="
-        padding:10px 12px;
-        background:${canUse ? color : '#ccc'};
-        color:#fff; border:none; border-radius:10px;
-        font-size:0.85em; cursor:${canUse ? 'pointer' : 'not-allowed'};
-        text-align:left; font-family:inherit;
-        opacity:${canUse ? '1' : '0.5'};
-      ">
-        <div style="font-weight:bold;">${label}</div>
-        <div style="font-size:0.75em; opacity:0.85;">${desc}</div>
-        <div style="font-size:0.7em; opacity:0.7;">⚡${cost}</div>
-      </button>
     `;
   }
 
@@ -752,40 +731,39 @@ export class DailyScreen implements Screen {
           <div style="display:flex; align-items:center; gap:4px; flex-wrap:wrap; margin-top:1px; font-size:0.75em; color:var(--game-text-dim);">
             ${renderStudentAffiliation(s.id, s.className, s.clubId)}
           </div>
-          <div style="font-size:0.72em; color:${affinityColor};">好感度: ${affinityLabel}</div>
+          <div style="font-size:0.72em; color:${affinityColor};">${t('daily.affinity')}: ${affinityLabel}</div>
           ${(() => {
             const maxKey = ALL_FACTION_IDS
               .reduce((a, b) => s.support[a] >= s.support[b] ? a : b);
             const sc = FACTION_INFO.find(f => f.id === maxKey);
-            const isAlly = maxKey === this.state.faction;
             return `<span style="
               font-size:0.7em; background:${sc?.color ?? '#888'}; color:#fff;
               border-radius:3px; padding:1px 6px;
               border:1px solid ${sc?.color ?? '#888'}60;
-            ">${FACTION_LABELS[maxKey] ?? ''}派</span>`;
+            ">${FACTION_LABELS[maxKey] ?? ''}${t('daily.factionSuffix')}</span>`;
           })()}
         </div>
         <div style="display:flex; flex-direction:column; gap:4px; flex-shrink:0;">
           <button data-action-talk="${s.id}" class="game-btn ${canTalk ? 'game-btn-primary' : 'game-btn-disabled'}" style="
             padding:5px 10px;
             font-size:0.78em; font-family:var(--game-font);
-          ">趣味(⚡${talkCost})</button>
+          ">${t('daily.hobbyTalk', { cost: talkCost })}</button>
           <button data-action-gossip="${s.id}" class="game-btn ${canTalk ? '' : 'game-btn-disabled'}" style="
             padding:5px 10px;
             background:linear-gradient(180deg,#9B6B9E,#7B4B7E);
             border-color:#B080B0;
             font-size:0.78em; font-family:var(--game-font);
-          ">噂話(⚡${talkCost})</button>
+          ">${t('daily.gossipTalk', { cost: talkCost })}</button>
           <button data-action-persuade="${s.id}" class="game-btn ${canPersuade ? 'game-btn-warning' : 'game-btn-disabled'}" style="
             padding:5px 10px;
             font-size:0.78em; font-family:var(--game-font);
-          ">説得</button>
+          ">${t('daily.persuade')}</button>
           <button data-action-info="${s.id}" class="game-btn" style="
             padding:5px 10px;
             background:linear-gradient(180deg,#6a7890,#4a5870);
             border-color:#8090a8;
             font-size:0.78em; font-family:var(--game-font);
-          ">情報</button>
+          ">${t('daily.infoBtn')}</button>
           ${this.state.lostItem?.ownerId === s.id ? `
             <button data-deliver-lost="${s.id}" class="game-btn" style="
               padding:5px 10px;
@@ -793,7 +771,7 @@ export class DailyScreen implements Screen {
               border-color:#E8C840;
               font-size:0.78em; font-family:var(--game-font);
               animation: game-pulse 1.5s ease-in-out infinite;
-            ">届ける</button>
+            ">${t('daily.deliver')}</button>
           ` : ''}
           ${this.state.errand?.toId === s.id ? `
             <button data-deliver-errand="${s.id}" class="game-btn" style="
@@ -802,7 +780,7 @@ export class DailyScreen implements Screen {
               border-color:#E8C840;
               font-size:0.78em; font-family:var(--game-font);
               animation: game-pulse 1.5s ease-in-out infinite;
-            ">届ける</button>
+            ">${t('daily.deliver')}</button>
           ` : ''}
         </div>
       </div>
@@ -824,7 +802,7 @@ export class DailyScreen implements Screen {
     const hobbiesHtml = Object.entries(s.hobbies).map(([hobby, pref]) => {
       const isRevealed = isPlayer || s.revealedHobbies.has(hobby as import('../types').HobbyTopic);
       const prefColor = pref === 'like' ? '#27AE60' : pref === 'dislike' ? '#C0392B' : '#888';
-      const prefLabel = pref === 'like' ? '好き' : pref === 'dislike' ? '嫌い' : '普通';
+      const prefLabel = pref === 'like' ? t('daily.prefLike') : pref === 'dislike' ? t('daily.prefDislike') : t('daily.prefNormal');
       return `
         <div style="
           display:flex; justify-content:space-between;
@@ -871,7 +849,7 @@ export class DailyScreen implements Screen {
           ${renderStudentAffiliation(s.id, s.className, s.clubId)}
         </div>
         ${isPlayer
-          ? `<div style="font-size:0.75em; color:${borderColor}; font-weight:bold; margin-top:2px;">${FACTION_LABELS[this.state.faction ?? 'conservative'] ?? ''}派</div>`
+          ? `<div style="font-size:0.75em; color:${borderColor}; font-weight:bold; margin-top:2px;">${FACTION_LABELS[this.state.faction ?? 'conservative'] ?? ''}${t('daily.factionSuffix')}</div>`
           : ''
         }
         <div style="font-size:0.75em; color:#888; margin-top:2px;">「${getCatchphrase(s.personality, s.attributes)}」</div>
@@ -907,13 +885,13 @@ export class DailyScreen implements Screen {
     const statusGridHtml = isPlayer
       ? `<div style="margin-bottom:8px;">
           <div style="background:rgba(240,245,255,0.8); border-radius:8px; padding:6px; font-size:0.78em;">
-            <div style="color:#888;">スタミナ</div>
+            <div style="color:#888;">${t('daily.stamina')}</div>
             <div style="font-weight:bold;">${this.state.stamina} / 100</div>
           </div>
         </div>`
       : `<div style="margin-bottom:8px;">
           <div style="background:rgba(240,245,255,0.8); border-radius:8px; padding:6px; font-size:0.78em;">
-            <div style="color:#888;">好感度</div>
+            <div style="color:#888;">${t('daily.affinity')}</div>
             <div style="font-weight:bold; color:${getAffinityInfo(s.affinity).color};">${getAffinityInfo(s.affinity).label}</div>
           </div>
         </div>`;
@@ -927,18 +905,18 @@ export class DailyScreen implements Screen {
         ${statusGridHtml}
 
         <div style="background:rgba(240,245,255,0.8); border-radius:8px; padding:6px; margin-bottom:12px; font-size:0.78em;">
-          <div style="color:#888; margin-bottom:3px;">思想</div>
+          <div style="color:#888; margin-bottom:3px;">${t('daily.ideology')}</div>
           ${renderSupportBar(supportData, 12)}
         </div>
 
         <div style="display:flex; flex-direction:column; gap:4px; margin-bottom:12px;">
-          ${statsBar('弁舌', s.stats.speech, '#4A90D9')}
-          ${statsBar('運動', s.stats.athletic, '#E74C3C')}
-          ${statsBar('知性', s.stats.intel, '#27AE60')}
+          ${statsBar(t('daily.statSpeech'), s.stats.speech, '#4A90D9')}
+          ${statsBar(t('daily.statAthletic'), s.stats.athletic, '#E74C3C')}
+          ${statsBar(t('daily.statIntel'), s.stats.intel, '#27AE60')}
         </div>
 
         <div>
-          <div style="font-size:0.8em; color:#888; margin-bottom:6px;">趣味</div>
+          <div style="font-size:0.8em; color:#888; margin-bottom:6px;">${t('daily.hobbyLabel')}</div>
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:4px;">${hobbiesHtml}</div>
         </div>
       </div>
@@ -1212,10 +1190,10 @@ export class DailyScreen implements Screen {
     if (this.container.querySelector('.game-dialog-overlay')) return;
 
     showConfirmDialog(this.container, {
-      title: '翌日へ',
-      message: '翌日に進みますか？',
-      okLabel: '翌日へ →',
-      cancelLabel: 'やめる',
+      title: t('daily.nextDayConfirmTitle'),
+      message: t('daily.nextDayConfirmMsg'),
+      okLabel: t('daily.nextDayConfirmOk'),
+      cancelLabel: t('daily.nextDayConfirmCancel'),
       okStyle: 'warning',
     }).then(ok => {
       if (ok) this.callbacks.onNextDay();
@@ -1290,10 +1268,10 @@ export class DailyScreen implements Screen {
 
   showLostItemFound(itemName: string, hint: string, callback?: (picked: boolean) => void): void {
     showConfirmDialog(this.container, {
-      title: '落とし物発見',
-      message: `足元に${itemName}が落ちている…\n${hint}`,
-      okLabel: '拾う',
-      cancelLabel: '無視する',
+      title: t('daily.lostItemFoundTitle'),
+      message: t('daily.lostItemFoundMsg', { item: itemName, hint }),
+      okLabel: t('daily.lostItemPick'),
+      cancelLabel: t('daily.lostItemIgnore'),
     }).then((picked) => {
       if (callback) callback(picked);
     });

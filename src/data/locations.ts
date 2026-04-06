@@ -1,36 +1,27 @@
 import type { Location, LocationId, Floor } from '../types';
+import { label } from '../i18n';
+import type { DataCategory } from '../i18n/ja-data';
 
-export const LOCATIONS: Location[] = [
-  { id: 'class1a', name: '教室 1-A' },
-  { id: 'class1b', name: '教室 1-B' },
-  { id: 'class1c', name: '教室 1-C' },
-  { id: 'class1d', name: '教室 1-D' },
-  { id: 'class2a', name: '教室 2-A' },
-  { id: 'class2b', name: '教室 2-B' },
-  { id: 'class2c', name: '教室 2-C' },
-  { id: 'class2d', name: '教室 2-D' },
-  { id: 'class3a', name: '教室 3-A' },
-  { id: 'class3b', name: '教室 3-B' },
-  { id: 'class3c', name: '教室 3-C' },
-  { id: 'class3d', name: '教室 3-D' },
-  { id: 'track_field', name: '陸上競技場' },
-  { id: 'soccer_field', name: 'サッカーグラウンド' },
-  { id: 'baseball_field', name: '野球グラウンド' },
-  { id: 'tennis_court', name: 'テニスコート' },
-  { id: 'music_room', name: '吹奏楽室' },
-  { id: 'art_room', name: '美術室' },
-  { id: 'broadcast_room', name: '放送室' },
-  { id: 'courtyard', name: '中庭' },
-  { id: 'library', name: '図書室' },
-  { id: 'cafeteria', name: '食堂' },
-  { id: 'nurses_office', name: '保健室' },
-  { id: 'rooftop', name: '屋上' },
-  { id: 'student_council', name: '生徒会室' },
-  { id: 'corridor_1f', name: '1階廊下' },
-  { id: 'corridor_2f', name: '2階廊下' },
-  { id: 'corridor_3f', name: '3階廊下' },
-  { id: 'corridor_ground', name: 'グラウンド' },
+function proxyLabels(category: DataCategory): Record<string, string> {
+  return new Proxy({} as Record<string, string>, {
+    get: (_target, key: string) => label(category, key),
+  });
+}
+
+const LOCATION_IDS: LocationId[] = [
+  'class1a', 'class1b', 'class1c', 'class1d',
+  'class2a', 'class2b', 'class2c', 'class2d',
+  'class3a', 'class3b', 'class3c', 'class3d',
+  'track_field', 'soccer_field', 'baseball_field', 'tennis_court',
+  'music_room', 'art_room', 'broadcast_room',
+  'courtyard', 'library', 'cafeteria', 'nurses_office', 'rooftop', 'student_council',
+  'corridor_1f', 'corridor_2f', 'corridor_3f', 'corridor_ground',
 ];
+
+export const LOCATIONS: Location[] = LOCATION_IDS.map(id => ({
+  id,
+  get name() { return label('location', id); },
+}));
 
 // フロア関連データ
 export const LOCATION_FLOOR_MAP: Record<LocationId, Floor> = {
@@ -62,12 +53,7 @@ export const FLOOR_ADJACENCY: Record<Floor, Floor[]> = {
   'ground': ['1f'],
 };
 
-export const FLOOR_LABELS: Record<Floor, string> = {
-  '1f': '1階',
-  '2f': '2階',
-  '3f': '3階',
-  'ground': 'グラウンド',
-};
+export const FLOOR_LABELS: Record<Floor, string> = proxyLabels('floor') as Record<Floor, string>;
 
 export const MOVE_COST = {
   ENTER_ROOM: 1,

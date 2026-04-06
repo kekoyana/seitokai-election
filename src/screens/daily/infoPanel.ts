@@ -5,6 +5,7 @@ import {
 } from '../../data';
 import { ORGANIZATIONS, SPORTS_CLUB_IDS, CULTURE_CLUB_IDS } from '../../data/organizations';
 import { getOrganizationVote, calcOrganizationSupport } from '../../logic/organizationLogic';
+import { t } from '../../i18n';
 
 export interface InfoPanelState {
   tab: 'class' | 'club' | 'objective';
@@ -69,17 +70,17 @@ function renderInfoTabs(activeTab: 'class' | 'club' | 'objective'): string {
   `;
   return `
     <div style="display:flex; gap:2px; margin-bottom:12px;">
-      <button data-info-tab="class" style="${tabStyle(activeTab === 'class')}">クラス</button>
-      <button data-info-tab="club" style="${tabStyle(activeTab === 'club')}">部活</button>
-      <button data-info-tab="objective" style="${tabStyle(activeTab === 'objective')}">目的</button>
+      <button data-info-tab="class" style="${tabStyle(activeTab === 'class')}">${t('daily.tabClass')}</button>
+      <button data-info-tab="club" style="${tabStyle(activeTab === 'club')}">${t('daily.tabClub')}</button>
+      <button data-info-tab="objective" style="${tabStyle(activeTab === 'objective')}">${t('daily.tabObjective')}</button>
     </div>
   `;
 }
 
 function renderInfoSubTabs(tab: 'class' | 'club', activeSubTab: string): string {
   const items = tab === 'class'
-    ? [{ key: 'grade1', label: '1年' }, { key: 'grade2', label: '2年' }, { key: 'grade3', label: '3年' }]
-    : [{ key: 'sports', label: '体育会系' }, { key: 'culture', label: '文化系' }];
+    ? [{ key: 'grade1', label: t('daily.grade1') }, { key: 'grade2', label: t('daily.grade2') }, { key: 'grade3', label: t('daily.grade3') }]
+    : [{ key: 'sports', label: t('daily.sports') }, { key: 'culture', label: t('daily.culture') }];
 
   const btnStyle = (active: boolean) => `
     padding:5px 12px; border:none; border-radius:12px;

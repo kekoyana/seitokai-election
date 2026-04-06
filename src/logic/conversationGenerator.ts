@@ -1,8 +1,8 @@
 import type { Student, HobbyTopic, Personality, Gender, PreferenceAttr } from '../types';
 import { HOBBY_LABELS, ATTRIBUTE_LABELS } from '../data';
 import {
-  getTalkLines, getPlayerLines, NARRATION_RESULTS, getTalkAffinityGroup,
-  getChitchatLines, CHITCHAT_NARRATIONS,
+  getTalkLines, getPlayerLines, getNarrationResults, getTalkAffinityGroup,
+  getChitchatLines, getChitchatNarrations,
 } from '../data/conversationLines';
 
 export interface ConversationStep {
@@ -187,7 +187,7 @@ export function generateConversationData(
   resultEffectParts.push(`<span style="color:${affinityColor};">好感度 ${affinitySign}${affinityGain}</span>`);
 
   const result: ConversationResult = {
-    text: pick(NARRATION_RESULTS[resultType]),
+    text: pick(getNarrationResults()[resultType]),
     effectHtml: resultEffectParts.join('<br>'),
   };
 
@@ -277,7 +277,7 @@ export function generateChitchatData(
   resultEffectParts.push(`<span style="color:#7EC850;">好感度 +${affinityGain}</span>`);
 
   const result: ConversationResult = {
-    text: pick(CHITCHAT_NARRATIONS),
+    text: pick(getChitchatNarrations()),
     effectHtml: resultEffectParts.join('<br>'),
     affinityGain,
   };

@@ -1,84 +1,32 @@
-export const HAIRSTYLE_LABELS: Record<string, string> = {
-  straight: 'ストレート',
-  ponytail: 'ポニーテール',
-  twintail: 'ツインテール',
-  braid: '三つ編み',
-  wavy: 'ウェーブ',
-  bun: 'お団子',
-  bob: 'ボブカット',
-};
+import { label } from '../i18n';
+import type { DataCategory } from '../i18n/ja-data';
+import { jaData } from '../i18n/ja-data';
 
-export const HOBBY_LABELS: Record<string, string> = {
-  love: '恋バナ',
-  game: 'ゲーム',
-  sns: 'SNS',
-  sports_hobby: 'スポーツ',
-  study: '勉強',
-  video: '動画',
-  music: '音楽',
-  reading: '読書',
-  fashion: 'ファッション',
-  fortune: '占い',
-};
+function proxyLabels(category: DataCategory): Record<string, string> {
+  const keys = Object.keys(jaData[category] ?? {});
+  return new Proxy({} as Record<string, string>, {
+    get: (_target, key: string) => {
+      if (key === Symbol.toPrimitive as unknown) return undefined;
+      return label(category, key);
+    },
+    ownKeys: () => keys,
+    getOwnPropertyDescriptor: (_target, key) => {
+      if (keys.includes(key as string)) {
+        return { configurable: true, enumerable: true, writable: true, value: label(category, key as string) };
+      }
+      return undefined;
+    },
+    has: (_target, key) => keys.includes(key as string),
+  });
+}
 
-export const ATTRIBUTE_LABELS: Record<string, string> = {
-  glasses: 'メガネ',
-  blonde: '金髪',
-  young: '幼い',
-  adult: '大人',
-  flat: '貧乳',
-  busty: '巨乳',
-  energetic_social: '陽キャ',
-  introverted: '陰キャ',
-  serious: '真面目',
-  delinquent: '不良',
-  fashionable: 'おしゃれ',
-  airhead: '天然',
-  cool: 'クール',
-  energetic: '元気',
-  sporty: '体育',
-  // 髪型（好み・苦手用）
-  straight: 'ストレート',
-  ponytail: 'ポニーテール',
-  twintail: 'ツインテール',
-  braid: '三つ編み',
-  wavy: 'ウェーブ',
-  bun: 'お団子',
-  bob: 'ボブカット',
-};
-
-export const MOOD_LABELS: Record<string, string> = {
-  furious: '激怒',
-  upset: '不機嫌',
-  normal: '平常',
-  favorable: '好意的',
-  devoted: '心酔',
-};
-
-export const TIME_LABELS: Record<string, string> = {
-  morning: '朝',
-  lunch: '昼',
-  afternoon: '午後',
-  afterschool: '放課後',
-};
-
-export const PERSONALITY_LABELS: Record<string, string> = {
-  passionate: '熱血',
-  cautious: '慎重',
-  stubborn: '頑固',
-  flexible: '柔軟',
-  cunning: '狡猾',
-};
-
-export const CLUB_LABELS: Record<string, string> = {
-  soccer: 'サッカー部',
-  track: '陸上部',
-  tennis: 'テニス部',
-  art: '美術部',
-  baseball: '野球部',
-  brass: '吹奏楽部',
-  student_council: '生徒会',
-};
+export const HAIRSTYLE_LABELS: Record<string, string> = proxyLabels('hairstyle');
+export const HOBBY_LABELS: Record<string, string> = proxyLabels('hobby');
+export const ATTRIBUTE_LABELS: Record<string, string> = proxyLabels('attribute');
+export const MOOD_LABELS: Record<string, string> = proxyLabels('mood');
+export const TIME_LABELS: Record<string, string> = proxyLabels('time');
+export const PERSONALITY_LABELS: Record<string, string> = proxyLabels('personality');
+export const CLUB_LABELS: Record<string, string> = proxyLabels('club');
 
 /** Day番号(1〜30)を「9/1」形式の日付文字列に変換（9月1日スタート） */
 export function dayToDate(day: number): string {
@@ -103,30 +51,27 @@ export interface AffinityInfo {
   color: string;
 }
 
-const AFFINITY_LEVELS: { min: number; level: AffinityLevel; label: string; color: string }[] = [
-  { min:  60, level: 'devoted',  label: '心酔', color: '#1B8A3A' },
-  { min:  35, level: 'trust',    label: '信頼', color: '#27AE60' },
-  { min:  15, level: 'friendly', label: '好意', color: '#7EC850' },
-  { min: -14, level: 'neutral',  label: '普通', color: '#888888' },
-  { min: -34, level: 'wary',     label: '警戒', color: '#C8A030' },
-  { min: -59, level: 'dislike',  label: '不快', color: '#D07020' },
-  { min: -Infinity, level: 'hostile', label: '敵意', color: '#C0392B' },
+const AFFINITY_LEVELS: { min: number; level: AffinityLevel; color: string }[] = [
+  { min:  60, level: 'devoted',  color: '#1B8A3A' },
+  { min:  35, level: 'trust',    color: '#27AE60' },
+  { min:  15, level: 'friendly', color: '#7EC850' },
+  { min: -14, level: 'neutral',  color: '#888888' },
+  { min: -34, level: 'wary',     color: '#C8A030' },
+  { min: -59, level: 'dislike',  color: '#D07020' },
+  { min: -Infinity, level: 'hostile', color: '#C0392B' },
 ];
 
 export function getAffinityInfo(affinity: number): AffinityInfo {
   for (const entry of AFFINITY_LEVELS) {
     if (affinity >= entry.min) {
-      return { level: entry.level, label: entry.label, color: entry.color };
+      return { level: entry.level, label: label('affinity', entry.level), color: entry.color };
     }
   }
-  return AFFINITY_LEVELS[AFFINITY_LEVELS.length - 1];
+  const last = AFFINITY_LEVELS[AFFINITY_LEVELS.length - 1];
+  return { level: last.level, label: label('affinity', last.level), color: last.color };
 }
 
-export const AFFINITY_LABELS: Record<AffinityLevel, string> = {
-  devoted: '心酔', trust: '信頼', friendly: '好意',
-  neutral: '普通',
-  wary: '警戒', dislike: '不快', hostile: '敵意',
-};
+export const AFFINITY_LABELS: Record<string, string> = proxyLabels('affinity');
 
 // 性格ごとのイニシャルアイコン背景色
 export const PERSONALITY_ICON_COLORS: Record<string, string> = {

@@ -349,7 +349,7 @@ export function resolvePlayerTurn(
 
   const newBar = clamp(battle.barPosition + effectivePlayerEffect, -100, 100);
 
-  const logText = buildPlayerLogText(attitude, topic, stance, effectivePlayerEffect);
+  const logText = buildPlayerLogText(attitude, topic, stance, effectivePlayerEffect, playerGender);
 
   const newBattle: BattleState = {
     ...battle,
@@ -411,7 +411,7 @@ export function resolveEnemyTurn(battle: BattleState): { newBattle: BattleState;
   const enemyEffect = battle.isDefending ? -rawEnemyEffect : rawEnemyEffect;
   const newBar = clamp(battle.barPosition + enemyEffect, -100, 100);
 
-  const counterLine = getCounterLine(student.personality, battle.enemyMood);
+  const counterLine = getCounterLine(student.personality, battle.enemyMood, student.gender);
   const logLabel = battle.isDefending ? '説得' : '反論';
   const logText = `「${counterLine}」（${logLabel} ${Math.abs(enemyEffect)}）`;
 
@@ -452,9 +452,10 @@ function buildPlayerLogText(
   topic: Topic,
   stance: Stance,
   effect: number,
+  gender: Gender,
 ): string {
   const isFactionTopic = (ALL_FACTION_IDS as readonly string[]).includes(topic);
-  const line = getPlayerLine(attitude, isFactionTopic, stance);
+  const line = getPlayerLine(attitude, isFactionTopic, stance, gender);
   const sign = effect >= 0 ? '+' : '';
   return `「${line}」（${sign}${effect}）`;
 }

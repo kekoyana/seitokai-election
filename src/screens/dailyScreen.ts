@@ -21,6 +21,7 @@ import type { InfoPanelState } from './daily/infoPanel';
 import { on, onDataAttr } from '../ui/dom';
 import type { Screen } from './Screen';
 import { t } from '../i18n';
+import { getStudentName, getStudentNickname, getStudentDescription } from '../data/students';
 
 /** 時間帯に応じたオーバーレイCSS（夕焼け→夜） */
 function getTimeOverlayStyle(currentTime: number): string {
@@ -452,7 +453,7 @@ export class DailyScreen implements Screen {
     if (li) {
       const owner = this.state.students.find(s => s.id === li.ownerId);
       if (owner) {
-        items.push(`<span id="lostitem-indicator" style="color:#D4A017; cursor:pointer; text-decoration:underline; text-underline-offset:3px;" data-target-id="${li.ownerId}">${t('daily.lostItemHolding', { name: owner.name, item: li.itemName })}</span>`);
+        items.push(`<span id="lostitem-indicator" style="color:#D4A017; cursor:pointer; text-decoration:underline; text-underline-offset:3px;" data-target-id="${li.ownerId}">${t('daily.lostItemHolding', { name: getStudentName(owner), item: li.itemName })}</span>`);
       } else {
         items.push(`<span style="color:#D4A017;">${t('daily.lostItemHoldingNoOwner', { item: li.itemName, hint: li.hint })}</span>`);
       }
@@ -461,7 +462,7 @@ export class DailyScreen implements Screen {
     if (er) {
       const from = this.state.students.find(s => s.id === er.fromId);
       const to = this.state.students.find(s => s.id === er.toId);
-      items.push(`<span id="errand-indicator" style="color:#4A90D9; cursor:pointer; text-decoration:underline; text-underline-offset:3px;" data-target-id="${er.toId}">${t('daily.errandHolding', { from: from?.name ?? '?', item: er.itemName, to: to?.name ?? '?' })}</span>`);
+      items.push(`<span id="errand-indicator" style="color:#4A90D9; cursor:pointer; text-decoration:underline; text-underline-offset:3px;" data-target-id="${er.toId}">${t('daily.errandHolding', { from: from ? getStudentName(from) : '?', item: er.itemName, to: to ? getStudentName(to) : '?' })}</span>`);
     }
     if (items.length === 0) return '';
     return `
@@ -714,19 +715,19 @@ export class DailyScreen implements Screen {
         display:flex; align-items:center; gap:10px;
       ">
         ${s.portrait
-          ? `<img src="${s.portrait}" alt="${s.name}" style="
+          ? `<img src="${s.portrait}" alt="${getStudentName(s)}" style="
               width:96px; height:96px; border-radius:4px;
               object-fit:cover; object-position:top;
               border:2px solid var(--game-panel-border);
               flex-shrink:0;
               box-shadow:0 2px 6px rgba(0,0,0,0.4);
             "/>`
-          : renderInitialIcon(s.name, s.personality, 96, '#b0c0d8')
+          : renderInitialIcon(getStudentName(s), s.personality, 96, '#b0c0d8')
         }
         <div style="flex:1; min-width:0;">
           <div style="display:flex; align-items:center; gap:4px; flex-wrap:wrap;">
-            <span style="font-size:0.9em; font-weight:bold; color:var(--game-text);">${s.name}</span>
-            <span style="font-size:0.72em; color:var(--game-text-dim);">（${s.nickname}）</span>
+            <span style="font-size:0.9em; font-weight:bold; color:var(--game-text);">${getStudentName(s)}</span>
+            <span style="font-size:0.72em; color:var(--game-text-dim);">（${getStudentNickname(s)}）</span>
           </div>
           <div style="display:flex; align-items:center; gap:4px; flex-wrap:wrap; margin-top:1px; font-size:0.75em; color:var(--game-text-dim);">
             ${renderStudentAffiliation(s.id, s.className, s.clubId)}
@@ -833,18 +834,18 @@ export class DailyScreen implements Screen {
     const closeBtnId = isPlayer ? 'close-player-btn' : 'close-info-btn';
     const portraitSize = 180;
     const portraitImgHtml = s.portrait
-      ? `<img src="${s.portrait}" alt="${s.name}" style="
+      ? `<img src="${s.portrait}" alt="${getStudentName(s)}" style="
             width:${portraitSize}px; height:${portraitSize}px; border-radius:8px;
             object-fit:cover; object-position:top;
             border:2px solid ${borderColor};
             box-shadow:0 2px 8px rgba(0,0,0,0.15);
             flex-shrink:0;
           "/>`
-      : renderInitialIcon(s.name, s.personality, portraitSize, borderColor);
+      : renderInitialIcon(getStudentName(s), s.personality, portraitSize, borderColor);
 
     const infoLineHtml = `
       <div style="flex:1; min-width:0;">
-        <div style="font-size:1.05em; font-weight:bold; color:#333;">${s.name} <span style="font-size:0.72em; color:#888; font-weight:normal;">（${s.nickname}）</span></div>
+        <div style="font-size:1.05em; font-weight:bold; color:#333;">${getStudentName(s)} <span style="font-size:0.72em; color:#888; font-weight:normal;">（${getStudentNickname(s)}）</span></div>
         <div style="display:flex; align-items:center; gap:4px; flex-wrap:wrap; margin-top:2px; font-size:0.78em; color:#888;">
           ${renderStudentAffiliation(s.id, s.className, s.clubId)}
         </div>
@@ -856,7 +857,7 @@ export class DailyScreen implements Screen {
       </div>`;
 
     const profileDescHtml = `
-      <div style="font-size:0.75em; color:#666; line-height:1.5; background:#f8f9fb; border-radius:8px; padding:6px 10px; margin-bottom:8px;">${s.description}</div>`;
+      <div style="font-size:0.75em; color:#666; line-height:1.5; background:#f8f9fb; border-radius:8px; padding:6px 10px; margin-bottom:8px;">${getStudentDescription(s)}</div>`;
 
     const headerHtml = backAction === 'close'
       ? `<div style="margin-bottom:10px;">
@@ -872,7 +873,7 @@ export class DailyScreen implements Screen {
           </div>
           ${profileDescHtml}
         </div>`
-      : `${renderInfoHeader(s.name, backAction)}
+      : `${renderInfoHeader(getStudentName(s), backAction)}
         <div style="display:flex; align-items:flex-start; gap:12px; margin-bottom:8px;">
           ${portraitImgHtml}
           ${infoLineHtml}

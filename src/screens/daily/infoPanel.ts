@@ -6,6 +6,7 @@ import {
 import { ORGANIZATIONS, SPORTS_CLUB_IDS, CULTURE_CLUB_IDS } from '../../data/organizations';
 import { getOrganizationVote, calcOrganizationSupport } from '../../logic/organizationLogic';
 import { t } from '../../i18n';
+import { getStudentName, getStudentNickname } from '../../data/students';
 
 export interface InfoPanelState {
   tab: 'class' | 'club' | 'objective';
@@ -115,12 +116,12 @@ export function renderOrgInfoSection(ctx: { state: GameState }, org: typeof ORGA
         color:${voteCandidate?.color ?? '#888'};
         border:1px solid ${(voteCandidate?.color ?? '#888')}50;
         font-weight:bold;
-      ">${FACTION_LABELS[vote] ?? ''}派${isAlly ? ' ✓' : ''}</span>
+      ">${FACTION_LABELS[vote] ?? ''}${t('daily.factionSuffix')}${isAlly ? ' ✓' : ''}</span>
     </div>
     <div style="display:flex; align-items:center; gap:6px; margin-bottom:4px; font-size:0.72em; color:var(--game-text-dim);">
-      <span>代表: <strong style="color:var(--game-text);">${leader?.name ?? '?'}</strong></span>
+      <span>${t('daily.orgRepresentative')}: <strong style="color:var(--game-text);">${leader ? getStudentName(leader) : '?'}</strong></span>
       <span style="opacity:0.4;">|</span>
-      <span>${totalMembers}名</span>
+      <span>${t('daily.membersCount', { count: totalMembers })}</span>
     </div>
     <div style="font-size:0.72em; color:var(--game-text-dim); margin-bottom:6px; line-height:1.5;">${org.description}</div>
     ${renderSupportBar(orgSupport, 14, true)}
@@ -142,54 +143,53 @@ function renderObjectivePanel(ctx: InfoPanelContext): string {
 
   return `
     <div class="game-panel" style="padding:14px;">
-      ${renderInfoHeader('情報')}
+      ${renderInfoHeader(t('daily.info'))}
       ${renderInfoTabs('objective')}
 
       <div style="font-size:0.95em; font-weight:bold; color:var(--game-heading); margin-bottom:10px; text-align:center;">
-        学園祭の企画投票で<span style="color:${factionColor};">${factionLabel}派</span>を勝利させよう！
+        ${t('daily.objectiveTitle', { color: factionColor, faction: factionLabel })}
       </div>
 
       <div style="background:var(--game-panel-inner); border-radius:8px; padding:10px; margin-bottom:10px; font-size:0.8em; line-height:1.7; color:var(--game-text);">
-        学園祭を外部公開するか、伝統を守るか、体育祭に変えるか——<br>
-        <strong>30日間</strong>で生徒たちを説得し、各組織（クラス・部活）の支持を集めよう。
+        ${t('daily.objectiveDesc')}
       </div>
 
       <div style="font-size:0.82em; color:var(--game-text); margin-bottom:8px;">
-        <strong>勝利条件</strong>（どちらかを達成）
+        <strong>${t('daily.winCondition')}</strong>${t('daily.winConditionSub')}
       </div>
       <div style="display:flex; flex-direction:column; gap:6px; margin-bottom:12px;">
         <div style="background:rgba(126,200,80,0.1); border:1px solid rgba(126,200,80,0.3); border-radius:6px; padding:8px 10px; font-size:0.78em; line-height:1.5;">
-          <strong style="color:#7EC850;">① 投票日に過半数の組織を支持させる</strong><br>
-          <span style="color:var(--game-text-dim);">30日後の投票で最も支持を集めた派閥が勝利</span>
+          <strong style="color:#7EC850;">${t('daily.winCond1')}</strong><br>
+          <span style="color:var(--game-text-dim);">${t('daily.winCond1Desc')}</span>
         </div>
         <div style="background:rgba(126,200,80,0.1); border:1px solid rgba(126,200,80,0.3); border-radius:6px; padding:8px 10px; font-size:0.78em; line-height:1.5;">
-          <strong style="color:#7EC850;">② 全組織の支持を統一する</strong><br>
-          <span style="color:var(--game-text-dim);">全クラス・部活を自派閥に引き込めば即座にクリア</span>
+          <strong style="color:#7EC850;">${t('daily.winCond2')}</strong><br>
+          <span style="color:var(--game-text-dim);">${t('daily.winCond2Desc')}</span>
         </div>
       </div>
 
       <div style="font-size:0.82em; color:var(--game-text); margin-bottom:8px;">
-        <strong>現在の状況</strong>
+        <strong>${t('daily.currentStatus')}</strong>
       </div>
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; font-size:0.8em; margin-bottom:12px;">
         <div style="background:var(--game-panel-inner); border-radius:6px; padding:8px; text-align:center;">
-          <div style="color:var(--game-text-dim); font-size:0.85em;">支持組織</div>
+          <div style="color:var(--game-text-dim); font-size:0.85em;">${t('daily.supportOrgs')}</div>
           <div style="font-size:1.3em; font-weight:bold; color:${factionColor};">${allyCount}<span style="font-size:0.6em; color:var(--game-text-dim);">/${totalCount}</span></div>
         </div>
         <div style="background:var(--game-panel-inner); border-radius:6px; padding:8px; text-align:center;">
-          <div style="color:var(--game-text-dim); font-size:0.85em;">残り日数</div>
-          <div style="font-size:1.3em; font-weight:bold; color:var(--game-text);">${remainDays}<span style="font-size:0.6em; color:var(--game-text-dim);">日</span></div>
+          <div style="color:var(--game-text-dim); font-size:0.85em;">${t('daily.remainDays')}</div>
+          <div style="font-size:1.3em; font-weight:bold; color:var(--game-text);">${remainDays}<span style="font-size:0.6em; color:var(--game-text-dim);">${t('daily.remainDaysUnit')}</span></div>
         </div>
       </div>
 
       <div style="font-size:0.82em; color:var(--game-text); margin-bottom:8px;">
-        <strong>攻略のコツ</strong>
+        <strong>${t('daily.tips')}</strong>
       </div>
       <div style="font-size:0.78em; color:var(--game-text-dim); line-height:1.7;">
-        ・生徒と<strong>雑談</strong>して趣味や好みを知ろう<br>
-        ・<strong>説得バトル</strong>で組織のキーパーソンを味方につけよう<br>
-        ・雑談で<strong>機嫌を上げてから</strong>思想を語ると効果的<br>
-        ・組織の<strong>代表</strong>を説得すると支持が大きく動く
+        ${t('daily.tip1')}<br>
+        ${t('daily.tip2')}<br>
+        ${t('daily.tip3')}<br>
+        ${t('daily.tip4')}
       </div>
     </div>
   `;
@@ -229,19 +229,19 @@ function renderInfoOrgList(ctx: InfoPanelContext, tab: 'class' | 'club'): string
         text-align:left; font-family:inherit;
       ">
         ${leader ? (leader.portrait
-          ? `<img src="${leader.portrait}" alt="${leader.name}" style="
+          ? `<img src="${leader.portrait}" alt="${getStudentName(leader)}" style="
               width:72px; height:72px; border-radius:50%;
               object-fit:cover; object-position:top;
               border:2px solid ${voteCandidate?.color ?? '#ddd'};
               flex-shrink:0;
             "/>`
-          : renderInitialIcon(leader.name, leader.personality, 72, voteCandidate?.color ?? '#ddd')
+          : renderInitialIcon(getStudentName(leader), leader.personality, 72, voteCandidate?.color ?? '#ddd')
         ) : ''}
         <div style="flex:1; min-width:0;">
           <div style="display:flex; align-items:center; gap:6px;">
             <span style="font-size:0.88em; font-weight:bold; color:#333;">${org.name}</span>
           </div>
-          <div style="font-size:0.72em; color:#888;">代表: ${leader?.name ?? '不明'}</div>
+          <div style="font-size:0.72em; color:#888;">${t('daily.orgRepresentative')}: ${leader ? getStudentName(leader) : t('daily.orgUnknown')}</div>
           <div style="font-size:0.68em; color:#999; margin-top:2px; line-height:1.4;">${org.description}</div>
         </div>
         <div style="display:flex; align-items:center; gap:4px; flex-shrink:0;">
@@ -251,7 +251,7 @@ function renderInfoOrgList(ctx: InfoPanelContext, tab: 'class' | 'club'): string
             color:${voteCandidate?.color ?? '#888'};
             border:1px solid ${(voteCandidate?.color ?? '#888')}33;
             font-weight:${isAlly ? 'bold' : 'normal'};
-          ">${FACTION_LABELS[vote] ?? ''}派${isAlly ? ' ✓' : ''}</span>
+          ">${FACTION_LABELS[vote] ?? ''}${t('daily.factionSuffix')}${isAlly ? ' ✓' : ''}</span>
           <span style="color:#bbb; font-size:0.8em;">›</span>
         </div>
       </button>
@@ -262,7 +262,7 @@ function renderInfoOrgList(ctx: InfoPanelContext, tab: 'class' | 'club'): string
     <div class="game-panel" style="
       padding:14px;
     ">
-      ${renderInfoHeader('情報')}
+      ${renderInfoHeader(t('daily.info'))}
       ${renderInfoTabs(tab)}
       ${renderInfoSubTabs(tab, subTab)}
 
@@ -271,7 +271,7 @@ function renderInfoOrgList(ctx: InfoPanelContext, tab: 'class' | 'club'): string
         border-radius:8px; padding:6px 12px; margin-bottom:12px;
         font-size:0.8em; color:#555; text-align:center;
       ">
-        味方: <strong style="color:${candidateColor};">${allAllyCount}</strong> / ${allOrgs.length}${tab === 'class' ? '組' : '部'}
+        ${t('daily.allyLabel')}: <strong style="color:${candidateColor};">${allAllyCount}</strong> / ${allOrgs.length}${tab === 'class' ? t('daily.unitClass') : t('daily.unitClub')}
       </div>
 
       ${orgRows}
@@ -284,10 +284,10 @@ function renderInfoOrgDetail(ctx: InfoPanelContext, org: typeof ORGANIZATIONS[nu
   const members = allMemberIds.map(id => {
     const s = ctx.state.students.find(st => st.id === id);
     const role = id === org.leaderId
-      ? (org.leaderTitle ?? '代表')
+      ? (org.leaderTitle ?? t('daily.representative'))
       : org.subLeaderIds.includes(id)
-        ? (org.subLeaderTitle ?? '副代表')
-        : 'メンバー';
+        ? (org.subLeaderTitle ?? t('daily.viceRepresentative'))
+        : t('daily.member');
     return s ? { student: s, role } : null;
   }).filter((m): m is { student: Student; role: string } => m !== null);
 
@@ -296,7 +296,9 @@ function renderInfoOrgDetail(ctx: InfoPanelContext, org: typeof ORGANIZATIONS[nu
     const maxKey = ALL_FACTION_IDS
       .reduce((a, b) => sup[a] >= sup[b] ? a : b);
     const sc = FACTION_INFO.find(f => f.id === maxKey);
-    const roleColor = role === '代表' ? '#E74C3C' : role === '副代表' ? '#E07820' : 'var(--game-text-dim)';
+    const isLeader = s.id === org.leaderId;
+    const isSubLeader = org.subLeaderIds.includes(s.id);
+    const roleColor = isLeader ? '#E74C3C' : isSubLeader ? '#E07820' : 'var(--game-text-dim)';
 
     return `
       <button data-info-student="${s.id}" style="
@@ -308,17 +310,17 @@ function renderInfoOrgDetail(ctx: InfoPanelContext, org: typeof ORGANIZATIONS[nu
         text-align:left; font-family:inherit;
       ">
         ${s.portrait
-          ? `<img src="${s.portrait}" alt="${s.name}" style="
+          ? `<img src="${s.portrait}" alt="${getStudentName(s)}" style="
               width:72px; height:72px; border-radius:50%;
               object-fit:cover; object-position:top;
               border:2px solid ${sc?.color ?? '#ddd'}; flex-shrink:0;
             "/>`
-          : renderInitialIcon(s.name, s.personality, 72, sc?.color ?? '#ddd')
+          : renderInitialIcon(getStudentName(s), s.personality, 72, sc?.color ?? '#ddd')
         }
         <div style="flex:1; min-width:0;">
           <div style="display:flex; align-items:center; gap:4px;">
-            <span style="font-size:0.85em; font-weight:bold; color:var(--game-text);">${s.name}</span>
-            <span style="font-size:0.65em; color:var(--game-text-dim);">（${s.nickname}）</span>
+            <span style="font-size:0.85em; font-weight:bold; color:var(--game-text);">${getStudentName(s)}</span>
+            <span style="font-size:0.65em; color:var(--game-text-dim);">（${getStudentNickname(s)}）</span>
             <span style="font-size:0.6em; color:${roleColor}; font-weight:bold;">${role}</span>
           </div>
           <div style="font-size:0.68em; color:var(--game-text-dim);">${s.className}</div>
@@ -347,7 +349,7 @@ function renderInfoOrgDetail(ctx: InfoPanelContext, org: typeof ORGANIZATIONS[nu
       </div>
 
       <div style="font-size:0.78em; color:var(--game-text-dim); margin-bottom:6px; font-weight:bold;">
-        メンバー（${members.length}名）
+        ${t('daily.membersTitle', { count: members.length })}
       </div>
       ${memberRows}
     </div>

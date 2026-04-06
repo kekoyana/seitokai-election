@@ -4,6 +4,8 @@ import {
   getTalkLines, getPlayerLines, getNarrationResults, getTalkAffinityGroup,
   getChitchatLines, getChitchatNarrations,
 } from '../data/conversationLines';
+import { t } from '../i18n';
+import { getStudentName } from '../data/students';
 
 export interface ConversationStep {
   speaker: 'student' | 'player';
@@ -184,7 +186,7 @@ export function generateConversationData(
     const prefIcon = pref === 'like' ? '♥' : pref === 'dislike' ? '✗' : '▲';
     resultEffectParts.push(`<span style="color:${prefColor};">${prefIcon} ${hobbyName}</span>`);
   }
-  resultEffectParts.push(`<span style="color:${affinityColor};">好感度 ${affinitySign}${affinityGain}</span>`);
+  resultEffectParts.push(`<span style="color:${affinityColor};">${t('conversation.affinityDisplay', { sign: affinitySign, value: affinityGain })}</span>`);
 
   const result: ConversationResult = {
     text: pick(getNarrationResults()[resultType]),
@@ -274,7 +276,7 @@ export function generateChitchatData(
     const prefIcon = pref === 'like' ? '♥' : pref === 'dislike' ? '✗' : '▲';
     resultEffectParts.push(`<span style="color:${prefColor};">${prefIcon} ${hobbyName}</span>`);
   }
-  resultEffectParts.push(`<span style="color:#7EC850;">好感度 +${affinityGain}</span>`);
+  resultEffectParts.push(`<span style="color:#7EC850;">${t('conversation.affinityDisplay', { sign: '+', value: affinityGain })}</span>`);
 
   const result: ConversationResult = {
     text: pick(getChitchatNarrations()),
@@ -292,7 +294,7 @@ export function generateTalkLogSummary(
   affinityGain: number,
 ): string {
   const parts: string[] = [];
-  parts.push(`${student.name}と会話した。`);
+  parts.push(t('conversation.talkLogSummary', { name: getStudentName(student) }));
 
   if (revealedHobby) {
     const hobbyName = HOBBY_LABELS[revealedHobby] ?? revealedHobby;
@@ -304,7 +306,7 @@ export function generateTalkLogSummary(
 
   const affinityColor = affinityGain > 0 ? '#7EC850' : affinityGain < 0 ? '#F07070' : '#999';
   const affinitySign = affinityGain >= 0 ? '+' : '';
-  parts.push(`<span style="color:${affinityColor};">好感度${affinitySign}${affinityGain}</span>`);
+  parts.push(`<span style="color:${affinityColor};">${t('conversation.affinityDisplay', { sign: affinitySign, value: affinityGain })}</span>`);
 
   return parts.join(' ');
 }
@@ -338,9 +340,9 @@ export function generateGossipData(
 
   // 1. プレイヤーが話しかける
   const askLines = [
-    '誰か他の人のこと、教えてくれない？',
-    'クラスメイトとかの話、聞かせてよ',
-    '周りの人について何か知ってる？',
+    t('conversation.gossipAsk1'),
+    t('conversation.gossipAsk2'),
+    t('conversation.gossipAsk3'),
   ];
   steps.push({
     speaker: 'player',
@@ -353,11 +355,11 @@ export function generateGossipData(
   const revealParts: string[] = [];
   if (reveal.hobby) {
     const hobbyName = HOBBY_LABELS[reveal.hobby.topic] ?? reveal.hobby.topic;
-    const prefLabel = reveal.hobby.pref === 'like' ? '好き' : reveal.hobby.pref === 'dislike' ? '嫌い' : '普通';
+    const prefLabel = reveal.hobby.pref === 'like' ? t('conversation.prefLike') : reveal.hobby.pref === 'dislike' ? t('conversation.prefDislike') : t('conversation.prefNormal');
     const gossipLines = [
-      `${reveal.targetName}は${hobbyName}が${prefLabel}みたいだよ`,
-      `${reveal.targetName}って${hobbyName}${prefLabel}らしいよ`,
-      `${hobbyName}のこと？${reveal.targetName}は${prefLabel}って言ってたかな`,
+      t('conversation.gossipHobby1', { target: reveal.targetName, hobby: hobbyName, pref: prefLabel }),
+      t('conversation.gossipHobby2', { target: reveal.targetName, hobby: hobbyName, pref: prefLabel }),
+      t('conversation.gossipHobby3', { target: reveal.targetName, hobby: hobbyName, pref: prefLabel }),
     ];
     steps.push({
       speaker: 'student',
@@ -372,30 +374,30 @@ export function generateGossipData(
   if (reveal.likedAttr) {
     const attrName = ATTRIBUTE_LABELS[reveal.likedAttr] ?? reveal.likedAttr;
     const gossipLines = [
-      `あと、${reveal.targetName}は${attrName}な感じの人が好みらしいよ`,
-      `${reveal.targetName}って${attrName}系が好きなんだって`,
+      t('conversation.gossipLiked1', { target: reveal.targetName, attr: attrName }),
+      t('conversation.gossipLiked2', { target: reveal.targetName, attr: attrName }),
     ];
     steps.push({
       speaker: 'student',
-      name: student.name,
+      name: getStudentName(student),
       portrait: student.portrait,
       text: `「${pick(gossipLines)}」`,
     });
-    revealParts.push(`<span style="color:#27AE60;">好み: ${attrName}</span>`);
+    revealParts.push(`<span style="color:#27AE60;">${t('conversation.gossipLikedLabel', { attr: attrName })}</span>`);
   }
   if (reveal.dislikedAttr) {
     const attrName = ATTRIBUTE_LABELS[reveal.dislikedAttr] ?? reveal.dislikedAttr;
     const gossipLines = [
-      `${reveal.targetName}は${attrName}な感じはちょっと苦手みたい`,
-      `${attrName}系は${reveal.targetName}にはウケ悪いかもね`,
+      t('conversation.gossipDisliked1', { target: reveal.targetName, attr: attrName }),
+      t('conversation.gossipDisliked2', { target: reveal.targetName, attr: attrName }),
     ];
     steps.push({
       speaker: 'student',
-      name: student.name,
+      name: getStudentName(student),
       portrait: student.portrait,
       text: `「${pick(gossipLines)}」`,
     });
-    revealParts.push(`<span style="color:#C0392B;">苦手: ${attrName}</span>`);
+    revealParts.push(`<span style="color:#C0392B;">${t('conversation.gossipDislikedLabel', { attr: attrName })}</span>`);
   }
 
   // 4. お礼
@@ -403,12 +405,12 @@ export function generateGossipData(
     speaker: 'player',
     name: playerName,
     portrait: playerPortrait,
-    text: `「ありがとう、参考になるよ」`,
+    text: `「${t('conversation.gossipThanks')}」`,
   });
 
   steps.push({
     speaker: 'student',
-    name: student.name,
+    name: getStudentName(student),
     portrait: student.portrait,
     text: `「${pick(studentLines.farewell[level])}」`,
   });
@@ -417,14 +419,14 @@ export function generateGossipData(
   const affinityColor = affinityGain > 0 ? '#7EC850' : affinityGain < 0 ? '#F07070' : '#999';
   const affinitySign = affinityGain >= 0 ? '+' : '';
   const effectParts = [
-    `${reveal.targetName}の情報: ${revealParts.join(' ')}`,
-    `<span style="color:${affinityColor};">好感度${affinitySign}${affinityGain}</span>`,
+    t('conversation.gossipResultInfo', { from: reveal.targetName, info: revealParts.join(' ') }),
+    `<span style="color:${affinityColor};">${t('conversation.affinityDisplay', { sign: affinitySign, value: affinityGain })}</span>`,
   ];
 
   return {
     steps,
     result: {
-      text: `${student.name}から${reveal.targetName}の噂を聞いた`,
+      text: t('conversation.gossipResultText', { speaker: getStudentName(student), target: reveal.targetName }),
       effectHtml: effectParts.join('<br>'),
     },
   };
@@ -437,7 +439,7 @@ export function generateGossipLogSummary(
   affinityGain: number,
 ): string {
   const parts: string[] = [];
-  parts.push(`${student.name}から${reveal.targetName}の噂を聞いた。`);
+  parts.push(t('conversation.gossipLogSummary', { speaker: getStudentName(student), target: reveal.targetName }));
 
   const infoParts: string[] = [];
   if (reveal.hobby) {
@@ -448,17 +450,17 @@ export function generateGossipLogSummary(
   }
   if (reveal.likedAttr) {
     const attrName = ATTRIBUTE_LABELS[reveal.likedAttr] ?? reveal.likedAttr;
-    infoParts.push(`<span style="color:#27AE60;">好み:${attrName}</span>`);
+    infoParts.push(`<span style="color:#27AE60;">${t('conversation.gossipLogLiked', { attr: attrName })}</span>`);
   }
   if (reveal.dislikedAttr) {
     const attrName = ATTRIBUTE_LABELS[reveal.dislikedAttr] ?? reveal.dislikedAttr;
-    infoParts.push(`<span style="color:#C0392B;">苦手:${attrName}</span>`);
+    infoParts.push(`<span style="color:#C0392B;">${t('conversation.gossipLogDisliked', { attr: attrName })}</span>`);
   }
   if (infoParts.length > 0) parts.push(infoParts.join(' '));
 
   const affinityColor = affinityGain > 0 ? '#7EC850' : affinityGain < 0 ? '#F07070' : '#999';
   const affinitySign = affinityGain >= 0 ? '+' : '';
-  parts.push(`<span style="color:${affinityColor};">好感度${affinitySign}${affinityGain}</span>`);
+  parts.push(`<span style="color:${affinityColor};">${t('conversation.affinityDisplay', { sign: affinitySign, value: affinityGain })}</span>`);
 
   return parts.join(' ');
 }

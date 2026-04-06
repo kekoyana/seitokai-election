@@ -31,6 +31,8 @@ import { bgm, BGM_TRACKS } from './bgm';
 import { se } from './se';
 import { saveGame, loadGame, deleteSaveData } from './saveLoad';
 import * as analytics from './analytics';
+import { t } from './i18n';
+import { getStudentName, getStudentNickname } from './data/students';
 
 function createInitialState(): GameState {
   return {
@@ -166,10 +168,10 @@ export class Game {
 
   private showPersuadeTutorial(returnTo: 'title' | 'daily'): void {
     showConfirmDialog(this.root, {
-      title: '説得バトル チュートリアル',
-      message: '渡辺あおいを相手に説得バトルを練習します。<br>2ラウンドで雑談→思想説得の流れを体験できます。',
-      okLabel: 'はじめる',
-      cancelLabel: 'やめる',
+      title: t('game.tutorialConfirmTitle'),
+      message: t('game.tutorialConfirmMsg'),
+      okLabel: t('game.tutorialConfirmOk'),
+      cancelLabel: t('game.tutorialConfirmCancel'),
     }).then((ok) => {
       if (!ok) return;
       bgm.play(BGM_TRACKS.settoku);
@@ -290,7 +292,7 @@ export class Game {
         saveGame(this.state);
         analytics.trackSave(this.state.day);
         if (this.dailyScreen) {
-          showInfoDialog(this.root, { title: 'セーブ', message: 'セーブしました。' });
+          showInfoDialog(this.root, { title: t('game.saveTitle'), message: t('game.saveMsg') });
         }
       },
       onLoad: () => {
@@ -311,12 +313,8 @@ export class Game {
       const fLabel = FACTION_LABELS[this.state.faction ?? 'conservative'] ?? '';
       const fColor = FACTION_INFO.find(f => f.id === this.state.faction)?.color ?? '#888';
       showInfoDialog(this.root, {
-        title: 'ゲームの目的',
-        message:
-          `学園祭の企画投票で<strong style="color:${fColor};">${fLabel}派</strong>を勝利させよう！<br><br>` +
-          '<strong>30日間</strong>で生徒たちを説得し、クラスや部活の支持を集める。<br>' +
-          '投票日に<strong>過半数の組織</strong>を支持させれば勝利！<br><br>' +
-          'まずは学園を探索してみよう。<br>廊下のマップから教室や部室に移動できるよ。',
+        title: t('game.objectiveDialogTitle'),
+        message: t('game.objectiveDialogMsg', { color: fColor, faction: fLabel }),
       });
       analytics.trackTutorialMove();
       saveGame(this.state);
@@ -340,8 +338,8 @@ export class Game {
     if (!this.state.tutorial.seenTalk) {
       this.updateState({ tutorial: { ...this.state.tutorial, seenTalk: true } });
       showInfoDialog(this.root, {
-        title: 'ヒント',
-        message: '生徒に話しかけてみよう。<br>雑談で趣味や好みを知ることができる。<br>仲良くなると説得が有利になるかも？',
+        title: t('game.hintTitle'),
+        message: t('game.hintEnterRoom'),
       });
       analytics.trackTutorialTalk();
       saveGame(this.state);
@@ -439,12 +437,12 @@ export class Game {
         speaker: 'student' as const,
         name: activist.name,
         portrait: activist.portrait,
-        text: `「${factionLabel}派の良さをわかってもらいたいんだ！」`,
+        text: `「${t('game.activistApproachLine', { faction: factionLabel })}」`,
       },
     ];
     const result = {
-      text: `${activist.name}（${factionLabel}派）が説得を仕掛けてきた！`,
-      effectHtml: '<span style="color:#E74C3C; font-weight:bold;">説得バトル開始！</span>',
+      text: t('game.activistApproachResult', { name: getStudentName(activist), faction: factionLabel }),
+      effectHtml: t('game.activistApproachEffect'),
     };
 
     this.dailyScreen?.showConversation(steps, result, () => {
@@ -501,7 +499,7 @@ export class Game {
 
     this.dailyScreen?.showConversation(convData.steps, convData.result, () => {
       this.updateState({
-        actionLogs: [...this.state.actionLogs, `${student.name}が話しかけてきた。 <span style="color:#7EC850;">好感度+${affinityGain}</span>`],
+        actionLogs: [...this.state.actionLogs, t('game.chitchatLog', { name: getStudentName(student), gain: affinityGain })],
       });
       this.dailyScreen?.update(this.state);
     });
@@ -522,10 +520,10 @@ export class Game {
     const owner = candidates[Math.floor(Math.random() * candidates.length)];
 
     const items: { name: string; hint: (s: Student) => string }[] = [
-      { name: '手帳', hint: (s) => `${s.name}と名前が書いてある` },
-      { name: 'ハンカチ', hint: (s) => `「${s.name.charAt(0)}」のイニシャル入り` },
-      { name: 'お守り', hint: (s) => s.clubId ? `${CLUB_LABELS[s.clubId] ?? s.clubId}のマークが付いている` : `${s.className}のシールが貼ってある` },
-      { name: 'ペンケース', hint: (s) => `${s.className}のシールが貼ってある` },
+      { name: t('game.lostItemNotebook'), hint: (s) => t('game.lostItemHintName', { name: getStudentName(s) }) },
+      { name: t('game.lostItemHandkerchief'), hint: (s) => t('game.lostItemHintInitial', { initial: getStudentName(s).charAt(0) }) },
+      { name: t('game.lostItemCharm'), hint: (s) => s.clubId ? t('game.lostItemHintClub', { club: CLUB_LABELS[s.clubId] ?? s.clubId }) : t('game.lostItemHintClass', { className: s.className }) },
+      { name: t('game.lostItemPenCase'), hint: (s) => t('game.lostItemHintClass', { className: s.className }) },
     ];
     const item = items[Math.floor(Math.random() * items.length)];
 
@@ -554,12 +552,12 @@ export class Game {
     const AFFINITY_GAIN = 15;
 
     const steps: import('./logic/conversationGenerator').ConversationStep[] = [
-      { speaker: 'player', name: pc?.name ?? 'あなた', portrait: pc?.portrait ?? null, text: `「これ、${owner.nickname}の${li.itemName}じゃない？」` },
-      { speaker: 'student', name: owner.name, portrait: owner.portrait, text: `「あっ、探してたの！ わざわざありがとう！」` },
+      { speaker: 'player', name: pc?.name ?? t('game.youDefault'), portrait: pc?.portrait ?? null, text: `「${t('game.deliverLostPlayerLine', { nickname: getStudentNickname(owner), item: li.itemName })}」` },
+      { speaker: 'student', name: getStudentName(owner), portrait: owner.portrait, text: `「${t('game.deliverLostOwnerLine')}」` },
     ];
     const result: import('./logic/conversationGenerator').ConversationResult = {
-      text: `${owner.name}に${li.itemName}を届けた。`,
-      effectHtml: `<span style="color:#7EC850;">${owner.name}の好感度+${AFFINITY_GAIN}</span>`,
+      text: t('game.deliverLostResult', { name: getStudentName(owner), item: li.itemName }),
+      effectHtml: t('game.deliverLostEffect', { name: getStudentName(owner), gain: AFFINITY_GAIN }),
     };
 
     this.updateState({
@@ -567,7 +565,7 @@ export class Game {
         s.id === li.ownerId ? { ...s, affinity: Math.min(100, s.affinity + AFFINITY_GAIN) } : s
       ),
       lostItem: null,
-      actionLogs: [...this.state.actionLogs, `${owner.name}に${li.itemName}を届けた。<span style="color:#7EC850;">好感度+${AFFINITY_GAIN}</span>`],
+      actionLogs: [...this.state.actionLogs, t('game.deliverLostLog', { name: getStudentName(owner), item: li.itemName, gain: AFFINITY_GAIN })],
     });
     this.dailyScreen?.update(this.state);
     this.dailyScreen?.showConversation(steps, result, () => {});
@@ -586,13 +584,13 @@ export class Game {
     const AFFINITY_GAIN = 8;
 
     const steps: import('./logic/conversationGenerator').ConversationStep[] = [
-      { speaker: 'player', name: pc?.name ?? 'あなた', portrait: pc?.portrait ?? null, text: `「${from.nickname}から${er.itemName}を預かってきたよ」` },
-      { speaker: 'student', name: to.name, portrait: to.portrait, text: `「わざわざ届けてくれたの？ ありがとう！」` },
-      { speaker: 'student', name: to.name, portrait: to.portrait, text: `「${from.nickname}にもお礼言っておくね」` },
+      { speaker: 'player', name: pc?.name ?? t('game.youDefault'), portrait: pc?.portrait ?? null, text: `「${t('game.deliverErrandPlayerLine', { from: getStudentNickname(from), item: er.itemName })}」` },
+      { speaker: 'student', name: getStudentName(to), portrait: to.portrait, text: `「${t('game.deliverErrandToLine1')}」` },
+      { speaker: 'student', name: getStudentName(to), portrait: to.portrait, text: `「${t('game.deliverErrandToLine2', { from: getStudentNickname(from) })}」` },
     ];
     const result: import('./logic/conversationGenerator').ConversationResult = {
-      text: `${from.name}の${er.itemName}を${to.name}に届けた。`,
-      effectHtml: `<span style="color:#7EC850;">${from.name}の好感度+${AFFINITY_GAIN}</span><br><span style="color:#7EC850;">${to.name}の好感度+${AFFINITY_GAIN}</span>`,
+      text: t('game.deliverErrandResult', { from: getStudentName(from), item: er.itemName, to: getStudentName(to) }),
+      effectHtml: t('game.deliverErrandEffect', { from: getStudentName(from), to: getStudentName(to), gain: AFFINITY_GAIN }),
     };
 
     this.updateState({
@@ -604,7 +602,7 @@ export class Game {
       }),
       errand: null,
       currentTime: Math.min(MAX_TIME, this.state.currentTime + 5),
-      actionLogs: [...this.state.actionLogs, `${from.name}の${er.itemName}を${to.name}に届けた。<span style="color:#7EC850;">双方の好感度+${AFFINITY_GAIN}</span>`],
+      actionLogs: [...this.state.actionLogs, t('game.deliverErrandLog', { from: getStudentName(from), item: er.itemName, to: getStudentName(to), gain: AFFINITY_GAIN })],
     });
     se.questComplete();
     this.dailyScreen?.update(this.state);
@@ -636,31 +634,33 @@ export class Game {
     const pool = diffFloor.length > 0 ? diffFloor : possibleTargets;
     const target = pool[Math.floor(Math.random() * pool.length)];
 
-    const errandItems = ['手紙', 'ノート', '文房具セット', '伝言'];
-    const itemName = errandItems[Math.floor(Math.random() * errandItems.length)];
+    const errandItemKeys = ['Letter', 'Notebook', 'Stationery', 'Message'] as const;
+    const errandItemKey = errandItemKeys[Math.floor(Math.random() * errandItemKeys.length)];
+    const itemName = t(`game.errandItem${errandItemKey}` as const);
 
     // おつかい依頼の会話を表示してから確認ダイアログ
-    const errandLines: { text: string; item: string }[] = [
-      { text: `「ねぇ、${target.nickname}に${itemName}を届けてくれない？」`, item: '手紙' },
-      { text: `「${target.nickname}に${itemName}を返しておいてほしいんだけど…」`, item: 'ノート' },
-      { text: `「${target.nickname}の${itemName}、預かってるんだけど届けてくれる？」`, item: '文房具セット' },
-      { text: `「${target.nickname}に伝えてほしいことがあるんだけど…」`, item: '伝言' },
-    ];
-    const line = errandLines.find(l => l.item === itemName) ?? errandLines[0];
+    const targetNickname = getStudentNickname(target);
+    const errandLineKeys: Record<string, string> = {
+      Letter: 'game.errandLine1Letter',
+      Notebook: 'game.errandLine1Notebook',
+      Stationery: 'game.errandLine1Stationery',
+      Message: 'game.errandLine1Message',
+    };
+    const lineText = `「${t(errandLineKeys[errandItemKey], { nickname: targetNickname, item: itemName })}」`;
     const steps: import('./logic/conversationGenerator').ConversationStep[] = [
-      { speaker: 'student', name: student.name, portrait: student.portrait, text: line.text },
-      { speaker: 'student', name: student.name, portrait: student.portrait, text: `「${target.nickname}、今どこにいるかわかんないんだよね。お願いできる？」` },
-      { speaker: 'player', name: pc?.name ?? 'あなた', portrait: pc?.portrait ?? null, text: '「わかった、届けておくよ。」' },
+      { speaker: 'student', name: getStudentName(student), portrait: student.portrait, text: lineText },
+      { speaker: 'student', name: getStudentName(student), portrait: student.portrait, text: `「${t('game.errandLine2', { nickname: targetNickname })}」` },
+      { speaker: 'player', name: pc?.name ?? t('game.youDefault'), portrait: pc?.portrait ?? null, text: `「${t('game.errandPlayerAccept')}」` },
     ];
     const result: import('./logic/conversationGenerator').ConversationResult = {
-      text: `${student.name}から${target.name}への${itemName}を預かった`,
-      effectHtml: `<span style="color:#4A90D9;">📨 ${target.name}に${itemName}を届ける</span>`,
+      text: t('game.errandResult', { from: getStudentName(student), to: getStudentName(target), item: itemName }),
+      effectHtml: t('game.errandEffect', { to: getStudentName(target), item: itemName }),
     };
     this.dailyScreen?.showConversation(steps, result, () => {
       se.questAccept();
       this.updateState({
         errand: { fromId: student.id, toId: target.id, itemName },
-        actionLogs: [...this.state.actionLogs, `${student.name}から${target.name}への${itemName}を預かった。`],
+        actionLogs: [...this.state.actionLogs, t('game.errandLog', { from: getStudentName(student), to: getStudentName(target), item: itemName })],
       });
       this.dailyScreen?.update(this.state);
     });
@@ -705,7 +705,7 @@ export class Game {
     const isInLove = checkIsInLove(student, pc?.gender, this.state.playerAttributes);
     const convData = generateConversationData(
       student,
-      pc?.name ?? 'あなた',
+      pc?.name ?? t('game.youDefault'),
       pc?.portrait ?? null,
       pc?.personality ?? 'flexible',
       pc?.gender ?? 'male',
@@ -733,17 +733,17 @@ export class Game {
     if (student.affinity < 15) {
       const pc = this.state.playerCharacter;
       const refuseSteps: import('./logic/conversationGenerator').ConversationStep[] = [
-        { speaker: 'player', name: pc?.name ?? 'あなた', portrait: pc?.portrait ?? null, text: '「周りの人について何か知ってる？」' },
-        { speaker: 'student', name: student.name, portrait: student.portrait, text: '「うーん、特にないかなぁ…」' },
+        { speaker: 'player', name: pc?.name ?? t('game.youDefault'), portrait: pc?.portrait ?? null, text: `「${t('game.gossipAskLine')}」` },
+        { speaker: 'student', name: getStudentName(student), portrait: student.portrait, text: `「${t('game.gossipRefuseLine')}」` },
       ];
       const refuseResult: import('./logic/conversationGenerator').ConversationResult = {
-        text: `${student.name}はあまり教えてくれなかった`,
-        effectHtml: '<span style="color:#999;">情報なし</span>',
+        text: t('game.gossipRefuseResult', { name: getStudentName(student) }),
+        effectHtml: t('game.gossipNoInfo'),
       };
       this.updateState({
         stamina: this.state.stamina - 5,
         currentTime: Math.min(MAX_TIME, this.state.currentTime + TIME_COST.TALK),
-        actionLogs: [...this.state.actionLogs, `${student.name}に噂話を聞いたが、教えてもらえなかった。`],
+        actionLogs: [...this.state.actionLogs, t('game.gossipRefuseLog', { name: getStudentName(student) })],
       });
       this.dailyScreen?.update(this.state);
       this.dailyScreen?.showConversation(refuseSteps, refuseResult, () => {});
@@ -809,7 +809,7 @@ export class Game {
         students: updatedStudents,
         stamina: this.state.stamina - 5,
         currentTime: Math.min(MAX_TIME, this.state.currentTime + TIME_COST.TALK),
-        actionLogs: [...this.state.actionLogs, `${student.name}に噂話を聞いたが、新しい情報はなかった。`],
+        actionLogs: [...this.state.actionLogs, t('game.gossipNoNewInfoLog', { name: getStudentName(student) })],
       });
       this.dailyScreen?.update(this.state);
       return;
@@ -845,7 +845,7 @@ export class Game {
     const pc = this.state.playerCharacter;
     const convData = generateGossipData(
       student,
-      pc?.name ?? 'あなた',
+      pc?.name ?? t('game.youDefault'),
       pc?.portrait ?? null,
       pc?.personality ?? 'flexible',
       pc?.gender ?? 'male',
@@ -903,7 +903,7 @@ export class Game {
     this.updateState({
       stamina: 100,
       currentTime: Math.min(MAX_TIME, this.state.currentTime + TIME_COST.NURSE_REST),
-      actionLogs: [...this.state.actionLogs, `保健室で1時間休憩した（体力全回復 +${recovery}）`],
+      actionLogs: [...this.state.actionLogs, t('game.restNurseLog', { recovery })],
     });
     se.rest();
     this.dailyScreen?.update(this.state);
@@ -917,7 +917,7 @@ export class Game {
     this.updateState({
       stamina: Math.min(100, this.state.stamina + 40),
       currentTime: Math.min(MAX_TIME, this.state.currentTime + TIME_COST.CLASSROOM_REST),
-      actionLogs: [...this.state.actionLogs, `自分の教室で休憩した（体力+${recovery} / ${TIME_COST.CLASSROOM_REST}分）`],
+      actionLogs: [...this.state.actionLogs, t('game.restClassroomLog', { recovery, min: TIME_COST.CLASSROOM_REST })],
     });
     se.rest();
     this.dailyScreen?.update(this.state);
@@ -930,7 +930,7 @@ export class Game {
     this.updateState({
       stamina: Math.min(100, this.state.stamina + 10),
       currentTime: Math.min(MAX_TIME, this.state.currentTime + TIME_COST.ROOFTOP_REST),
-      actionLogs: [...this.state.actionLogs, `屋上で一息ついた（体力+${recovery} / ${TIME_COST.ROOFTOP_REST}分）`],
+      actionLogs: [...this.state.actionLogs, t('game.restRooftopLog', { recovery, min: TIME_COST.ROOFTOP_REST })],
     });
     se.rest();
     this.dailyScreen?.update(this.state);
@@ -942,8 +942,8 @@ export class Game {
     if (!this.state.playerCharacter) return;
 
     const TRAIN_AMOUNT = Math.floor(Math.random() * 4); // 0〜3
-    const statLabels: Record<string, string> = {
-      speech: '弁舌', athletic: '運動', intel: '知力',
+    const statLabelKeys: Record<string, string> = {
+      speech: 'game.trainStatSpeech', athletic: 'game.trainStatAthletic', intel: 'game.trainStatIntel',
     };
     const statIcons: Record<string, string> = {
       speech: '🎙️', athletic: '🏃', intel: '📚',
@@ -951,14 +951,18 @@ export class Game {
     const statColors: Record<string, string> = {
       speech: '#E07820', athletic: '#27AE60', intel: '#2E5FAC',
     };
-    const locationLabels: Record<string, string> = {
-      speech: '放送室で発声練習', athletic: 'グラウンドで運動', intel: '図書室で読書',
+    const locationLabelKeys: Record<string, string> = {
+      speech: 'game.trainLocSpeech', athletic: 'game.trainLocAthletic', intel: 'game.trainLocIntel',
     };
 
     const oldValue = this.state.playerCharacter.stats[stat];
     const newStats = { ...this.state.playerCharacter.stats };
     newStats[stat] = Math.min(100, newStats[stat] + TRAIN_AMOUNT);
     const newValue = newStats[stat];
+
+    const statLabel = t(statLabelKeys[stat]);
+    const locationLabel = t(locationLabelKeys[stat]);
+    const changeText = TRAIN_AMOUNT > 0 ? `+${TRAIN_AMOUNT}` : t('game.trainNoChange');
 
     const playerId = this.state.playerCharacter.id;
     this.updateState({
@@ -971,11 +975,11 @@ export class Game {
       ),
       stamina: this.state.stamina - 10,
       currentTime: Math.min(MAX_TIME, this.state.currentTime + TIME_COST.TRAINING),
-      actionLogs: [...this.state.actionLogs, `${locationLabels[stat]}をした（${statLabels[stat]}${TRAIN_AMOUNT > 0 ? `+${TRAIN_AMOUNT}` : '変化なし'}）`],
+      actionLogs: [...this.state.actionLogs, t('game.trainLog', { location: locationLabel, stat: statLabel, change: changeText })],
     });
     this.dailyScreen?.update(this.state);
     this.dailyScreen?.showTrainingResult(
-      statIcons[stat], statLabels[stat], oldValue, newValue, statColors[stat]
+      statIcons[stat], statLabel, oldValue, newValue, statColors[stat]
     );
   }
 

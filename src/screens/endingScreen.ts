@@ -3,6 +3,7 @@ import { FACTION_INFO, FACTION_LABELS, renderSupportBar, ALL_FACTION_IDS } from 
 import { ORGANIZATIONS } from '../data/organizations';
 import { getOrganizationVote } from '../logic/organizationLogic';
 import { t } from '../i18n';
+import { getStudentName } from '../data/students';
 import type { Screen } from './Screen';
 
 function winnerMessage(factionId: FactionId): string {
@@ -94,7 +95,7 @@ export class EndingScreen implements Screen {
             border-radius:10px; padding:12px;
             font-size:0.85em; color:var(--game-text);
           ">
-            ${lastResult ? `<div style="margin-bottom:8px;">${t('ending.failedPersuade', { name: lastResult.student.name })}</div>` : ''}
+            ${lastResult ? `<div style="margin-bottom:8px;">${t('ending.failedPersuade', { name: getStudentName(lastResult.student) })}</div>` : ''}
             <div style="margin-bottom:4px;">
               <span style="color:${originalFaction?.color ?? 'var(--game-text)'};">${FACTION_LABELS[this.state.faction ?? 'conservative'] ?? ''}</span>${fSuffix}
               → <span style="color:${newFaction?.color ?? 'var(--game-text)'};">${FACTION_LABELS[newTop] ?? ''}</span>${fSuffix} ${t('ending.factionChanged')}
@@ -227,7 +228,7 @@ export class EndingScreen implements Screen {
                 margin-bottom:4px;
               ">
                 <div style="flex:1; font-size:0.85em; color:var(--game-text); font-weight:bold;">${org.name}</div>
-                <div style="font-size:0.75em; color:var(--game-text-dim);">${t('ending.representative')}: ${leader?.name ?? org.leaderId}</div>
+                <div style="font-size:0.75em; color:var(--game-text-dim);">${t('ending.representative')}: ${leader ? getStudentName(leader) : org.leaderId}</div>
                 <div style="font-size:0.8em; color:${sc?.color ?? '#888'}; font-weight:bold;">
                   ${FACTION_LABELS[vote] ?? ''}${fSuffix}
                 </div>

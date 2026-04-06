@@ -3,6 +3,7 @@ import {
   FACTION_INFO, FACTION_LABELS, getCatchphrase, renderInitialIcon,
   CLUB_LABELS,
 } from '../data';
+import { getStudentName, getStudentNickname, getStudentDescription } from '../data/students';
 import { ORGANIZATIONS } from '../data/organizations';
 import { showConfirmDialog } from '../ui/gameDialog';
 import { t } from '../i18n';
@@ -156,13 +157,13 @@ export class CharacterSelectScreen implements Screen {
           <!-- Portrait -->
           <div style="position:relative; flex-shrink:0;">
             ${sel.portrait
-              ? `<img src="${sel.portrait}" alt="${sel.name}" style="
+              ? `<img src="${sel.portrait}" alt="${getStudentName(sel)}" style="
                   width:150px; height:150px; border-radius:8px;
                   object-fit:cover; object-position:top;
                   border:3px solid ${info.color};
                   box-shadow:0 0 20px ${info.color}60, 0 4px 12px rgba(0,0,0,0.4);
                 "/>`
-              : renderInitialIcon(sel.name, sel.personality, 150, info.color)
+              : renderInitialIcon(getStudentName(sel), sel.personality, 150, info.color)
             }
             <!-- Faction badge -->
             <div style="
@@ -178,8 +179,8 @@ export class CharacterSelectScreen implements Screen {
           <div style="text-align:center; margin-top:4px;">
             <div style="font-size:1.2em; font-weight:900; letter-spacing:0.05em;
               text-shadow:0 2px 4px rgba(0,0,0,0.5);">
-              ${sel.name}
-              <span style="font-size:0.6em; font-weight:400; opacity:0.6; margin-left:4px;">（${sel.nickname}）</span>
+              ${getStudentName(sel)}
+              <span style="font-size:0.6em; font-weight:400; opacity:0.6; margin-left:4px;">（${getStudentNickname(sel)}）</span>
             </div>
             <div style="font-size:0.75em; opacity:0.7;">
               ${sel.gender === 'male' ? '♂' : '♀'}　${getAffiliationLabels(sel.id, sel.className, sel.clubId).join('　')}
@@ -195,7 +196,7 @@ export class CharacterSelectScreen implements Screen {
             background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.1);
             border-radius:4px; padding:6px 10px;
             max-width:380px; text-align:center;
-          ">${sel.description}</div>
+          ">${getStudentDescription(sel)}</div>
 
           <!-- Stats (inline) -->
           <div style="
@@ -237,7 +238,7 @@ export class CharacterSelectScreen implements Screen {
         font-family:var(--game-font);
       ">
         ${s.portrait
-          ? `<img src="${s.portrait}" alt="${s.name}" style="
+          ? `<img src="${s.portrait}" alt="${getStudentName(s)}" style="
               width:48px; height:48px; border-radius:4px;
               object-fit:cover; object-position:top;
               border:2px solid ${isSelected ? '#fff' : 'rgba(255,255,255,0.2)'};
@@ -250,14 +251,14 @@ export class CharacterSelectScreen implements Screen {
               border:2px solid ${isSelected ? '#fff' : 'rgba(255,255,255,0.2)'};
               display:flex; align-items:center; justify-content:center;
               font-size:1.2em; font-weight:bold; color:rgba(255,255,255,0.5);
-            ">${s.name[0]}</div>`
+            ">${getStudentName(s)[0]}</div>`
         }
         <span style="
           font-size:0.65em; color:${isSelected ? '#fff' : 'rgba(255,255,255,0.5)'};
           font-weight:${isSelected ? 'bold' : 'normal'};
           white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
           max-width:60px; text-align:center;
-        ">${s.name}</span>
+        ">${getStudentName(s)}</span>
       </button>`;
     }).join('');
 
@@ -360,7 +361,7 @@ export class CharacterSelectScreen implements Screen {
       selectBtn.addEventListener('pointerup', () => {
         showConfirmDialog(this.container, {
           title: t('charSelect.confirmTitle'),
-          message: t('charSelect.confirmMsg', { name: student.name }),
+          message: t('charSelect.confirmMsg', { name: getStudentName(student) }),
           okLabel: t('charSelect.confirmOk'),
           cancelLabel: t('charSelect.confirmCancel'),
           okStyle: 'primary',

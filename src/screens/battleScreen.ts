@@ -5,6 +5,7 @@ import { bgm } from '../bgm';
 import battleBg from '../../assets/backgrounds/battle.jpg';
 import type { Screen } from './Screen';
 import { t } from '../i18n';
+import { getStudentName } from '../data/students';
 
 export interface BattleCallbacks {
   onAttitudeSelect: (attitude: PlayerAttitude) => void;
@@ -156,19 +157,19 @@ export class BattleScreen implements Screen {
         <!-- ポートレート -->
         <div style="flex-shrink:0;">
           ${student.portrait
-            ? `<img src="${student.portrait}" alt="${student.name}" style="
+            ? `<img src="${student.portrait}" alt="${getStudentName(student)}" style="
                 width:80px; height:80px;
                 border-radius:4px; object-fit:cover; object-position:top;
                 border:2px solid var(--game-panel-border);
                 box-shadow:0 4px 16px rgba(0,0,0,0.5);
               "/>`
-            : renderInitialIcon(student.name, student.personality, 80, 'rgba(255,255,255,0.3)')
+            : renderInitialIcon(getStudentName(student), student.personality, 80, 'rgba(255,255,255,0.3)')
           }
         </div>
         <!-- 右側: 情報 + 吹き出し -->
         <div style="flex:1; min-width:0; color:#fff;">
           <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
-            <span style="font-size:0.95em; font-weight:bold;">${student.name}</span>
+            <span style="font-size:0.95em; font-weight:bold;">${getStudentName(student)}</span>
             <span style="font-size:0.72em; opacity:0.6;">${student.className}</span>
             ${(() => {
               const topFaction = ALL_FACTION_IDS.reduce((a, b) => student.support[a] >= student.support[b] ? a : b);
@@ -340,8 +341,8 @@ export class BattleScreen implements Screen {
     let title = battle.isDefending ? t('battle.resultDefendLose') : t('battle.resultLose');
     let color = '#F07070';
     let message = battle.isDefending
-      ? t('battle.msgDefendLose', { name: battle.student.name })
-      : t('battle.msgLose', { name: battle.student.name });
+      ? t('battle.msgDefendLose', { name: getStudentName(battle.student) })
+      : t('battle.msgLose', { name: getStudentName(battle.student) });
     let btnColor = '#555';
 
     if (isWin) {
@@ -349,8 +350,8 @@ export class BattleScreen implements Screen {
       title = battle.isDefending ? t('battle.resultDefendWin') : t('battle.resultWin');
       color = '#7EC8F0';
       message = battle.isDefending
-        ? t('battle.msgDefendWin', { name: battle.student.name })
-        : t('battle.msgWin', { name: battle.student.name });
+        ? t('battle.msgDefendWin', { name: getStudentName(battle.student) })
+        : t('battle.msgWin', { name: getStudentName(battle.student) });
       btnColor = '#2E5FAC';
     } else if (isTimeout) {
       emoji = '⏰';
@@ -360,14 +361,14 @@ export class BattleScreen implements Screen {
         title = t('battle.resultTimeoutAdvantage');
         color = '#B0D8F0';
         message = battle.isDefending
-          ? t('battle.msgTimeoutAdvantageDefend', { name: battle.student.name })
-          : t('battle.msgTimeoutAdvantageAttack', { name: battle.student.name });
+          ? t('battle.msgTimeoutAdvantageDefend', { name: getStudentName(battle.student) })
+          : t('battle.msgTimeoutAdvantageAttack', { name: getStudentName(battle.student) });
         btnColor = '#4A6A9A';
       } else if (effectiveBar < 0) {
         title = t('battle.resultTimeoutDisadvantage');
         color = '#F0B0A0';
         message = battle.isDefending
-          ? t('battle.msgTimeoutDisadvantageDefend', { name: battle.student.name })
+          ? t('battle.msgTimeoutDisadvantageDefend', { name: getStudentName(battle.student) })
           : t('battle.msgTimeoutDisadvantageAttack');
         btnColor = '#8A5A50';
       } else {

@@ -65,7 +65,7 @@ export { getCatchphrase } from '../catchphrase';
 export const STUDENTS: Student[] = [
   // 派閥の中心人物（3名）
   {
-    id: 'takayama_seiichi',
+    id: 's30101',
     name: '鷹山誠一',
     nickname: '鷹山先輩',
     gender: 'male',
@@ -89,7 +89,7 @@ export const STUDENTS: Student[] = [
     playable: true,
   },
   {
-    id: 'yuuki_akari',
+    id: 's30351',
     name: '結城あかり',
     nickname: 'あかりん',
     gender: 'female',
@@ -113,7 +113,7 @@ export const STUDENTS: Student[] = [
     playable: true,
   },
   {
-    id: 'shido_tsuyoshi',
+    id: 's30401',
     name: '獅堂剛',
     nickname: '獅堂',
     gender: 'male',
@@ -138,7 +138,7 @@ export const STUDENTS: Student[] = [
   },
   // プレイアブルキャラクター
   {
-    id: 'tanaka_daiki',
+    id: 's10201',
     name: '田中大輝',
     nickname: 'ダイキ',
     gender: 'male',
@@ -163,7 +163,7 @@ export const STUDENTS: Student[] = [
     playable: true,
   },
   {
-    id: 'yamamoto_ren',
+    id: 's20201',
     name: '山本蓮',
     nickname: '委員長',
     gender: 'male',
@@ -188,7 +188,7 @@ export const STUDENTS: Student[] = [
     playable: true,
   },
   {
-    id: 'sato_yui',
+    id: 's10151',
     name: '佐藤ゆい',
     nickname: 'ゆい',
     gender: 'female',
@@ -213,7 +213,7 @@ export const STUDENTS: Student[] = [
     playable: true,
   },
   {
-    id: 'watanabe_aoi',
+    id: 's20151',
     name: '渡辺あおい',
     nickname: 'あおい',
     gender: 'female',
@@ -238,7 +238,7 @@ export const STUDENTS: Student[] = [
     playable: true,
   },
   {
-    id: 'nakamura_sakura',
+    id: 's20351',
     name: '中村さくら',
     nickname: 'さくら',
     gender: 'female',
@@ -264,7 +264,7 @@ export const STUDENTS: Student[] = [
   },
   // 追加7名
   {
-    id: 'takahashi_yuto',
+    id: 's30201',
     name: '高橋悠人',
     nickname: 'ユウト',
     gender: 'male',
@@ -289,7 +289,7 @@ export const STUDENTS: Student[] = [
     playable: true,
   },
   {
-    id: 'matsumoto_kenta',
+    id: 's30402',
     name: '松本健太',
     nickname: 'ケンタ',
     gender: 'male',
@@ -314,7 +314,7 @@ export const STUDENTS: Student[] = [
     playable: true,
   },
   {
-    id: 'miyazaki_akane',
+    id: 's10351',
     name: '宮崎あかね',
     nickname: 'あかね',
     gender: 'female',
@@ -339,7 +339,7 @@ export const STUDENTS: Student[] = [
     playable: true,
   },
   {
-    id: 'hashimoto_tsubasa',
+    id: 's10401',
     name: '橋本翼',
     nickname: 'つばさ',
     gender: 'male',
@@ -364,7 +364,7 @@ export const STUDENTS: Student[] = [
     playable: true,
   },
   {
-    id: 'kato_mitsuki',
+    id: 's20451',
     name: '加藤美月',
     nickname: 'みっちゃん',
     gender: 'female',
@@ -389,7 +389,7 @@ export const STUDENTS: Student[] = [
     playable: true,
   },
   {
-    id: 'suzuki_shota',
+    id: 's30102',
     name: '鈴木翔太',
     nickname: 'ショウ',
     gender: 'male',
@@ -414,7 +414,7 @@ export const STUDENTS: Student[] = [
     playable: true,
   },
   {
-    id: 'saito_manabu',
+    id: 's30301',
     name: '斎藤学',
     nickname: 'ガク',
     gender: 'male',
@@ -441,7 +441,7 @@ export const STUDENTS: Student[] = [
   // === 追加キャラクター（サブリーダー・メンバー、ポートレートなし） ===
   // 1-A サブリーダー
   {
-    id: 'ogawa_haruka',
+    id: 's10152',
     name: '小川はるか',
     nickname: 'はるちゃん',
     gender: 'female',
@@ -467,7 +467,7 @@ export const STUDENTS: Student[] = [
   },
   // 1-A メンバー
   {
-    id: 'inoue_momoka',
+    id: 's10153',
     name: '井上桃花',
     nickname: 'モモ',
     gender: 'female',
@@ -493,7 +493,7 @@ export const STUDENTS: Student[] = [
   },
   // 1-B サブリーダー
   {
-    id: 'endo_ryota',
+    id: 's10202',
     name: '遠藤涼太',
     nickname: 'リョウタ',
     gender: 'male',
@@ -519,7 +519,7 @@ export const STUDENTS: Student[] = [
   },
   // 1-B メンバー
   {
-    id: 'shimizu_nana',
+    id: 's10251',
     name: '清水菜々',
     nickname: 'ナナ',
     gender: 'female',
@@ -545,7 +545,7 @@ export const STUDENTS: Student[] = [
   },
   // 1-C サブリーダー
   {
-    id: 'aoki_sora',
+    id: 's10301',
     name: '青木蒼',
     nickname: 'アオ',
     gender: 'male',
@@ -571,7 +571,7 @@ export const STUDENTS: Student[] = [
   },
   // 1-C メンバー
   {
-    id: 'morita_chihiro',
+    id: 's10352',
     name: '森田千尋',
     nickname: 'ちーちゃん',
     gender: 'female',
@@ -597,7 +597,7 @@ export const STUDENTS: Student[] = [
   },
   // 1-D サブリーダー
   {
-    id: 'nishida_kaito',
+    id: 's10402',
     name: '西田海斗',
     nickname: 'カイト',
     gender: 'male',
@@ -623,7 +623,7 @@ export const STUDENTS: Student[] = [
   },
   // 1-D メンバー
   {
-    id: 'hayashi_riko',
+    id: 's10451',
     name: '林りこ',
     nickname: 'りこりん',
     gender: 'female',
@@ -649,7 +649,7 @@ export const STUDENTS: Student[] = [
   },
   // 2-A サブリーダー
   {
-    id: 'fujita_mei',
+    id: 's20152',
     name: '藤田芽衣',
     nickname: 'メイ',
     gender: 'female',
@@ -675,7 +675,7 @@ export const STUDENTS: Student[] = [
   },
   // 2-A メンバー
   {
-    id: 'ueda_takumi',
+    id: 's20101',
     name: '上田拓海',
     nickname: 'タク',
     gender: 'male',
@@ -701,7 +701,7 @@ export const STUDENTS: Student[] = [
   },
   // 2-B サブリーダー
   {
-    id: 'kimura_yuna',
+    id: 's20251',
     name: '木村ゆな',
     nickname: 'ゆなち',
     gender: 'female',
@@ -727,7 +727,7 @@ export const STUDENTS: Student[] = [
   },
   // 2-B メンバー
   {
-    id: 'murakami_sota',
+    id: 's20202',
     name: '村上蒼太',
     nickname: 'ソウタ',
     gender: 'male',
@@ -753,7 +753,7 @@ export const STUDENTS: Student[] = [
   },
   // 2-C サブリーダー
   {
-    id: 'yoshida_hinata',
+    id: 's20352',
     name: '吉田ひなた',
     nickname: 'ひなた',
     gender: 'female',
@@ -779,7 +779,7 @@ export const STUDENTS: Student[] = [
   },
   // 2-C メンバー
   {
-    id: 'okamoto_rin',
+    id: 's20353',
     name: '岡本凜',
     nickname: 'りんちゃん',
     gender: 'female',
@@ -805,7 +805,7 @@ export const STUDENTS: Student[] = [
   },
   // 2-D サブリーダー
   {
-    id: 'goto_hayato',
+    id: 's20401',
     name: '後藤隼人',
     nickname: 'ハヤト',
     gender: 'male',
@@ -831,7 +831,7 @@ export const STUDENTS: Student[] = [
   },
   // 2-D メンバー
   {
-    id: 'sakamoto_miu',
+    id: 's20452',
     name: '坂本美羽',
     nickname: 'ミウ',
     gender: 'female',
@@ -857,7 +857,7 @@ export const STUDENTS: Student[] = [
   },
   // 3-A サブリーダー
   {
-    id: 'yamaguchi_ryo',
+    id: 's30103',
     name: '山口涼',
     nickname: 'リョウ',
     gender: 'male',
@@ -883,7 +883,7 @@ export const STUDENTS: Student[] = [
   },
   // 3-A メンバー
   {
-    id: 'ikeda_kotone',
+    id: 's30151',
     name: '池田琴音',
     nickname: 'コトネ',
     gender: 'female',
@@ -909,7 +909,7 @@ export const STUDENTS: Student[] = [
   },
   // 3-B サブリーダー
   {
-    id: 'otsuka_itsuki',
+    id: 's30202',
     name: '大塚樹',
     nickname: 'イツキ',
     gender: 'male',
@@ -935,7 +935,7 @@ export const STUDENTS: Student[] = [
   },
   // 3-B メンバー
   {
-    id: 'tanabe_misaki',
+    id: 's30251',
     name: '田辺美咲',
     nickname: 'ミサキ',
     gender: 'female',
@@ -961,7 +961,7 @@ export const STUDENTS: Student[] = [
   },
   // 3-C サブリーダー
   {
-    id: 'kawano_shiori',
+    id: 's30352',
     name: '河野しおり',
     nickname: 'しおりん',
     gender: 'female',
@@ -987,7 +987,7 @@ export const STUDENTS: Student[] = [
   },
   // 3-C メンバー
   {
-    id: 'maeda_taiga',
+    id: 's30302',
     name: '前田大河',
     nickname: 'タイガ',
     gender: 'male',
@@ -1013,7 +1013,7 @@ export const STUDENTS: Student[] = [
   },
   // 3-D サブリーダー
   {
-    id: 'noguchi_saki',
+    id: 's30451',
     name: '野口咲希',
     nickname: 'サキ',
     gender: 'female',
@@ -1039,7 +1039,7 @@ export const STUDENTS: Student[] = [
   },
   // 3-D メンバー
   {
-    id: 'ishikawa_yusuke',
+    id: 's30403',
     name: '石川悠介',
     nickname: 'ユウスケ',
     gender: 'male',
@@ -1064,7 +1064,7 @@ export const STUDENTS: Student[] = [
     playable: false,
   },
   {
-    id: 'iwata_daichi',
+    id: 's30404',
     name: '岩田大地',
     nickname: 'ダイチ',
     gender: 'male',
@@ -1092,7 +1092,7 @@ export const STUDENTS: Student[] = [
 
 /** チュートリアル対戦相手（渡辺あおい） */
 export function getTutorialOpponent(): Student {
-  const s = STUDENTS.find(s => s.id === 'watanabe_aoi')!;
+  const s = STUDENTS.find(s => s.id === 's20151')!;
   return {
     ...s,
     revealedHobbies: new Set<HobbyTopic>(['sns', 'sports_hobby']),
@@ -1104,29 +1104,28 @@ export function getTutorialOpponent(): Student {
 
 // 部活スケジュール（放課後の場所）
 const CLUB_LOCATION_MAP: Record<string, LocationId> = {
-  tanaka_daiki: 'soccer_field',
-  matsumoto_kenta: 'track_field',
-  kato_mitsuki: 'tennis_court',
-  takahashi_yuto: 'art_room',
-  hashimoto_tsubasa: 'baseball_field',
-  suzuki_shota: 'music_room',
-  miyazaki_akane: 'library',
-  // 追加キャラクター
-  ogawa_haruka: 'music_room',
-  endo_ryota: 'soccer_field',
-  morita_chihiro: 'art_room',
-  nishida_kaito: 'baseball_field',
-  fujita_mei: 'tennis_court',
-  murakami_sota: 'soccer_field',
-  yoshida_hinata: 'art_room',
-  goto_hayato: 'track_field',
-  yamaguchi_ryo: 'music_room',
-  tanabe_misaki: 'tennis_court',
-  maeda_taiga: 'track_field',
-  noguchi_saki: 'baseball_field',
-  iwata_daichi: 'baseball_field',
-  yuuki_akari: 'art_room',
-  shido_tsuyoshi: 'track_field',
+  s10201: 'soccer_field',    // 田中大輝
+  s30402: 'track_field',     // 松本健太
+  s20451: 'tennis_court',    // 加藤美月
+  s30201: 'art_room',        // 高橋悠人
+  s10401: 'baseball_field',  // 橋本翼
+  s30102: 'music_room',      // 鈴木翔太
+  s10351: 'library',         // 宮崎あかね
+  s10152: 'music_room',      // 小川はるか
+  s10202: 'soccer_field',    // 遠藤涼太
+  s10352: 'art_room',        // 森田千尋
+  s10402: 'baseball_field',  // 西田海斗
+  s20152: 'tennis_court',    // 藤田芽衣
+  s20202: 'soccer_field',    // 村上蒼太
+  s20352: 'art_room',        // 吉田ひなた
+  s20401: 'track_field',     // 後藤隼人
+  s30103: 'music_room',      // 山口涼
+  s30251: 'tennis_court',    // 田辺美咲
+  s30302: 'track_field',     // 前田大河
+  s30451: 'baseball_field',  // 野口咲希
+  s30404: 'baseball_field',  // 岩田大地
+  s30351: 'art_room',        // 結城あかり
+  s30401: 'track_field',     // 獅堂剛
 };
 
 // 生徒の場所スケジュール（currentTime: 0=15:00, 240=19:00）

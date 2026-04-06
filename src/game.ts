@@ -30,6 +30,7 @@ import { showInfoDialog, showConfirmDialog } from './ui/gameDialog';
 import { bgm, BGM_TRACKS } from './bgm';
 import { se } from './se';
 import { saveGame, loadGame, deleteSaveData } from './saveLoad';
+import * as analytics from './analytics';
 
 function createInitialState(): GameState {
   return {
@@ -146,6 +147,7 @@ export class Game {
     this.titleScreen = new TitleScreen({
       onStart: () => {
         deleteSaveData();
+        analytics.trackGameStart();
         this.showPrologue();
       },
       onContinue: () => this.continueGame(),
@@ -173,6 +175,7 @@ export class Game {
       bgm.play(BGM_TRACKS.settoku);
       this.persuadeTutorial = new PersuadeTutorial({
         onFinish: () => {
+          analytics.trackTutorialPersuade();
           this.persuadeTutorial?.unmount();
           this.persuadeTutorial = null;
           bgm.play(returnTo === 'title' ? BGM_TRACKS.title : BGM_TRACKS.schoolDaytime);
@@ -199,6 +202,7 @@ export class Game {
     this.updateState({ screen: 'faction_select' });
     this.factionSelectScreen = new FactionSelectScreen({
       onSelect: (faction) => {
+        analytics.trackFactionSelect(faction);
         this.showCharacterSelect(faction);
       },
     });
@@ -218,6 +222,7 @@ export class Game {
     });
     this.characterScreen = new CharacterSelectScreen(factionStudents, faction, {
       onSelect: (selected: Student) => {
+        analytics.trackCharacterSelect(selected.name, faction);
         // 選んだ生徒をプレイヤーに（studentsには全員残す＝組織の代表計算に必要）
         const startLocation = CLASS_LOCATION_MAP[selected.className] ?? 'class1b';
         this.state = {
@@ -283,6 +288,7 @@ export class Game {
       onPersuadeTutorial: () => this.showPersuadeTutorial('daily'),
       onSave: () => {
         saveGame(this.state);
+        analytics.trackSave(this.state.day);
         if (this.dailyScreen) {
           showInfoDialog(this.root, { title: 'セーブ', message: 'セーブしました。' });
         }
@@ -291,6 +297,7 @@ export class Game {
         const saved = loadGame();
         if (saved) {
           this.state = saved;
+          analytics.trackLoad(this.state.day);
           this.state.screen = 'daily';
           this.showDaily();
         }
@@ -311,6 +318,7 @@ export class Game {
           '投票日に<strong>過半数の組織</strong>を支持させれば勝利！<br><br>' +
           'まずは学園を探索してみよう。<br>廊下のマップから教室や部室に移動できるよ。',
       });
+      analytics.trackTutorialMove();
       saveGame(this.state);
     }
   }
@@ -335,6 +343,7 @@ export class Game {
         title: 'ヒント',
         message: '生徒に話しかけてみよう。<br>雑談で趣味や好みを知ることができる。<br>仲良くなると説得が有利になるかも？',
       });
+      analytics.trackTutorialTalk();
       saveGame(this.state);
     }
 
@@ -977,6 +986,7 @@ export class Game {
 
   private handleNextDay(): void {
     se.nextDay();
+    analytics.trackDayAdvance(this.state.day + 1, this.state.faction ?? 'unknown');
     if (this.state.day >= 30) {
       this.showEnding();
       return;
@@ -1021,6 +1031,7 @@ export class Game {
     this.clearScreens();
     bgm.play(BGM_TRACKS.settoku);
     if (!this.state.battle) return;
+    analytics.trackBattleStart(this.state.battle.student.name, this.state.battle.isDefending);
 
     this.battleScreenInst = new BattleScreen(this.state, {
       onAttitudeSelect: (attitude: PlayerAttitude) => {
@@ -1181,6 +1192,7 @@ export class Game {
 
     const result = battle.result;
     const student = battle.student;
+    analytics.trackBattleEnd(result ?? 'unknown', student.name, battle.isDefending);
     let shiftAmount = 0;
 
     // シフト結果を自然な日本語で表現するヘルパー
@@ -1362,6 +1374,7 @@ export class Game {
 
   private showGameOver(): void {
     this.clearScreens();
+    analytics.trackGameOver(this.state.faction ?? 'unknown', this.state.day);
     deleteSaveData();
     this.endingScreen = new EndingScreen(this.state, {
       onRestart: () => {
@@ -1414,6 +1427,8 @@ export class Game {
 
   private transitionToEnding(): void {
     this.clearScreens();
+    const isUnified = this.state.day < 30 && this.isAllOrganizationsUnified();
+    analytics.trackGameClear(this.state.faction ?? 'unknown', this.state.day, isUnified ? 'unified' : 'vote_win');
     deleteSaveData();
     this.updateState({ screen: 'ending' });
     this.endingScreen = new EndingScreen(this.state, {

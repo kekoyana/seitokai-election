@@ -37,17 +37,17 @@ const MOOD_COUNTER_MULTIPLIER: Record<EnemyMood, number> = {
   devoted: 0.7,
 };
 
-// 性格ごとの反撃倍率
-const PERSONALITY_COUNTER_MULTIPLIER: Record<Personality, number> = {
-  passionate: 1.0,
-  cautious: 1.1,
-  stubborn: 1.3,
-  flexible: 0.7,
-  cunning: 1.15,
-};
+// 相手の運動/知力による防御倍率
+// 肯定に対して運動が防御、否定に対して知力が防御
+// 0→×1.0, 50→×1.15, 100→×1.30
+function calcDefenseMultiplier(student: Student, playerStance: Stance | null): number {
+  if (!playerStance) return 1.0;
+  const stat = playerStance === 'positive' ? student.stats.athletic : student.stats.intel;
+  return 1.0 + stat * 0.003;
+}
 
 // 性格による機嫌変化の補正
-function applyPersonalityMoodShift(personality: Personality, delta: number): number {
+function applyPersonalityMoodShift(personality: Personality, delta: number, affinity: number): number {
   switch (personality) {
     case 'stubborn':
       // 頑固: 全ての機嫌変化が1段階少ない（プラスもマイナスも）
@@ -62,8 +62,9 @@ function applyPersonalityMoodShift(personality: Personality, delta: number): num
       // 狡猾: 50%の確率で機嫌変化を無効化
       return Math.random() < 0.5 ? 0 : delta;
     case 'cautious':
-      // 慎重: プラスの機嫌変化が1段階少ない（警戒心が強い）
-      if (delta > 0) return Math.max(0, delta - 1);
+      // 慎重: プラスの機嫌変化が1段階少ない
+      // 好感度20以上なら警戒が解けて補正なし、19以下でも50%の確率で補正なし
+      if (delta > 0 && affinity < 20 && Math.random() < 0.5) return Math.max(0, delta - 1);
       return delta;
     default: // passionate
       return delta;
@@ -74,7 +75,7 @@ function applyPersonalityMoodShift(personality: Personality, delta: number): num
 const ATTITUDE_MOOD_PENALTY: Record<PlayerAttitude, number> = {
   friendly: 0,   // 柔らかく → 角が立たない
   normal: 1,     // 普通 → 従来通り
-  strong: 2,     // 情熱的 → 攻撃的で機嫌が大きく下がる
+  strong: 1,     // 情熱的 → 機嫌が下がる
 };
 
 const MOOD_ORDER: EnemyMood[] = ['furious', 'upset', 'normal', 'favorable', 'devoted'];
@@ -129,6 +130,7 @@ export function initBattle(
     phase: 'select_attitude',
     selectedAttitude: null,
     selectedTopic: null,
+    selectedStance: null,
     result: null,
     isDefending,
     topicUseCounts: {},
@@ -341,7 +343,7 @@ export function resolvePlayerTurn(
   const effectivePlayerEffect = battle.isDefending ? -playerEffect : playerEffect;
 
   // 性格による機嫌変化補正
-  const adjustedMoodDelta = applyPersonalityMoodShift(student.personality, moodDelta.delta);
+  const adjustedMoodDelta = applyPersonalityMoodShift(student.personality, moodDelta.delta, student.affinity);
   const newMood = shiftMood(battle.enemyMood, adjustedMoodDelta);
 
   const newBar = clamp(battle.barPosition + effectivePlayerEffect, -100, 100);
@@ -356,6 +358,7 @@ export function resolvePlayerTurn(
     phase: 'resolving',
     selectedAttitude: attitude,
     selectedTopic: topic,
+    selectedStance: stance,
     topicUseCounts: newTopicUseCounts,
   };
 
@@ -387,14 +390,15 @@ export function resolveEnemyTurn(battle: BattleState): { newBattle: BattleState;
       phase: 'select_attitude',
       selectedAttitude: null,
       selectedTopic: null,
+      selectedStance: null,
     };
     return { newBattle, enemyEffect: 0 };
   }
 
-  // 相手の反撃（ベース強化 + 性格倍率）
+  // 相手の反撃（弁舌 + 機嫌 + 運動/知力防御）
   let baseCounter = 10 + student.stats.speech * 0.15;
   baseCounter *= MOOD_COUNTER_MULTIPLIER[battle.enemyMood];
-  baseCounter *= PERSONALITY_COUNTER_MULTIPLIER[student.personality];
+  baseCounter *= calcDefenseMultiplier(student, battle.selectedStance);
 
   // 恋愛感情: 反撃が弱まる（×0.6）
   if (battle.isInLove) {
@@ -418,6 +422,7 @@ export function resolveEnemyTurn(battle: BattleState): { newBattle: BattleState;
     phase: 'select_attitude',
     selectedAttitude: null,
     selectedTopic: null,
+    selectedStance: null,
   };
 
   return { newBattle, enemyEffect };

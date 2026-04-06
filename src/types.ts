@@ -97,7 +97,8 @@ export interface Student {
   stats: { speech: number; athletic: number; intel: number; maxHp: number };
   affinity: number;
   talkCount: number;
-  portrait: string | null;
+  bustPortrait: string | null;
+  facePortrait: string | null;
   playable: boolean;            // プレイヤーとして選択可能か
 }
 
@@ -119,6 +120,7 @@ export interface BattleState {
   phase: 'select_attitude' | 'select_topic' | 'select_stance' | 'resolving' | 'finished';
   selectedAttitude: PlayerAttitude | null;
   selectedTopic: Topic | null;
+  selectedStance: Stance | null;
   result: 'win' | 'lose' | 'timeout' | null;
   isDefending: boolean; // 活動家から説得されている場合true（勝敗反転）
   topicUseCounts: Record<string, number>; // 話題ごとの使用回数（繰り返しペナルティ用）
@@ -137,7 +139,8 @@ export interface PlayerCharacter {
   likedAttributes: PreferenceAttr[];
   dislikedAttributes: PreferenceAttr[];
   stats: { speech: number; athletic: number; intel: number; maxHp: number };
-  portrait: string | null;
+  bustPortrait: string | null;
+  facePortrait: string | null;
 }
 
 // アクションタイプ

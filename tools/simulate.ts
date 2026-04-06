@@ -239,8 +239,23 @@ function simulate(
       playerGender,
     );
 
+    // プレイヤーターン後の勝利判定（バー100到達で反撃前に決着）
+    const checkedAfterPlayer = checkBattleEnd(afterPlayer);
+    if (checkedAfterPlayer.phase === 'finished') {
+      battle = checkedAfterPlayer;
+      const isFactionTopic2 = (ALL_FACTION_IDS as readonly string[]).includes(action.topic);
+      const topicLabel2 = isFactionTopic2 ? `思想[${action.topic}]` : `雑談[${action.topic}]`;
+      const stanceLabel2 = action.stance === 'positive' ? '肯定' : '否定';
+      console.log(
+        `  R${String(battle.round).padStart(2)}: ${action.attitude.padEnd(8)}/${topicLabel2.padEnd(14)}/${stanceLabel2}` +
+        ` → +${String(playerEffect).padStart(3)} 反撃:なし` +
+        ` バー:${String(battle.barPosition).padStart(4)} ${MOOD_LABELS[prevMood]}→${MOOD_LABELS[afterPlayer.enemyMood]} ⚡${stamina}`
+      );
+      break;
+    }
+
     // 相手ターン
-    const { newBattle: afterEnemy, enemyEffect } = resolveEnemyTurn(afterPlayer);
+    const { newBattle: afterEnemy, enemyEffect } = resolveEnemyTurn(checkedAfterPlayer);
     battle = checkBattleEnd(afterEnemy);
 
     const isFactionTopic = (ALL_FACTION_IDS as readonly string[]).includes(action.topic);

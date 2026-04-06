@@ -229,7 +229,8 @@ export class Game {
             likedAttributes: [...selected.likedAttributes],
             dislikedAttributes: [...selected.dislikedAttributes],
             stats: { ...selected.stats },
-            portrait: selected.portrait,
+            bustPortrait: selected.bustPortrait,
+            facePortrait: selected.facePortrait,
           },
           playerAttributes: [...selected.attributes, selected.hairStyle],
           playerSupport: { ...selected.support },
@@ -404,13 +405,13 @@ export class Game {
       {
         speaker: 'student' as const,
         name: activist.name,
-        portrait: activist.portrait,
+        bustPortrait: activist.bustPortrait, facePortrait: activist.facePortrait,
         text: `「${text}」`,
       },
       {
         speaker: 'student' as const,
         name: activist.name,
-        portrait: activist.portrait,
+        bustPortrait: activist.bustPortrait, facePortrait: activist.facePortrait,
         text: `「${factionLabel}派の良さをわかってもらいたいんだ！」`,
       },
     ];
@@ -455,7 +456,8 @@ export class Game {
     const convData = generateChitchatData(
       student,
       pc.name,
-      pc.portrait ?? null,
+      pc.bustPortrait ?? null,
+      pc.facePortrait ?? null,
       pc.personality,
       pc.gender,
       revealedHobby,
@@ -526,8 +528,8 @@ export class Game {
     const AFFINITY_GAIN = 15;
 
     const steps: import('./logic/conversationGenerator').ConversationStep[] = [
-      { speaker: 'player', name: pc?.name ?? 'あなた', portrait: pc?.portrait ?? null, text: `「これ、${owner.name}さんの${li.itemName}じゃない？」` },
-      { speaker: 'student', name: owner.name, portrait: owner.portrait, text: `「あっ、探してたの！ わざわざありがとう！」` },
+      { speaker: 'player', name: pc?.name ?? 'あなた', bustPortrait: pc?.bustPortrait ?? null, facePortrait: pc?.facePortrait ?? null, text: `「これ、${owner.name}さんの${li.itemName}じゃない？」` },
+      { speaker: 'student', name: owner.name, bustPortrait: owner.bustPortrait, facePortrait: owner.facePortrait, text: `「あっ、探してたの！ わざわざありがとう！」` },
     ];
     const result: import('./logic/conversationGenerator').ConversationResult = {
       text: `${owner.name}に${li.itemName}を届けた。`,
@@ -558,9 +560,9 @@ export class Game {
     const AFFINITY_GAIN = 8;
 
     const steps: import('./logic/conversationGenerator').ConversationStep[] = [
-      { speaker: 'player', name: pc?.name ?? 'あなた', portrait: pc?.portrait ?? null, text: `「${from.name}さんから${er.itemName}を預かってきたよ」` },
-      { speaker: 'student', name: to.name, portrait: to.portrait, text: `「わざわざ届けてくれたの？ ありがとう！」` },
-      { speaker: 'student', name: to.name, portrait: to.portrait, text: `「${from.name}にもお礼言っておくね」` },
+      { speaker: 'player', name: pc?.name ?? 'あなた', bustPortrait: pc?.bustPortrait ?? null, facePortrait: pc?.facePortrait ?? null, text: `「${from.name}さんから${er.itemName}を預かってきたよ」` },
+      { speaker: 'student', name: to.name, bustPortrait: to.bustPortrait, facePortrait: to.facePortrait, text: `「わざわざ届けてくれたの？ ありがとう！」` },
+      { speaker: 'student', name: to.name, bustPortrait: to.bustPortrait, facePortrait: to.facePortrait, text: `「${from.name}にもお礼言っておくね」` },
     ];
     const result: import('./logic/conversationGenerator').ConversationResult = {
       text: `${from.name}の${er.itemName}を${to.name}に届けた。`,
@@ -619,9 +621,9 @@ export class Game {
     ];
     const line = errandLines.find(l => l.item === itemName) ?? errandLines[0];
     const steps: import('./logic/conversationGenerator').ConversationStep[] = [
-      { speaker: 'student', name: student.name, portrait: student.portrait, text: line.text },
-      { speaker: 'player', name: pc?.name ?? 'あなた', portrait: pc?.portrait ?? null, text: '「…？」' },
-      { speaker: 'student', name: student.name, portrait: student.portrait, text: `「${target.name}、今どこにいるかわかんないんだよね。お願いできる？」` },
+      { speaker: 'student', name: student.name, bustPortrait: student.bustPortrait, facePortrait: student.facePortrait, text: line.text },
+      { speaker: 'player', name: pc?.name ?? 'あなた', bustPortrait: pc?.bustPortrait ?? null, facePortrait: pc?.facePortrait ?? null, text: '「…？」' },
+      { speaker: 'student', name: student.name, bustPortrait: student.bustPortrait, facePortrait: student.facePortrait, text: `「${target.name}、今どこにいるかわかんないんだよね。お願いできる？」` },
     ];
     const result: import('./logic/conversationGenerator').ConversationResult = {
       text: `${student.name}からおつかいを頼まれた`,
@@ -680,7 +682,8 @@ export class Game {
     const convData = generateConversationData(
       student,
       pc?.name ?? 'あなた',
-      pc?.portrait ?? null,
+      pc?.bustPortrait ?? null,
+      pc?.facePortrait ?? null,
       pc?.personality ?? 'flexible',
       pc?.gender ?? 'male',
       revealedHobby,
@@ -707,8 +710,8 @@ export class Game {
     if (student.affinity < 15) {
       const pc = this.state.playerCharacter;
       const refuseSteps: import('./logic/conversationGenerator').ConversationStep[] = [
-        { speaker: 'player', name: pc?.name ?? 'あなた', portrait: pc?.portrait ?? null, text: '「周りの人について何か知ってる？」' },
-        { speaker: 'student', name: student.name, portrait: student.portrait, text: '「うーん、特にないかなぁ…」' },
+        { speaker: 'player', name: pc?.name ?? 'あなた', bustPortrait: pc?.bustPortrait ?? null, facePortrait: pc?.facePortrait ?? null, text: '「周りの人について何か知ってる？」' },
+        { speaker: 'student', name: student.name, bustPortrait: student.bustPortrait, facePortrait: student.facePortrait, text: '「うーん、特にないかなぁ…」' },
       ];
       const refuseResult: import('./logic/conversationGenerator').ConversationResult = {
         text: `${student.name}はあまり教えてくれなかった`,
@@ -820,7 +823,8 @@ export class Game {
     const convData = generateGossipData(
       student,
       pc?.name ?? 'あなた',
-      pc?.portrait ?? null,
+      pc?.bustPortrait ?? null,
+      pc?.facePortrait ?? null,
       pc?.personality ?? 'flexible',
       pc?.gender ?? 'male',
       reveal,

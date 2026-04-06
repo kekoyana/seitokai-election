@@ -191,8 +191,8 @@ export class DailyScreen implements Screen {
           border-color:${candidateColor};
           padding:3px 10px 3px 3px;
         ">
-          ${pc ? (pc.portrait
-            ? `<img src="${pc.portrait}" alt="${pc.name}" style="
+          ${pc ? (pc.facePortrait
+            ? `<img src="${pc.facePortrait}" alt="${pc.name}" style="
                 width:28px; height:28px; border-radius:3px;
                 object-fit:cover; object-position:top;
                 border:1px solid rgba(255,255,255,0.5);
@@ -721,8 +721,8 @@ export class DailyScreen implements Screen {
       <div class="game-chara-card" style="
         display:flex; align-items:center; gap:10px;
       ">
-        ${s.portrait
-          ? `<img src="${s.portrait}" alt="${s.name}" style="
+        ${s.facePortrait
+          ? `<img src="${s.facePortrait}" alt="${s.name}" style="
               width:96px; height:96px; border-radius:4px;
               object-fit:cover; object-position:top;
               border:2px solid var(--game-panel-border);
@@ -841,8 +841,8 @@ export class DailyScreen implements Screen {
     // ヘッダー部（ポートレート + 名前 + 所属情報を横並び）
     const closeBtnId = isPlayer ? 'close-player-btn' : 'close-info-btn';
     const portraitSize = 180;
-    const portraitImgHtml = s.portrait
-      ? `<img src="${s.portrait}" alt="${s.name}" style="
+    const portraitImgHtml = s.bustPortrait
+      ? `<img src="${s.bustPortrait}" alt="${s.name}" style="
             width:${portraitSize}px; height:${portraitSize}px; border-radius:8px;
             object-fit:cover; object-position:top;
             border:2px solid ${borderColor};

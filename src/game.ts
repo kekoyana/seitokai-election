@@ -554,7 +554,7 @@ export class Game {
     const AFFINITY_GAIN = 15;
 
     const steps: import('./logic/conversationGenerator').ConversationStep[] = [
-      { speaker: 'player', name: pc?.name ?? 'あなた', portrait: pc?.portrait ?? null, text: `「これ、${owner.name}さんの${li.itemName}じゃない？」` },
+      { speaker: 'player', name: pc?.name ?? 'あなた', portrait: pc?.portrait ?? null, text: `「これ、${owner.nickname}の${li.itemName}じゃない？」` },
       { speaker: 'student', name: owner.name, portrait: owner.portrait, text: `「あっ、探してたの！ わざわざありがとう！」` },
     ];
     const result: import('./logic/conversationGenerator').ConversationResult = {
@@ -586,9 +586,9 @@ export class Game {
     const AFFINITY_GAIN = 8;
 
     const steps: import('./logic/conversationGenerator').ConversationStep[] = [
-      { speaker: 'player', name: pc?.name ?? 'あなた', portrait: pc?.portrait ?? null, text: `「${from.name}さんから${er.itemName}を預かってきたよ」` },
+      { speaker: 'player', name: pc?.name ?? 'あなた', portrait: pc?.portrait ?? null, text: `「${from.nickname}から${er.itemName}を預かってきたよ」` },
       { speaker: 'student', name: to.name, portrait: to.portrait, text: `「わざわざ届けてくれたの？ ありがとう！」` },
-      { speaker: 'student', name: to.name, portrait: to.portrait, text: `「${from.name}にもお礼言っておくね」` },
+      { speaker: 'student', name: to.name, portrait: to.portrait, text: `「${from.nickname}にもお礼言っておくね」` },
     ];
     const result: import('./logic/conversationGenerator').ConversationResult = {
       text: `${from.name}の${er.itemName}を${to.name}に届けた。`,
@@ -641,15 +641,15 @@ export class Game {
 
     // おつかい依頼の会話を表示してから確認ダイアログ
     const errandLines: { text: string; item: string }[] = [
-      { text: `「ねぇ、${target.name}に${itemName}を届けてくれない？」`, item: '手紙' },
-      { text: `「${target.name}に${itemName}を返しておいてほしいんだけど…」`, item: 'ノート' },
-      { text: `「${target.name}の${itemName}、預かってるんだけど届けてくれる？」`, item: '文房具セット' },
-      { text: `「${target.name}に伝えてほしいことがあるんだけど…」`, item: '伝言' },
+      { text: `「ねぇ、${target.nickname}に${itemName}を届けてくれない？」`, item: '手紙' },
+      { text: `「${target.nickname}に${itemName}を返しておいてほしいんだけど…」`, item: 'ノート' },
+      { text: `「${target.nickname}の${itemName}、預かってるんだけど届けてくれる？」`, item: '文房具セット' },
+      { text: `「${target.nickname}に伝えてほしいことがあるんだけど…」`, item: '伝言' },
     ];
     const line = errandLines.find(l => l.item === itemName) ?? errandLines[0];
     const steps: import('./logic/conversationGenerator').ConversationStep[] = [
       { speaker: 'student', name: student.name, portrait: student.portrait, text: line.text },
-      { speaker: 'student', name: student.name, portrait: student.portrait, text: `「${target.name}、今どこにいるかわかんないんだよね。お願いできる？」` },
+      { speaker: 'student', name: student.name, portrait: student.portrait, text: `「${target.nickname}、今どこにいるかわかんないんだよね。お願いできる？」` },
       { speaker: 'player', name: pc?.name ?? 'あなた', portrait: pc?.portrait ?? null, text: '「わかった、届けておくよ。」' },
     ];
     const result: import('./logic/conversationGenerator').ConversationResult = {

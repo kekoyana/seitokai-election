@@ -7,7 +7,7 @@ import { ORGANIZATIONS, SPORTS_CLUB_IDS, CULTURE_CLUB_IDS } from '../../data/org
 import { getOrganizationVote, calcOrganizationSupport } from '../../logic/organizationLogic';
 
 export interface InfoPanelState {
-  tab: 'class' | 'club';
+  tab: 'class' | 'club' | 'objective';
   subTab?: string;
   orgId?: string;
   studentId?: string;
@@ -22,6 +22,10 @@ export interface InfoPanelContext {
 
 export function renderInfoPanel(ctx: InfoPanelContext): string {
   const { tab, orgId, studentId } = ctx.infoPanel;
+
+  if (tab === 'objective') {
+    return renderObjectivePanel(ctx);
+  }
 
   if (orgId && studentId) {
     const student = ctx.state.students.find(s => s.id === studentId);
@@ -54,7 +58,7 @@ export function renderInfoHeader(title: string, backAction?: string): string {
   `;
 }
 
-function renderInfoTabs(activeTab: 'class' | 'club'): string {
+function renderInfoTabs(activeTab: 'class' | 'club' | 'objective'): string {
   const tabStyle = (active: boolean) => `
     padding:8px 16px; border:none; border-radius:8px 8px 0 0;
     font-size:0.85em; font-weight:bold; cursor:pointer;
@@ -67,6 +71,7 @@ function renderInfoTabs(activeTab: 'class' | 'club'): string {
     <div style="display:flex; gap:2px; margin-bottom:12px;">
       <button data-info-tab="class" style="${tabStyle(activeTab === 'class')}">クラス</button>
       <button data-info-tab="club" style="${tabStyle(activeTab === 'club')}">部活</button>
+      <button data-info-tab="objective" style="${tabStyle(activeTab === 'objective')}">目的</button>
     </div>
   `;
 }
@@ -118,6 +123,74 @@ export function renderOrgInfoSection(ctx: { state: GameState }, org: typeof ORGA
     </div>
     <div style="font-size:0.72em; color:var(--game-text-dim); margin-bottom:6px; line-height:1.5;">${org.description}</div>
     ${renderSupportBar(orgSupport, 14, true)}
+  `;
+}
+
+function renderObjectivePanel(ctx: InfoPanelContext): string {
+  const faction = ctx.state.faction;
+  const factionInfo = FACTION_INFO.find(f => f.id === faction);
+  const factionLabel = faction ? FACTION_LABELS[faction] : '???';
+  const factionColor = factionInfo?.color ?? '#888';
+
+  const classOrgs = ORGANIZATIONS.filter(o => o.id.startsWith('class'));
+  const clubOrgs = ORGANIZATIONS.filter(o => o.id.startsWith('club_'));
+  const allOrgs = [...classOrgs, ...clubOrgs];
+  const allyCount = allOrgs.filter(org => getOrganizationVote(org, ctx.state.students) === faction).length;
+  const totalCount = allOrgs.length;
+  const remainDays = Math.max(0, 30 - ctx.state.day);
+
+  return `
+    <div class="game-panel" style="padding:14px;">
+      ${renderInfoHeader('情報')}
+      ${renderInfoTabs('objective')}
+
+      <div style="font-size:0.95em; font-weight:bold; color:var(--game-heading); margin-bottom:10px; text-align:center;">
+        学園祭の企画投票で<span style="color:${factionColor};">${factionLabel}派</span>を勝利させよう！
+      </div>
+
+      <div style="background:var(--game-panel-inner); border-radius:8px; padding:10px; margin-bottom:10px; font-size:0.8em; line-height:1.7; color:var(--game-text);">
+        学園祭を外部公開するか、伝統を守るか、体育祭に変えるか——<br>
+        <strong>30日間</strong>で生徒たちを説得し、各組織（クラス・部活）の支持を集めよう。
+      </div>
+
+      <div style="font-size:0.82em; color:var(--game-text); margin-bottom:8px;">
+        <strong>勝利条件</strong>（どちらかを達成）
+      </div>
+      <div style="display:flex; flex-direction:column; gap:6px; margin-bottom:12px;">
+        <div style="background:rgba(126,200,80,0.1); border:1px solid rgba(126,200,80,0.3); border-radius:6px; padding:8px 10px; font-size:0.78em; line-height:1.5;">
+          <strong style="color:#7EC850;">① 投票日に過半数の組織を支持させる</strong><br>
+          <span style="color:var(--game-text-dim);">30日後の投票で最も支持を集めた派閥が勝利</span>
+        </div>
+        <div style="background:rgba(126,200,80,0.1); border:1px solid rgba(126,200,80,0.3); border-radius:6px; padding:8px 10px; font-size:0.78em; line-height:1.5;">
+          <strong style="color:#7EC850;">② 全組織の支持を統一する</strong><br>
+          <span style="color:var(--game-text-dim);">全クラス・部活を自派閥に引き込めば即座にクリア</span>
+        </div>
+      </div>
+
+      <div style="font-size:0.82em; color:var(--game-text); margin-bottom:8px;">
+        <strong>現在の状況</strong>
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; font-size:0.8em; margin-bottom:12px;">
+        <div style="background:var(--game-panel-inner); border-radius:6px; padding:8px; text-align:center;">
+          <div style="color:var(--game-text-dim); font-size:0.85em;">支持組織</div>
+          <div style="font-size:1.3em; font-weight:bold; color:${factionColor};">${allyCount}<span style="font-size:0.6em; color:var(--game-text-dim);">/${totalCount}</span></div>
+        </div>
+        <div style="background:var(--game-panel-inner); border-radius:6px; padding:8px; text-align:center;">
+          <div style="color:var(--game-text-dim); font-size:0.85em;">残り日数</div>
+          <div style="font-size:1.3em; font-weight:bold; color:var(--game-text);">${remainDays}<span style="font-size:0.6em; color:var(--game-text-dim);">日</span></div>
+        </div>
+      </div>
+
+      <div style="font-size:0.82em; color:var(--game-text); margin-bottom:8px;">
+        <strong>攻略のコツ</strong>
+      </div>
+      <div style="font-size:0.78em; color:var(--game-text-dim); line-height:1.7;">
+        ・生徒と<strong>雑談</strong>して趣味や好みを知ろう<br>
+        ・<strong>説得バトル</strong>で組織のキーパーソンを味方につけよう<br>
+        ・雑談で<strong>機嫌を上げてから</strong>思想を語ると効果的<br>
+        ・組織の<strong>代表</strong>を説得すると支持が大きく動く
+      </div>
+    </div>
   `;
 }
 

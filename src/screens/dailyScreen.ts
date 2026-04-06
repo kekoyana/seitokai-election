@@ -1027,7 +1027,7 @@ export class DailyScreen implements Screen {
 
     // 情報パネル: タブ切替
     onDataAttr(this.container, 'data-info-tab', (tab) => {
-      this.infoPanel = { tab: tab as 'class' | 'club' };
+      this.infoPanel = { tab: tab as 'class' | 'club' | 'objective' };
       this.render();
     });
 

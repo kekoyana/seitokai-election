@@ -5,7 +5,7 @@ import type {
 import {
   STUDENTS, getFloorFromLocation, getCorridorForFloor,
   FLOOR_ADJACENCY, MOVE_COST, getFloorMoveCost, TIME_COST, MAX_TIME,
-  getStudentLocation, FACTION_LABELS, CLASS_LOCATION_MAP, ALL_FACTION_IDS, CLUB_LABELS,
+  getStudentLocation, FACTION_INFO, FACTION_LABELS, CLASS_LOCATION_MAP, ALL_FACTION_IDS, CLUB_LABELS,
 } from './data';
 import { generateConversationData, generateTalkLogSummary, generateChitchatData, generateGossipData, generateGossipLogSummary } from './logic/conversationGenerator';
 import type { GossipReveal } from './logic/conversationGenerator';
@@ -298,12 +298,18 @@ export class Game {
     });
     this.dailyScreen.mount(this.root);
 
-    // チュートリアル: 初日に移動ヒント
+    // チュートリアル: 初日にゲームの目的＋移動ヒント
     if (!this.state.tutorial.seenMove && this.state.day === 1) {
       this.updateState({ tutorial: { ...this.state.tutorial, seenMove: true } });
+      const fLabel = FACTION_LABELS[this.state.faction ?? 'conservative'] ?? '';
+      const fColor = FACTION_INFO.find(f => f.id === this.state.faction)?.color ?? '#888';
       showInfoDialog(this.root, {
-        title: 'はじめに',
-        message: '学園を探索してみよう。<br>廊下のマップから教室や部室に移動できる。<br>体力（スタミナ）に気をつけて！',
+        title: 'ゲームの目的',
+        message:
+          `学園祭の企画投票で<strong style="color:${fColor};">${fLabel}派</strong>を勝利させよう！<br><br>` +
+          '<strong>30日間</strong>で生徒たちを説得し、クラスや部活の支持を集める。<br>' +
+          '投票日に<strong>過半数の組織</strong>を支持させれば勝利！<br><br>' +
+          'まずは学園を探索してみよう。<br>廊下のマップから教室や部室に移動できるよ。',
       });
       saveGame(this.state);
     }

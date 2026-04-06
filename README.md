@@ -74,6 +74,32 @@ ai-sprites-local/           # 画像生成スクリプト
 - Codex での作業ルール: `AGENTS.md`
 - Gemini での作業ルール: `GEMINI.md`
 
+## 🎮 itch.io用ビルド
+
+```bash
+# itch.io用ビルド（相対パス、dist-itch/ に出力）
+BUILD_TARGET=itch npx vite build
+
+# zipファイル生成
+cd dist-itch && python3 -c "
+import zipfile, os
+with zipfile.ZipFile('../academy-tempest-itch.zip', 'w', zipfile.ZIP_DEFLATED) as zf:
+    for root, dirs, files in os.walk('.'):
+        for f in files:
+            zf.write(os.path.join(root, f))
+" && cd ..
+```
+
+生成された `academy-tempest-itch.zip` をitch.ioにアップロードする。
+
+- **Kind of project**: HTML
+- **Viewport**: 480 x 820
+- **Frame options**: モバイル対応 ON / Auto start ON / 全画面ボタン ON
+- **Orientation**: Portrait
+
+通常の `npx vite build` は GitHub Pages 用（`base: "/seitokai-election/"`）。
+itch.io 用は `BUILD_TARGET=itch` で相対パス（`base: "./"`）になる。
+
 ## 📝 開発上の注意
 
 本プロジェクトでは、ルートディレクトリの AI 向けガイドと `docs/` 以下の仕様書を「Single Source of Truth」として扱います。

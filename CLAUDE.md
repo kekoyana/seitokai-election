@@ -17,7 +17,8 @@
 ```bash
 npm install              # 依存インストール
 npx tsc --noEmit         # 型チェック
-npx vite build           # ビルド
+npx vite build           # ビルド（GitHub Pages用）
+BUILD_TARGET=itch npx vite build  # ビルド（itch.io用、相対パス）
 npx vite --port 5173     # 開発サーバー
 npx tsx tools/simulate.ts # 説得バトルシミュレーション
 ```

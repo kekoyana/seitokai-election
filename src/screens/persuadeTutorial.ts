@@ -12,37 +12,62 @@ interface PersuadeTutorialCallbacks {
   onFinish: () => void;
 }
 
-type TutorialStep = 'intro' | 'attitude' | 'topic' | 'stance' | 'resolving' | 'end';
+type TutorialStep =
+  | 'r1_attitude' | 'r1_topic' | 'r1_stance' | 'r1_result'
+  | 'r2_attitude' | 'r2_topic' | 'r2_stance' | 'r2_result'
+  | 'end';
 
 const GUIDE_MESSAGES: Record<TutorialStep, { title: string; text: string; btn: string }> = {
-  intro: {
-    title: '説得バトルを体験しよう',
-    text: '渡辺あおいを相手に、1ラウンドだけ練習してみよう。<br>実際にボタンを押して流れをつかもう！',
-    btn: 'はじめる',
-  },
-  attitude: {
-    title: '【1】態度を選ぼう',
-    text: 'まず<strong style="color:#f0d060;">態度</strong>を選ぼう。<br>' +
-      '<span style="color:#27AE60;">柔らかく</span>はスタミナ節約、<span style="color:#E07820;">情熱的に</span>は効果大だがコストも高い。<br><br>' +
-      '画面上のバーを<strong>右端（+100）</strong>まで押し込めば説得成功！',
+  r1_attitude: {
+    title: '【ラウンド1】まず雑談で機嫌を上げよう',
+    text: 'いきなり思想を語っても通じにくい。<br>' +
+      'まずは<strong style="color:#F0D070;">雑談</strong>で相手の機嫌を良くしよう！<br><br>' +
+      '<strong style="color:#f0d060;">態度</strong>を選んでね。' +
+      '<span style="color:#27AE60;">柔らかく</span>はコスト低、<span style="color:#E07820;">情熱的に</span>は効果大。',
     btn: 'OK',
   },
-  topic: {
-    title: '【2】話題を選ぼう',
-    text: '<span style="color:#7EC8F0;">派閥の政策</span>はバーを大きく動かす直接攻撃。<br>' +
-      '<span style="color:#F0D070;">雑談（趣味）</span>は相手の機嫌を変える間接攻撃。<br><br>' +
-      '趣味の横の <span style="color:#7EC850;">♥</span> は好き、<span style="color:#F07070;">✗</span> は嫌い。事前の情報収集が活きるよ！',
+  r1_topic: {
+    title: '趣味の話題を選ぼう',
+    text: '<span style="color:#F0D070;">雑談（趣味）</span>は相手の<strong>機嫌</strong>を変える間接攻撃。<br>' +
+      '趣味の横の <span style="color:#7EC850;">♥</span> は好き、<span style="color:#F07070;">✗</span> は嫌い。<br><br>' +
+      '好きな話題を<span style="color:#7EC850;">肯定</span>すると機嫌が上がるよ！',
     btn: 'OK',
   },
-  stance: {
-    title: '【3】立場を選ぼう',
-    text: '<span style="color:#7EC850;">肯定</span>か<span style="color:#F07070;">否定</span>を選ぼう。<br>' +
-      '正しい組み合わせならバーが有利に動く！',
+  r1_stance: {
+    title: '立場を選ぼう',
+    text: '相手の<span style="color:#7EC850;">好きな話題</span>なら<span style="color:#7EC850;">肯定</span>、<br>' +
+      '<span style="color:#F07070;">嫌いな話題</span>なら<span style="color:#F07070;">否定</span>で機嫌アップ！',
     btn: 'OK',
   },
-  resolving: {
-    title: '相手の反撃',
-    text: '相手も反撃してくる。これが1ラウンドの流れだ！<br>' +
+  r1_result: {
+    title: '機嫌が変わった！',
+    text: '相手の機嫌が変化したね。<br>' +
+      '機嫌が良いほど、次の<strong style="color:#7EC8F0;">思想説得</strong>が通りやすくなる！<br><br>' +
+      '次はいよいよ本番——派閥の政策で説得しよう。',
+    btn: '次へ',
+  },
+  r2_attitude: {
+    title: '【ラウンド2】思想で説得しよう',
+    text: '機嫌が良くなったところで、<strong style="color:#7EC8F0;">派閥の政策</strong>で攻めよう！<br>' +
+      'バーを<strong>右端（+100）</strong>まで押し込めば説得成功。<br><br>' +
+      '態度を選んでね。',
+    btn: 'OK',
+  },
+  r2_topic: {
+    title: '派閥の政策を選ぼう',
+    text: '<span style="color:#7EC8F0;">派閥の政策</span>はバーを大きく動かす<strong>直接攻撃</strong>！<br>' +
+      '相手が支持していない派閥を<span style="color:#F07070;">否定</span>するのも有効。',
+    btn: 'OK',
+  },
+  r2_stance: {
+    title: '立場を選ぼう',
+    text: '自分の派閥を<span style="color:#7EC850;">肯定</span>するか、<br>' +
+      '相手の派閥を<span style="color:#F07070;">否定</span>しよう！',
+    btn: 'OK',
+  },
+  r2_result: {
+    title: 'バーが動いた！',
+    text: '雑談で機嫌を上げてから思想説得——<br>これが基本の流れだ！<br><br>' +
       '本番では<strong>10ラウンド</strong>繰り返して勝負がつく。',
     btn: 'OK',
   },
@@ -50,8 +75,8 @@ const GUIDE_MESSAGES: Record<TutorialStep, { title: string; text: string; btn: s
     title: 'チュートリアル完了！',
     text: '説得バトルの流れはつかめたかな？<br><br>' +
       '攻略のコツ：<br>' +
+      '・まず<strong>雑談で機嫌</strong>を上げてから思想説得<br>' +
       '・事前に<strong>雑談で趣味</strong>を聞いておこう<br>' +
-      '・相手の<strong>機嫌</strong>が良いほど説得が通りやすい<br>' +
       '・同じ話題の繰り返しは効果が下がる',
     btn: '閉じる',
   },
@@ -62,8 +87,9 @@ export class PersuadeTutorial implements Screen {
   private battleScreen: BattleScreen | null = null;
   private tutorialState: GameState;
   private callbacks: PersuadeTutorialCallbacks;
-  private step: TutorialStep = 'intro';
+  private step: TutorialStep = 'r1_attitude';
   private overlay: HTMLDivElement;
+  private tutorialRound: 1 | 2 = 1;
 
   constructor(callbacks: PersuadeTutorialCallbacks) {
     this.callbacks = callbacks;
@@ -74,7 +100,9 @@ export class PersuadeTutorial implements Screen {
 
     this.tutorialState = this.createTutorialState();
 
-    this.showGuide('intro');
+    // バトル画面を即座に表示し、最初のガイドを出す
+    this.startBattle();
+    setTimeout(() => this.showGuide('r1_attitude'), 300);
   }
 
   private createTutorialState(): GameState {
@@ -182,21 +210,36 @@ export class PersuadeTutorial implements Screen {
 
   private onGuideOk(): void {
     switch (this.step) {
-      case 'intro':
-        this.hideGuide();
-        this.startBattle();
-        // 少し待ってから態度ガイドを表示
-        setTimeout(() => this.showGuide('attitude'), 300);
-        break;
-      case 'attitude':
-      case 'topic':
-      case 'stance':
+      case 'r1_attitude':
+      case 'r1_topic':
+      case 'r1_stance':
+      case 'r2_attitude':
+      case 'r2_topic':
+      case 'r2_stance':
         this.hideGuide();
         // プレイヤーの操作を待つ
         break;
-      case 'resolving':
+      case 'r1_result':
         this.hideGuide();
-        // 終了ガイドを表示
+        // ラウンド2へ: バトルフェーズをリセット
+        this.tutorialRound = 2;
+        if (this.tutorialState.battle) {
+          this.tutorialState = {
+            ...this.tutorialState,
+            battle: {
+              ...this.tutorialState.battle,
+              selectedAttitude: null,
+              selectedTopic: null,
+              selectedStance: null,
+              phase: 'select_attitude',
+            },
+          };
+          this.battleScreen?.update(this.tutorialState);
+        }
+        setTimeout(() => this.showGuide('r2_attitude'), 300);
+        break;
+      case 'r2_result':
+        this.hideGuide();
         setTimeout(() => this.showGuide('end'), 300);
         break;
       case 'end':
@@ -221,8 +264,8 @@ export class PersuadeTutorial implements Screen {
           },
         };
         this.battleScreen?.update(this.tutorialState);
-        // 話題ガイドを表示
-        setTimeout(() => this.showGuide('topic'), 200);
+        const topicStep = this.tutorialRound === 1 ? 'r1_topic' : 'r2_topic';
+        setTimeout(() => this.showGuide(topicStep), 200);
       },
       onTopicSelect: (topic: Topic) => {
         if (!this.tutorialState.battle) return;
@@ -235,8 +278,8 @@ export class PersuadeTutorial implements Screen {
           },
         };
         this.battleScreen?.update(this.tutorialState);
-        // 立場ガイドを表示
-        setTimeout(() => this.showGuide('stance'), 200);
+        const stanceStep = this.tutorialRound === 1 ? 'r1_stance' : 'r2_stance';
+        setTimeout(() => this.showGuide(stanceStep), 200);
       },
       onStanceSelect: (stance: Stance) => {
         if (!this.tutorialState.battle || !this.tutorialState.faction) return;
@@ -258,16 +301,16 @@ export class PersuadeTutorial implements Screen {
         this.battleScreen?.update(this.tutorialState);
 
         // 敵ターン
+        const resultStep = this.tutorialRound === 1 ? 'r1_result' : 'r2_result';
         setTimeout(() => {
           if (!this.tutorialState.battle) return;
           const { newBattle: afterEnemy } = resolveEnemyTurn(this.tutorialState.battle);
 
-          // 1ラウンド終了 → 強制的にfinishedにはせず、結果を見せてからガイド
+          // ラウンド終了 → 強制的にfinishedにはせず、結果を見せてからガイド
           this.tutorialState = { ...this.tutorialState, battle: afterEnemy };
           this.battleScreen?.update(this.tutorialState);
 
-          // 反撃後のガイド表示
-          setTimeout(() => this.showGuide('resolving'), 400);
+          setTimeout(() => this.showGuide(resultStep), 400);
         }, 700);
       },
       onCancel: (phase: 'select_topic' | 'select_stance') => {

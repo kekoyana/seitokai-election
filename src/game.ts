@@ -26,7 +26,7 @@ import { EndingScreen } from './screens/endingScreen';
 import { DebugScreen } from './screens/debugScreen';
 import { PrologueScreen } from './screens/prologueScreen';
 import { PersuadeTutorial } from './screens/persuadeTutorial';
-import { showInfoDialog } from './ui/gameDialog';
+import { showInfoDialog, showConfirmDialog } from './ui/gameDialog';
 import { bgm, BGM_TRACKS } from './bgm';
 import { se } from './se';
 import { saveGame, loadGame, deleteSaveData } from './saveLoad';
@@ -163,16 +163,23 @@ export class Game {
   }
 
   private showPersuadeTutorial(returnTo: 'title' | 'daily'): void {
-    bgm.play(BGM_TRACKS.settoku);
-    this.persuadeTutorial = new PersuadeTutorial({
-      onFinish: () => {
-        this.persuadeTutorial?.unmount();
-        this.persuadeTutorial = null;
-        // 元の画面のBGMに戻す
-        bgm.play(returnTo === 'title' ? BGM_TRACKS.title : BGM_TRACKS.schoolDaytime);
-      },
+    showConfirmDialog(this.root, {
+      title: '説得バトル チュートリアル',
+      message: '渡辺あおいを相手に説得バトルを練習します。<br>2ラウンドで雑談→思想説得の流れを体験できます。',
+      okLabel: 'はじめる',
+      cancelLabel: 'やめる',
+    }).then((ok) => {
+      if (!ok) return;
+      bgm.play(BGM_TRACKS.settoku);
+      this.persuadeTutorial = new PersuadeTutorial({
+        onFinish: () => {
+          this.persuadeTutorial?.unmount();
+          this.persuadeTutorial = null;
+          bgm.play(returnTo === 'title' ? BGM_TRACKS.title : BGM_TRACKS.schoolDaytime);
+        },
+      });
+      this.persuadeTutorial.mount(this.root);
     });
-    this.persuadeTutorial.mount(this.root);
   }
 
   private showPrologue(): void {

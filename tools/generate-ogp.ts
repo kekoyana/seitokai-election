@@ -15,9 +15,9 @@ function toDataUrl(filePath: string, mime: string): string {
 async function main() {
   const titleBg = toDataUrl(path.resolve(__dirname, '../assets/backgrounds/title.jpg'), 'image/jpeg');
   const portraits = {
-    takayama: toDataUrl(path.resolve(__dirname, '../assets/portraits/takayama_seiichi.png'), 'image/png'),
-    yuuki: toDataUrl(path.resolve(__dirname, '../assets/portraits/yuuki_akari.png'), 'image/png'),
-    shido: toDataUrl(path.resolve(__dirname, '../assets/portraits/shido_tsuyoshi.png'), 'image/png'),
+    takayama: toDataUrl(path.resolve(__dirname, '../assets/portraits/takayama_seiichi.webp'), 'image/webp'),
+    yuuki: toDataUrl(path.resolve(__dirname, '../assets/portraits/yuuki_akari.webp'), 'image/webp'),
+    shido: toDataUrl(path.resolve(__dirname, '../assets/portraits/shido_tsuyoshi.webp'), 'image/webp'),
   };
   const screens = {
     daily: toDataUrl(path.resolve(__dirname, '../public/screen-daily.png'), 'image/png'),

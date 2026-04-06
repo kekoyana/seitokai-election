@@ -17,6 +17,7 @@ export class BattleScreen implements Screen {
   private callbacks: BattleCallbacks;
   private showLog: boolean = false;
   private showVolumeDialog: boolean = false;
+  private lastBubbleLogIndex: number = -1;
 
   constructor(state: GameState, callbacks: BattleCallbacks) {
     this.state = state;
@@ -77,6 +78,9 @@ export class BattleScreen implements Screen {
 
     const isFinished = battle.phase === 'finished';
     const lastLog = battle.logs[battle.logs.length - 1];
+    const lastEnemyLogIdx = battle.logs.length - 1;
+    const bubbleIsNew = lastLog?.speaker === 'enemy' && lastEnemyLogIdx !== this.lastBubbleLogIndex;
+    if (lastLog?.speaker === 'enemy') this.lastBubbleLogIndex = lastEnemyLogIdx;
 
     // 音量ダイアログ
     let volumeDialogHtml = '';
@@ -125,37 +129,69 @@ export class BattleScreen implements Screen {
         </div>
       </div>
 
-      <!-- キャラクター表示 -->
+      <!-- キャラクター表示 + 吹き出し -->
       <div style="
-        display:flex; justify-content:center; align-items:center;
-        padding:40px 12px 12px; gap:16px; flex-shrink:0;
+        display:flex; align-items:flex-start;
+        padding:40px 12px 8px; gap:10px; flex-shrink:0;
       ">
-        ${student.portrait
-          ? `<img src="${student.portrait}" alt="${student.name}" style="
-              width:96px; height:96px;
-              border-radius:4px; object-fit:cover; object-position:top;
-              border:2px solid var(--game-panel-border);
-              box-shadow:0 4px 16px rgba(0,0,0,0.5);
-            "/>`
-          : renderInitialIcon(student.name, student.personality, 96, 'rgba(255,255,255,0.3)')
-        }
-        <div style="color:#fff; min-width:120px;">
-          <div style="font-size:1.05em; font-weight:bold;">${student.name} <span style="font-size:0.75em; font-weight:normal; opacity:0.7;">（${student.nickname}）</span></div>
-          <div style="font-size:0.82em; opacity:0.7; margin-bottom:6px;">${student.className}</div>
-          <div style="
-            display:inline-flex; align-items:center; gap:6px;
-            background:rgba(255,255,255,0.15);
-            border-radius:20px; padding:5px 12px;
-            font-size:0.82em;
-          ">
-            <span>${moodEmoji[battle.enemyMood] ?? ''} ${moodLabel}</span>
+        <!-- ポートレート -->
+        <div style="flex-shrink:0;">
+          ${student.portrait
+            ? `<img src="${student.portrait}" alt="${student.name}" style="
+                width:80px; height:80px;
+                border-radius:4px; object-fit:cover; object-position:top;
+                border:2px solid var(--game-panel-border);
+                box-shadow:0 4px 16px rgba(0,0,0,0.5);
+              "/>`
+            : renderInitialIcon(student.name, student.personality, 80, 'rgba(255,255,255,0.3)')
+          }
+        </div>
+        <!-- 右側: 情報 + 吹き出し -->
+        <div style="flex:1; min-width:0; color:#fff;">
+          <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+            <span style="font-size:0.95em; font-weight:bold;">${student.name}</span>
+            <span style="font-size:0.72em; opacity:0.6;">${student.className}</span>
+            <div style="
+              display:inline-flex; align-items:center; gap:4px;
+              background:rgba(255,255,255,0.15);
+              border-radius:12px; padding:2px 8px;
+              font-size:0.72em;
+            ">
+              ${moodEmoji[battle.enemyMood] ?? ''} ${moodLabel}
+            </div>
           </div>
-          <div style="display:flex; align-items:center; gap:4px; margin-top:4px;">
+          <div style="display:flex; align-items:center; gap:4px; margin-top:3px;">
             ${moodIndicatorHtml}
+            <div style="margin-left:6px; width:80px;">
+              ${renderSupportBar(student.support, 8)}
+            </div>
           </div>
-          <div style="margin-top:6px; width:120px;">
-            ${renderSupportBar(student.support, 10)}
+          <!-- 吹き出し -->
+          ${lastLog?.speaker === 'enemy' ? `
+          <div style="
+            margin-top:6px; padding:6px 10px;
+            background:var(--game-panel-inner);
+            border:2px solid var(--game-panel-border);
+            border-radius:0 8px 8px 8px;
+            position:relative;
+            font-size:0.82em; color:var(--game-text); line-height:1.5;
+            ${bubbleIsNew ? 'animation: game-slide-up 0.15s ease-out;' : ''}
+          ">
+            <div style="
+              position:absolute; top:-8px; left:-2px;
+              width:0; height:0;
+              border-bottom:8px solid var(--game-panel-border);
+              border-right:8px solid transparent;
+            "></div>
+            <div style="
+              position:absolute; top:-5px; left:0px;
+              width:0; height:0;
+              border-bottom:6px solid var(--game-panel-inner);
+              border-right:6px solid transparent;
+            "></div>
+            ${lastLog.text}
           </div>
+          ` : ''}
         </div>
       </div>
 

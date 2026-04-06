@@ -136,7 +136,7 @@ export function generateConversationData(
     const reactionLine = pick(studentLines.hobbyReaction[pref]);
 
     const prefColor = pref === 'like' ? '#7EC850' : pref === 'dislike' ? '#F07070' : '#999';
-    const prefIcon = pref === 'like' ? '♥' : pref === 'dislike' ? '✗' : '―';
+    const prefIcon = pref === 'like' ? '♥' : pref === 'dislike' ? '✗' : '▲';
 
     // プレイヤーが趣味を振る
     steps.push({
@@ -181,7 +181,7 @@ export function generateConversationData(
     const pref = student.hobbies[revealedHobby];
     const hobbyName = HOBBY_LABELS[revealedHobby] ?? revealedHobby;
     const prefColor = pref === 'like' ? '#7EC850' : pref === 'dislike' ? '#F07070' : '#999';
-    const prefIcon = pref === 'like' ? '♥' : pref === 'dislike' ? '✗' : '―';
+    const prefIcon = pref === 'like' ? '♥' : pref === 'dislike' ? '✗' : '▲';
     resultEffectParts.push(`<span style="color:${prefColor};">${prefIcon} ${hobbyName}</span>`);
   }
   resultEffectParts.push(`<span style="color:${affinityColor};">好感度 ${affinitySign}${affinityGain}</span>`);
@@ -246,7 +246,7 @@ export function generateChitchatData(
     const studentTalkLines = getTalkLines(student.personality, student.gender);
     const reactionLine = pick(studentTalkLines.hobbyReaction[pref]);
     const prefColor = pref === 'like' ? '#7EC850' : pref === 'dislike' ? '#F07070' : '#999';
-    const prefIcon = pref === 'like' ? '♥' : pref === 'dislike' ? '✗' : '―';
+    const prefIcon = pref === 'like' ? '♥' : pref === 'dislike' ? '✗' : '▲';
 
     steps.push({
       speaker: 'student',
@@ -271,7 +271,7 @@ export function generateChitchatData(
     const pref = student.hobbies[revealedHobby];
     const hobbyName = HOBBY_LABELS[revealedHobby] ?? revealedHobby;
     const prefColor = pref === 'like' ? '#7EC850' : pref === 'dislike' ? '#F07070' : '#999';
-    const prefIcon = pref === 'like' ? '♥' : pref === 'dislike' ? '✗' : '―';
+    const prefIcon = pref === 'like' ? '♥' : pref === 'dislike' ? '✗' : '▲';
     resultEffectParts.push(`<span style="color:${prefColor};">${prefIcon} ${hobbyName}</span>`);
   }
   resultEffectParts.push(`<span style="color:#7EC850;">好感度 +${affinityGain}</span>`);
@@ -298,7 +298,7 @@ export function generateTalkLogSummary(
     const hobbyName = HOBBY_LABELS[revealedHobby] ?? revealedHobby;
     const pref = student.hobbies[revealedHobby];
     const prefColor = pref === 'like' ? '#7EC850' : pref === 'dislike' ? '#F07070' : '#999';
-    const prefIcon = pref === 'like' ? '♥' : pref === 'dislike' ? '✗' : '―';
+    const prefIcon = pref === 'like' ? '♥' : pref === 'dislike' ? '✗' : '▲';
     parts.push(`<span style="color:${prefColor};">${prefIcon}${hobbyName}</span>`);
   }
 
@@ -366,7 +366,7 @@ export function generateGossipData(
       text: `「${pick(gossipLines)}」`,
     });
     const prefColor = reveal.hobby.pref === 'like' ? '#7EC850' : reveal.hobby.pref === 'dislike' ? '#F07070' : '#999';
-    const prefIcon = reveal.hobby.pref === 'like' ? '♥' : reveal.hobby.pref === 'dislike' ? '✗' : '―';
+    const prefIcon = reveal.hobby.pref === 'like' ? '♥' : reveal.hobby.pref === 'dislike' ? '✗' : '▲';
     revealParts.push(`<span style="color:${prefColor};">${prefIcon}${hobbyName}</span>`);
   }
   if (reveal.likedAttr) {
@@ -443,7 +443,7 @@ export function generateGossipLogSummary(
   if (reveal.hobby) {
     const hobbyName = HOBBY_LABELS[reveal.hobby.topic] ?? reveal.hobby.topic;
     const prefColor = reveal.hobby.pref === 'like' ? '#7EC850' : reveal.hobby.pref === 'dislike' ? '#F07070' : '#999';
-    const prefIcon = reveal.hobby.pref === 'like' ? '♥' : reveal.hobby.pref === 'dislike' ? '✗' : '―';
+    const prefIcon = reveal.hobby.pref === 'like' ? '♥' : reveal.hobby.pref === 'dislike' ? '✗' : '▲';
     infoParts.push(`<span style="color:${prefColor};">${prefIcon}${hobbyName}</span>`);
   }
   if (reveal.likedAttr) {

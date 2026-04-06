@@ -451,7 +451,7 @@ function buildPlayerLogText(
   attitude: PlayerAttitude,
   topic: Topic,
   stance: Stance,
-  effect: number
+  effect: number,
 ): string {
   const isFactionTopic = (ALL_FACTION_IDS as readonly string[]).includes(topic);
   const line = getPlayerLine(attitude, isFactionTopic, stance);

@@ -1,5 +1,6 @@
 import type { GameState, PlayerAttitude, Topic, Stance, FactionId, HobbyTopic } from '../types';
-import { FACTION_INFO, HOBBY_LABELS, MOOD_LABELS, renderInitialIcon, renderSupportBar } from '../data';
+import { FACTION_INFO, FACTION_LABELS, HOBBY_LABELS, MOOD_LABELS, renderInitialIcon, renderSupportBar } from '../data';
+import { ALL_FACTION_IDS } from '../data/factions';
 import { bgm } from '../bgm';
 import battleBg from '../../assets/backgrounds/battle.jpg';
 import type { Screen } from './Screen';
@@ -43,6 +44,7 @@ export class BattleScreen implements Screen {
 
     const candidateColor = this.getFactionColor();
     const student = battle.student;
+    const pc = this.state.playerCharacter;
     const barPct = (battle.barPosition + 100) / 2; // 0〜100%
 
     const barColor = battle.barPosition >= 0 ? candidateColor : '#C0392B';
@@ -132,6 +134,13 @@ export class BattleScreen implements Screen {
           pointer-events:auto;
           display:flex; gap:6px; align-items:center;
         ">
+          ${(() => {
+            const pf = FACTION_INFO.find(f => f.id === this.state.faction);
+            return pf ? `<span style="
+              font-size:0.72em; background:${pf.color}; color:#fff;
+              border-radius:3px; padding:1px 6px; font-weight:bold;
+            ">${FACTION_LABELS[pf.id]}派</span>` : '';
+          })()}
           <span>⚡<strong>${this.state.stamina}</strong></span>
           <span style="opacity:0.4;">|</span>
           <span id="bgm-icon" style="cursor:pointer; font-size:1.1em; line-height:1; padding:2px;">${bgm.volume > 0 ? '🔊' : '🔇'}</span>
@@ -160,23 +169,30 @@ export class BattleScreen implements Screen {
           <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
             <span style="font-size:0.95em; font-weight:bold;">${student.name}</span>
             <span style="font-size:0.72em; opacity:0.6;">${student.className}</span>
-            <div style="
-              display:inline-flex; align-items:center; gap:4px;
-              background:rgba(255,255,255,0.15);
-              border-radius:12px; padding:2px 8px;
-              font-size:0.72em;
-            ">
-              ${moodEmoji[battle.enemyMood] ?? ''} ${moodLabel}
-            </div>
+            ${(() => {
+              const topFaction = ALL_FACTION_IDS.reduce((a, b) => student.support[a] >= student.support[b] ? a : b);
+              const fi = FACTION_INFO.find(f => f.id === topFaction);
+              return fi ? `<span style="
+                font-size:0.65em; background:${fi.color}; color:#fff;
+                border-radius:3px; padding:1px 6px; font-weight:bold;
+              ">${FACTION_LABELS[topFaction]}派</span>` : '';
+            })()}
           </div>
-          <div style="display:flex; align-items:center; gap:4px; margin-top:3px;">
-            ${moodIndicatorHtml}
-            <div style="margin-left:6px; width:80px;">
+          <div style="display:flex; align-items:center; gap:6px; margin-top:3px; flex-wrap:wrap;">
+            <div id="mood-area" style="
+              display:inline-flex; align-items:center; gap:6px;
+              background:rgba(255,255,255,0.1);
+              border-radius:8px; padding:3px 8px;
+            ">
+              <span style="font-size:0.72em;">${moodEmoji[battle.enemyMood] ?? ''} ${moodLabel}</span>
+              <span style="display:inline-flex; align-items:center; gap:3px;">${moodIndicatorHtml}</span>
+            </div>
+            <div style="width:80px;">
               ${renderSupportBar(student.support, 8)}
             </div>
           </div>
-          <!-- 吹き出し -->
-          ${lastLog?.speaker === 'enemy' ? `
+          <!-- 相手の吹き出し -->
+          ${lastEnemyLog ? `
           <div style="
             margin-top:6px; padding:6px 10px;
             background:var(--game-panel-inner);
@@ -184,7 +200,7 @@ export class BattleScreen implements Screen {
             border-radius:0 8px 8px 8px;
             position:relative;
             font-size:0.82em; color:var(--game-text); line-height:1.5;
-            ${bubbleIsNew ? 'animation: game-slide-up 0.15s ease-out;' : ''}
+            ${enemyBubbleIsNew ? 'animation: game-slide-up 0.15s ease-out;' : ''}
           ">
             <div style="
               position:absolute; top:-8px; left:-2px;
@@ -198,11 +214,54 @@ export class BattleScreen implements Screen {
               border-bottom:6px solid var(--game-panel-inner);
               border-right:6px solid transparent;
             "></div>
-            ${lastLog.text}
+            ${lastEnemyLog.text.replace(/（[^）]*）$/, '')}
           </div>
           ` : ''}
         </div>
       </div>
+      <!-- プレイヤーの吹き出し + ポートレート -->
+      ${lastPlayerLog ? `
+      <div style="
+        display:flex; align-items:flex-start; gap:10px;
+        margin:0 12px 4px; justify-content:flex-end;
+      ">
+        <div style="
+          flex:1; min-width:0; padding:6px 10px;
+          background:rgba(168,216,240,0.15);
+          border:2px solid rgba(168,216,240,0.4);
+          border-radius:8px 8px 0 8px;
+          position:relative;
+          font-size:0.82em; color:#A8D8F0; line-height:1.5;
+          text-align:right;
+          ${playerBubbleIsNew ? 'animation: game-slide-up 0.15s ease-out;' : ''}
+        ">
+          <div style="
+            position:absolute; bottom:-8px; right:-2px;
+            width:0; height:0;
+            border-top:8px solid rgba(168,216,240,0.4);
+            border-left:8px solid transparent;
+          "></div>
+          <div style="
+            position:absolute; bottom:-5px; right:0px;
+            width:0; height:0;
+            border-top:6px solid rgba(168,216,240,0.15);
+            border-left:6px solid transparent;
+          "></div>
+          ${lastPlayerLog.text.replace(/（[^）]*）$/, '')}
+        </div>
+        <div style="flex-shrink:0;">
+          ${pc?.portrait
+            ? `<img src="${pc.portrait}" alt="${pc.name}" style="
+                width:48px; height:48px;
+                border-radius:4px; object-fit:cover; object-position:top;
+                border:2px solid ${candidateColor};
+                box-shadow:0 2px 8px rgba(0,0,0,0.4);
+              "/>`
+            : renderInitialIcon(pc?.name ?? '', pc?.personality ?? 'flexible', 48, candidateColor)
+          }
+        </div>
+      </div>
+      ` : ''}
 
       <!-- バーグラフ -->
       <div style="padding:8px 16px; flex-shrink:0;">
@@ -235,7 +294,6 @@ export class BattleScreen implements Screen {
               : `right:${50}%; width:${50 - barPct}%;`
             }
           "></div>
-          <!-- ゾーン表示（バー端=勝敗なのでラインは不要） -->
         </div>
       </div>
 
@@ -268,6 +326,7 @@ export class BattleScreen implements Screen {
     `;
 
     this.attachEvents();
+
   }
 
   private renderFinished(): string {

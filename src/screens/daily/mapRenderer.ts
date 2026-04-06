@@ -29,9 +29,10 @@ function renderRoomBtn(ctx: MapContext, roomId: LocationId, canEnter: boolean, s
     <button data-enter-room="${roomId}" style="
       ${style.w ? `width:${style.w};` : ''}
       ${style.h ? `height:${style.h};` : ''}
-      padding:4px 2px;
+      padding:8px 4px;
       background:${hasStudents ? style.bg : '#f0f2f4'};
       border:2px solid ${hasStudents ? style.border : '#b8c0c8'};
+      min-height:40px;
       cursor:${canEnter ? 'pointer' : 'not-allowed'};
       text-align:center; font-family:inherit;
       opacity:${canEnter ? '1' : '0.6'};
@@ -39,7 +40,7 @@ function renderRoomBtn(ctx: MapContext, roomId: LocationId, canEnter: boolean, s
       display:flex; flex-direction:column; align-items:center; justify-content:center;
       box-shadow:${hasStudents ? `inset 0 0 12px ${style.border}40, 0 1px 3px rgba(0,0,0,0.1)` : '0 1px 2px rgba(0,0,0,0.05)'};
     ">
-      <div style="font-weight:bold; font-size:0.72em; color:#333; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%;">${shortName}</div>
+      <div style="font-weight:bold; font-size:0.88em; color:#333; line-height:1.2; overflow:hidden; text-overflow:ellipsis; max-width:100%;">${shortName}</div>
       ${hasStudents
         ? `<div style="
             position:absolute; top:-7px; right:-7px;

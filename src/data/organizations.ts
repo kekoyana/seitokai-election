@@ -169,7 +169,7 @@ export const ORGANIZATIONS: Organization[] = [
     id: 'club_student_council',
     name: '生徒会',
     description: '鷹山が率いる学園の中枢。校内行事の企画・運営を担う。',
-    type: 'council',
+    type: 'dictatorship',
     leaderId: 's30101',
     subLeaderIds: ['s20201'],
     memberIds: ['s30151'],

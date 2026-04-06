@@ -10,6 +10,7 @@ import {
 import { ORGANIZATIONS } from '../data/organizations';
 import { getOrganizationVote } from '../logic/organizationLogic';
 import { bgm } from '../bgm';
+import { se } from '../se';
 import dailyBg from '../../assets/backgrounds/daily.jpg';
 import type { ConversationStep, ConversationResult } from '../logic/conversationGenerator';
 import { ConversationOverlay } from './conversationOverlay';
@@ -223,7 +224,8 @@ export class DailyScreen implements Screen {
     // システムメニューダイアログ
     let systemMenuHtml = '';
     if (this.showSystemMenu) {
-      const volPct = Math.round(bgm.volume * 100);
+      const bgmPct = Math.round(bgm.volume * 100);
+      const sePct = Math.round(se.volume * 100);
       systemMenuHtml = `
         <div class="game-dialog-overlay" id="system-menu-overlay" style="
           position:absolute; inset:0; z-index:200;
@@ -238,13 +240,23 @@ export class DailyScreen implements Screen {
               <button id="sys-load-btn" class="game-btn game-btn-warning" style="padding:10px 16px; width:100%; font-family:var(--game-font);">ロード</button>
               <div style="margin-top:4px;">
                 <div style="font-size:0.85em; color:var(--game-text); margin-bottom:8px;">音量調整</div>
-                <div style="display:flex; align-items:center; gap:10px;">
+                <div style="font-size:0.78em; color:var(--game-text-dim); margin-bottom:4px; text-align:left;">BGM</div>
+                <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
                   <span id="sys-bgm-icon" style="font-size:1.2em;">${bgm.volume > 0 ? '🔊' : '🔇'}</span>
-                  <input id="sys-bgm-slider" type="range" min="0" max="100" value="${volPct}" style="
+                  <input id="sys-bgm-slider" type="range" min="0" max="100" value="${bgmPct}" style="
                     flex:1; height:6px; cursor:pointer;
                     accent-color:var(--game-accent);
                   "/>
-                  <span id="sys-bgm-label" style="font-size:0.9em; width:35px; text-align:right;">${volPct}%</span>
+                  <span id="sys-bgm-label" style="font-size:0.9em; width:35px; text-align:right;">${bgmPct}%</span>
+                </div>
+                <div style="font-size:0.78em; color:var(--game-text-dim); margin-bottom:4px; text-align:left;">効果音</div>
+                <div style="display:flex; align-items:center; gap:10px;">
+                  <span id="sys-se-icon" style="font-size:1.2em;">${se.volume > 0 ? '🔔' : '🔕'}</span>
+                  <input id="sys-se-slider" type="range" min="0" max="100" value="${sePct}" style="
+                    flex:1; height:6px; cursor:pointer;
+                    accent-color:var(--game-accent);
+                  "/>
+                  <span id="sys-se-label" style="font-size:0.9em; width:35px; text-align:right;">${sePct}%</span>
                 </div>
               </div>
               <button id="sys-tutorial-btn" class="game-btn game-btn-success" style="padding:10px 16px; width:100%; font-family:var(--game-font);">チュートリアル（説得の遊び方）</button>
@@ -958,6 +970,18 @@ export class DailyScreen implements Screen {
         if (sysLabel) sysLabel.textContent = `${Math.round(v * 100)}%`;
         const icon = this.container.querySelector<HTMLElement>('#sys-bgm-icon');
         if (icon) icon.textContent = v > 0 ? '🔊' : '🔇';
+      });
+      const sysSeSlider = this.container.querySelector<HTMLInputElement>('#sys-se-slider');
+      const sysSeLabel = this.container.querySelector<HTMLElement>('#sys-se-label');
+      sysSeSlider?.addEventListener('input', () => {
+        const v = parseInt(sysSeSlider.value, 10) / 100;
+        se.setVolume(v);
+        if (sysSeLabel) sysSeLabel.textContent = `${Math.round(v * 100)}%`;
+        const seIcon = this.container.querySelector<HTMLElement>('#sys-se-icon');
+        if (seIcon) seIcon.textContent = v > 0 ? '🔔' : '🔕';
+      });
+      sysSeSlider?.addEventListener('change', () => {
+        se.click();
       });
       this.container.querySelector('#sys-tutorial-btn')?.addEventListener('pointerup', () => {
         this.showSystemMenu = false;

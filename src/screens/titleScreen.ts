@@ -1,5 +1,6 @@
 import titleBg from '../../assets/backgrounds/title.jpg';
 import { bgm } from '../bgm';
+import { se } from '../se';
 import { hasSaveData } from '../saveLoad';
 import type { Screen } from './Screen';
 
@@ -142,7 +143,8 @@ export class TitleScreen implements Screen {
 
     // 音量ダイアログ
     if (this.showVolumeDialog) {
-      const volPct = Math.round(bgm.volume * 100);
+      const bgmPct = Math.round(bgm.volume * 100);
+      const sePct = Math.round(se.volume * 100);
       const volumeDialogHtml = `
         <div class="game-dialog-overlay" style="
           position:absolute; inset:0; z-index:200;
@@ -150,15 +152,25 @@ export class TitleScreen implements Screen {
           display:flex; align-items:center; justify-content:center;
           animation: fadeIn 0.2s ease;
         ">
-          <div class="game-panel" style="width:240px; padding:20px; text-align:center;">
-            <div style="font-weight:bold; margin-bottom:15px; color:var(--game-text);">BGM音量</div>
-            <div style="display:flex; align-items:center; gap:10px; margin-bottom:20px;">
+          <div class="game-panel" style="width:260px; padding:20px; text-align:center;">
+            <div style="font-weight:bold; margin-bottom:15px; color:var(--game-text);">音量設定</div>
+            <div style="font-size:0.85em; color:var(--game-text-dim); margin-bottom:6px; text-align:left;">BGM</div>
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:14px;">
               <span id="bgm-dialog-icon" style="font-size:1.2em;">${bgm.volume > 0 ? '🔊' : '🔇'}</span>
-              <input id="bgm-volume-dialog" type="range" min="0" max="100" value="${volPct}" style="
+              <input id="bgm-volume-dialog" type="range" min="0" max="100" value="${bgmPct}" style="
                 flex:1; height:6px; cursor:pointer;
                 accent-color:var(--game-accent);
               "/>
-              <span id="bgm-volume-label" style="font-size:0.9em; width:35px; text-align:right;">${volPct}%</span>
+              <span id="bgm-volume-label" style="font-size:0.9em; width:35px; text-align:right;">${bgmPct}%</span>
+            </div>
+            <div style="font-size:0.85em; color:var(--game-text-dim); margin-bottom:6px; text-align:left;">効果音</div>
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:20px;">
+              <span id="se-dialog-icon" style="font-size:1.2em;">${se.volume > 0 ? '🔔' : '🔕'}</span>
+              <input id="se-volume-dialog" type="range" min="0" max="100" value="${sePct}" style="
+                flex:1; height:6px; cursor:pointer;
+                accent-color:var(--game-accent);
+              "/>
+              <span id="se-volume-label" style="font-size:0.9em; width:35px; text-align:right;">${sePct}%</span>
             </div>
             <button id="close-volume-dialog" class="game-btn game-btn-primary" style="padding:8px 24px;">閉じる</button>
           </div>
@@ -212,6 +224,18 @@ export class TitleScreen implements Screen {
         if (volLabel) volLabel.textContent = `${Math.round(v * 100)}%`;
         const dialogIcon = this.container.querySelector<HTMLElement>('#bgm-dialog-icon');
         if (dialogIcon) dialogIcon.textContent = v > 0 ? '🔊' : '🔇';
+      });
+      const seSlider = this.container.querySelector<HTMLInputElement>('#se-volume-dialog');
+      const seLabel = this.container.querySelector<HTMLElement>('#se-volume-label');
+      seSlider?.addEventListener('input', () => {
+        const v = parseInt(seSlider.value, 10) / 100;
+        se.setVolume(v);
+        if (seLabel) seLabel.textContent = `${Math.round(v * 100)}%`;
+        const seIcon = this.container.querySelector<HTMLElement>('#se-dialog-icon');
+        if (seIcon) seIcon.textContent = v > 0 ? '🔔' : '🔕';
+      });
+      seSlider?.addEventListener('change', () => {
+        se.click(); // 音量変更後にテスト再生
       });
       this.container.querySelector('#close-volume-dialog')?.addEventListener('pointerup', () => {
         this.showVolumeDialog = false;

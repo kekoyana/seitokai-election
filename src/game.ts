@@ -28,6 +28,7 @@ import { PrologueScreen } from './screens/prologueScreen';
 import { PersuadeTutorial } from './screens/persuadeTutorial';
 import { showInfoDialog } from './ui/gameDialog';
 import { bgm, BGM_TRACKS } from './bgm';
+import { se } from './se';
 import { saveGame, loadGame, deleteSaveData } from './saveLoad';
 
 function createInitialState(): GameState {
@@ -580,6 +581,7 @@ export class Game {
       currentTime: Math.min(MAX_TIME, this.state.currentTime + 5),
       actionLogs: [...this.state.actionLogs, `${from.name}の${er.itemName}を${to.name}に届けた。<span style="color:#7EC850;">双方の好感度+${AFFINITY_GAIN}</span>`],
     });
+    se.questComplete();
     this.dailyScreen?.update(this.state);
     this.dailyScreen?.showConversation(steps, result, () => {});
   }
@@ -630,6 +632,7 @@ export class Game {
       effectHtml: `<span style="color:#4A90D9;">📨 ${target.name}に${itemName}を届ける</span>`,
     };
     this.dailyScreen?.showConversation(steps, result, () => {
+      se.questAccept();
       this.updateState({
         errand: { fromId: student.id, toId: target.id, itemName },
         actionLogs: [...this.state.actionLogs, `${student.name}から${target.name}への${itemName}を預かった。`],
@@ -640,6 +643,7 @@ export class Game {
 
   private handleTalk(student: Student): void {
     if (this.state.stamina < 5 || this.isTimeUp()) return;
+    se.talkStart();
 
     // 趣味を解禁（会話するたびにランダムで1つ）
     const unrevealed = Object.keys(student.hobbies).filter(
@@ -878,6 +882,7 @@ export class Game {
       currentTime: Math.min(MAX_TIME, this.state.currentTime + TIME_COST.NURSE_REST),
       actionLogs: [...this.state.actionLogs, `保健室で1時間休憩した（体力全回復 +${recovery}）`],
     });
+    se.rest();
     this.dailyScreen?.update(this.state);
   }
 
@@ -891,6 +896,7 @@ export class Game {
       currentTime: Math.min(MAX_TIME, this.state.currentTime + TIME_COST.CLASSROOM_REST),
       actionLogs: [...this.state.actionLogs, `自分の教室で休憩した（体力+${recovery} / ${TIME_COST.CLASSROOM_REST}分）`],
     });
+    se.rest();
     this.dailyScreen?.update(this.state);
   }
 
@@ -903,6 +909,7 @@ export class Game {
       currentTime: Math.min(MAX_TIME, this.state.currentTime + TIME_COST.ROOFTOP_REST),
       actionLogs: [...this.state.actionLogs, `屋上で一息ついた（体力+${recovery} / ${TIME_COST.ROOFTOP_REST}分）`],
     });
+    se.rest();
     this.dailyScreen?.update(this.state);
   }
 
@@ -955,6 +962,7 @@ export class Game {
   }
 
   private handleNextDay(): void {
+    se.nextDay();
     if (this.state.day >= 30) {
       this.showEnding();
       return;
@@ -1042,6 +1050,9 @@ export class Game {
         );
 
         const checkedAfterPlayer = checkBattleEnd(afterPlayer);
+        const playerBarDelta = afterPlayer.barPosition - (this.state.battle?.barPosition ?? 0);
+        if (playerBarDelta > 0) se.barPositive(playerBarDelta);
+        else if (playerBarDelta < 0) se.barNegative(playerBarDelta);
 
         if (checkedAfterPlayer.phase === 'finished') {
           this.updateState({ battle: checkedAfterPlayer });
@@ -1055,7 +1066,11 @@ export class Game {
 
         setTimeout(() => {
           if (!this.state.battle) return;
+          const prevBar = this.state.battle.barPosition;
           const { newBattle: afterEnemy } = resolveEnemyTurn(this.state.battle);
+          const enemyBarDelta = afterEnemy.barPosition - prevBar;
+          if (enemyBarDelta < 0) se.barNegative(enemyBarDelta);
+          else if (enemyBarDelta > 0) se.barPositive(enemyBarDelta);
           const finalBattle = checkBattleEnd(afterEnemy);
           this.updateState({ battle: finalBattle });
           this.battleScreenInst?.update(this.state);
@@ -1068,6 +1083,7 @@ export class Game {
       },
       onCancel: (phase: 'select_topic' | 'select_stance') => {
         if (!this.state.battle) return;
+        se.cancel();
         if (phase === 'select_topic') {
           // 態度選択に戻る（スタミナを返還）
           const refund = this.state.battle.selectedAttitude
@@ -1109,6 +1125,7 @@ export class Game {
     if (!this.state.battle || this.state.battle.phase !== 'select_attitude') return;
     if (!shouldPass(this.state.stamina)) return;
 
+    se.pass();
     // パス: プレイヤーは行動できず、相手だけ反撃する（少し体力回復）
     const recovery = Math.floor(Math.random() * 3) + 3; // 3〜5回復
     const passFlavors = [
@@ -1169,6 +1186,7 @@ export class Game {
       : Math.min(MAX_TIME, this.state.currentTime + TIME_COST.PERSUADE);
 
     if (result === 'win') {
+      se.victory();
       // 成功: 相手の思想をプレイヤーの支持方向にシフト
       const newSupport = applyWinShift(student, this.state.faction, battle.barPosition);
       shiftAmount = Math.abs(battle.barPosition);
@@ -1209,6 +1227,7 @@ export class Game {
       this.updateState({ students: this.syncPlayerSupport(this.state.students) });
       this.appendOrgChangeLogsAndProceed(oldStudents);
     } else if (result === 'lose') {
+      se.defeat();
       // 失敗: プレイヤーの思想が相手方向にシフト
       const { newSupport, shiftPercent } = applyLoseShift(
         this.state.playerSupport, student.support, battle.barPosition
@@ -1246,6 +1265,7 @@ export class Game {
         this.appendOrgChangeLogsAndProceed(oldStudents);
       }
     } else if (result === 'timeout') {
+      se.timeout();
       // タイムアウト: バー位置に応じて双方の思想をシフト
       const { studentSupport, playerNewSupport, shiftPercent } = applyTimeoutShift(
         student, this.state.faction, this.state.playerSupport, battle.barPosition

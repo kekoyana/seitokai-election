@@ -1,9 +1,9 @@
 # ポートレート生成設定
 
 ## モデル
-- チェックポイント: `illustrious-xl-v0.1.safetensors`
+- チェックポイント: `Illustrious-XL-v2.0.safetensors`
 - 生成解像度: 1024x1024
-- 出力サイズ: 256x256（リサイズ）
+- 出力サイズ: バストショット 384x384 + 顔切り抜き 256x256
 - Steps: 28
 - CFG: 8.0
 - Sampler: euler_ancestral
@@ -18,7 +18,7 @@
 
 ### 女子
 ```
-(miyase_mahiro:0.5), (kizoku:1.0), (anmi:1.0), (kishida_mel:0.5)
+(miyase_mahiro:0.8), (kizoku:1.0), (anmi:1.0), (kishida_mel:0.5)
 ```
 
 ## プロンプト構造
@@ -26,17 +26,17 @@
 ### 男子テンプレート
 ```
 1boy, (kizoku:1.0), (anmi:0.5), (kishida_mel:0.5),
-{目の色と特徴},
+{目の色と特徴}, 8k, RAW photo, realistic,
 Japanese high school student, {髪型・髪色},
-dark navy blue school blazer, white dress shirt, red striped necktie,
-upper body portrait, face close-up, looking at viewer, {表情},
+(dark navy blue school blazer:1.3), white dress shirt, red striped necktie,
+upper body portrait, portrait from chest up, head and shoulders visible, looking at viewer, {表情},
 simple grey background, masterpiece, best quality
 ```
 
 ### 女子テンプレート
 ```
-1girl, (miyase_mahiro:1.0), (kizoku:1.0), (anmi:1.0), (kishida_mel:0.5),
-{目の色と特徴},
+1girl, (miyase_mahiro:0.8), (kizoku:1.0), (anmi:1.0), (kishida_mel:0.5),
+{目の色と特徴}, 8k, RAW photo, realistic,
 Japanese high school student, {髪型・髪色},
 (dark navy blue school blazer:1.3), white dress shirt, red ribbon bow at collar,
 upper body portrait, portrait from chest up, head and shoulders visible, looking at viewer, {表情},
@@ -46,9 +46,9 @@ simple grey background, masterpiece, best quality
 ## ネガティブプロンプト（男女共通）
 ```
 text, title, logo, banner, watermark, signature, username, artist name,
-realistic photo, blurry, deformed face, extra fingers, bad anatomy,
+blurry, deformed face, extra fingers, bad anatomy,
 full body, landscape, multiple characters, multiple views, split screen,
-lowres, jpeg artifacts, cropped
+lowres, jpeg artifacts, cropped, hat, beret, headwear
 ```
 
 ## 制服デザイン（統一）
@@ -89,13 +89,13 @@ from PIL import Image
 from pathlib import Path
 
 client = ComfyUIClient('http://127.0.0.1:8188')
-negative = 'text, title, logo, banner, watermark, signature, username, artist name, realistic photo, blurry, deformed face, extra fingers, bad anatomy, full body, landscape, multiple characters, multiple views, split screen, lowres, jpeg artifacts, cropped'
+negative = 'text, title, logo, banner, watermark, signature, username, artist name, blurry, deformed face, extra fingers, bad anatomy, full body, landscape, multiple characters, multiple views, split screen, lowres, jpeg artifacts, cropped, hat, beret, headwear'
 
-prompt = '1boy, (kizoku:1.0), (anmi:0.5), (kishida_mel:0.5), big expressive brown eyes, Japanese high school student, short messy black hair, dark navy blue school blazer, white dress shirt, red striped necktie, upper body portrait, face close-up, looking at viewer, gentle smile, blush, simple grey background, masterpiece, best quality'
+prompt = '1boy, (kizoku:1.0), (anmi:0.5), (kishida_mel:0.5), big expressive brown eyes, 8k, RAW photo, realistic, Japanese high school student, short messy black hair, (dark navy blue school blazer:1.3), white dress shirt, red striped necktie, upper body portrait, portrait from chest up, head and shoulders visible, looking at viewer, gentle smile, blush, simple grey background, masterpiece, best quality'
 
 workflow = build_sdxl_workflow(
     prompt=prompt, negative=negative, seed=77, steps=28, cfg=8.0,
-    width=1024, height=1024, checkpoint='illustrious-xl-v0.1.safetensors',
+    width=1024, height=1024, checkpoint='Illustrious-XL-v2.0.safetensors',
 )
 paths = client.generate(workflow, output_path=Path('output.png'))
 img = Image.open(str(paths[0])).convert('RGBA').resize((256, 256), Image.LANCZOS)
@@ -110,4 +110,5 @@ img.save('output_256.png')
 | SD 1.5 ベース | 512x512 | ○ | △（紺が出にくい） | アーティストタグが効かない |
 | SDXL ベース | 1024x1024 | ○ | △（紺が出にくい） | アーティストタグが効かない |
 | FLUX.2 Klein 4B | 1024x1024 | ◎ | ○ | テキスト混入問題 |
-| **Illustrious-XL v0.1** | **1024x1024** | **◎** | **◎** | **採用** |
+| Illustrious-XL v0.1 | 1024x1024 | ◎ | ◎ | v2.0に移行 |
+| **Illustrious-XL v2.0** | **1024x1024** | **◎** | **◎** | **採用** |

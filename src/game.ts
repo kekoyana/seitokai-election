@@ -261,6 +261,8 @@ export class Game {
       onGossip: (student: Student) => this.handleGossip(student),
       onPersuade: (student: Student) => this.handlePersuade(student),
       onNurseRest: () => this.handleNurseRest(),
+      onClassroomRest: () => this.handleClassroomRest(),
+      onRooftopRest: () => this.handleRooftopRest(),
       onTrain: (stat: 'speech' | 'athletic' | 'intel') => this.handleTrain(stat),
       onDeliverLostItem: () => this.handleDeliverLostItem(),
       onDeliverErrand: () => this.handleDeliverErrand(),
@@ -605,17 +607,36 @@ export class Game {
     const pool = diffFloor.length > 0 ? diffFloor : possibleTargets;
     const target = pool[Math.floor(Math.random() * pool.length)];
 
-    const errandItems = ['手紙', 'ノート', 'お弁当箱', '伝言'];
+    const errandItems = ['手紙', 'ノート', '文房具セット', '伝言'];
     const itemName = errandItems[Math.floor(Math.random() * errandItems.length)];
 
-    this.dailyScreen?.showErrandRequest(student, target, itemName, (accepted) => {
-      if (accepted) {
-        this.updateState({
-          errand: { fromId: student.id, toId: target.id, itemName },
-          actionLogs: [...this.state.actionLogs, `${student.name}から${target.name}への${itemName}を預かった。`],
-        });
-        this.dailyScreen?.update(this.state);
-      }
+    // おつかい依頼の会話を表示してから確認ダイアログ
+    const errandLines: { text: string; item: string }[] = [
+      { text: `「ねぇ、${target.name}に${itemName}を届けてくれない？」`, item: '手紙' },
+      { text: `「${target.name}に${itemName}を返しておいてほしいんだけど…」`, item: 'ノート' },
+      { text: `「${target.name}の${itemName}、預かってるんだけど届けてくれる？」`, item: '文房具セット' },
+      { text: `「${target.name}に伝えてほしいことがあるんだけど…」`, item: '伝言' },
+    ];
+    const line = errandLines.find(l => l.item === itemName) ?? errandLines[0];
+    const steps: import('./logic/conversationGenerator').ConversationStep[] = [
+      { speaker: 'student', name: student.name, portrait: student.portrait, text: line.text },
+      { speaker: 'player', name: pc?.name ?? 'あなた', portrait: pc?.portrait ?? null, text: '「…？」' },
+      { speaker: 'student', name: student.name, portrait: student.portrait, text: `「${target.name}、今どこにいるかわかんないんだよね。お願いできる？」` },
+    ];
+    const result: import('./logic/conversationGenerator').ConversationResult = {
+      text: `${student.name}からおつかいを頼まれた`,
+      effectHtml: `<span style="color:#4A90D9;">📨 ${target.name}に${itemName}を届ける</span>`,
+    };
+    this.dailyScreen?.showConversation(steps, result, () => {
+      this.dailyScreen?.showErrandRequest(student, target, itemName, (accepted) => {
+        if (accepted) {
+          this.updateState({
+            errand: { fromId: student.id, toId: target.id, itemName },
+            actionLogs: [...this.state.actionLogs, `${student.name}から${target.name}への${itemName}を預かった。`],
+          });
+          this.dailyScreen?.update(this.state);
+        }
+      });
     });
   }
 
@@ -852,11 +873,36 @@ export class Game {
   private handleNurseRest(): void {
     if (this.isTimeUp()) return;
     if (this.state.currentLocation !== 'nurses_office') return;
-    const recovery = 40;
+    const recovery = 100 - this.state.stamina;
     this.updateState({
-      stamina: Math.min(100, this.state.stamina + recovery),
+      stamina: 100,
       currentTime: Math.min(MAX_TIME, this.state.currentTime + TIME_COST.NURSE_REST),
-      actionLogs: [...this.state.actionLogs, `保健室で1時間休憩した（体力+${recovery}）`],
+      actionLogs: [...this.state.actionLogs, `保健室で1時間休憩した（体力全回復 +${recovery}）`],
+    });
+    this.dailyScreen?.update(this.state);
+  }
+
+  private handleClassroomRest(): void {
+    if (this.isTimeUp()) return;
+    const playerClassLoc = this.getPlayerClassLocation();
+    if (this.state.currentLocation !== playerClassLoc) return;
+    const recovery = Math.min(40, 100 - this.state.stamina);
+    this.updateState({
+      stamina: Math.min(100, this.state.stamina + 40),
+      currentTime: Math.min(MAX_TIME, this.state.currentTime + TIME_COST.CLASSROOM_REST),
+      actionLogs: [...this.state.actionLogs, `自分の教室で休憩した（体力+${recovery} / ${TIME_COST.CLASSROOM_REST}分）`],
+    });
+    this.dailyScreen?.update(this.state);
+  }
+
+  private handleRooftopRest(): void {
+    if (this.isTimeUp()) return;
+    if (this.state.currentLocation !== 'rooftop') return;
+    const recovery = Math.min(10, 100 - this.state.stamina);
+    this.updateState({
+      stamina: Math.min(100, this.state.stamina + 10),
+      currentTime: Math.min(MAX_TIME, this.state.currentTime + TIME_COST.ROOFTOP_REST),
+      actionLogs: [...this.state.actionLogs, `屋上で一息ついた（体力+${recovery} / ${TIME_COST.ROOFTOP_REST}分）`],
     });
     this.dailyScreen?.update(this.state);
   }
@@ -931,8 +977,6 @@ export class Game {
       timeSlot: 'afterschool',
       activists,
       actionLogs: [],
-        lostItem: null,
-      errand: null,
     });
 
     // オートセーブ

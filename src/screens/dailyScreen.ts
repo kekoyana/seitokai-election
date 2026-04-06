@@ -5,6 +5,7 @@ import {
   isCorridorLocation, getFloorFromLocation, FLOOR_LABELS, ALL_FACTION_IDS,
   renderSupportBar, MAX_TIME, TIME_COST,
   CLUB_LABELS, dayToDate, formatTime, getAffinityInfo,
+  CLASS_LOCATION_MAP,
 } from '../data';
 import { ORGANIZATIONS } from '../data/organizations';
 import { getOrganizationVote } from '../logic/organizationLogic';
@@ -109,6 +110,8 @@ export interface DailyCallbacks {
   onGossip: (student: Student) => void;
   onPersuade: (student: Student) => void;
   onNurseRest: () => void;
+  onClassroomRest: () => void;
+  onRooftopRest: () => void;
   onTrain: (stat: 'speech' | 'athletic' | 'intel') => void;
   onDeliverLostItem: () => void;
   onDeliverErrand: () => void;
@@ -559,6 +562,67 @@ export class DailyScreen implements Screen {
     return `${exitBtnHtml}${infoBtnHtml}${nextDayBtnHtml}`;
   }
 
+  private renderRestPanel(isOutOfStamina: boolean): string {
+    const loc = this.state.currentLocation;
+
+    // 保健室: 60分消費で全回復
+    if (loc === 'nurses_office') {
+      const canRest = !isOutOfStamina && this.state.currentTime + TIME_COST.NURSE_REST <= MAX_TIME;
+      return `
+        <div class="game-panel" style="margin-bottom:12px; text-align:center; padding:16px;">
+          <div style="font-size:0.9em; color:var(--game-text); margin-bottom:8px;">
+            ベッドで横になって休憩できる
+          </div>
+          <button id="nurse-rest-btn" class="game-btn ${canRest ? 'game-btn-primary' : 'game-btn-disabled'}" style="
+            padding:10px 24px;
+            font-size:0.9em; font-family:var(--game-font);
+          ">休憩する（体力全回復 / ${TIME_COST.NURSE_REST}分）</button>
+          ${!canRest && !isOutOfStamina ? '<div style="font-size:0.72em; color:#C0392B; margin-top:6px;">時間が足りない</div>' : ''}
+        </div>
+      `;
+    }
+
+    // 自分の教室: 30分消費で40回復
+    const playerClassName = this.state.playerCharacter?.className;
+    if (playerClassName) {
+      const playerClassLoc = CLASS_LOCATION_MAP[playerClassName];
+      if (loc === playerClassLoc) {
+        const canRest = !isOutOfStamina && this.state.currentTime + TIME_COST.CLASSROOM_REST <= MAX_TIME;
+        return `
+          <div class="game-panel" style="margin-bottom:12px; text-align:center; padding:16px;">
+            <div style="font-size:0.9em; color:var(--game-text); margin-bottom:8px;">
+              自分の席で少し休める
+            </div>
+            <button id="classroom-rest-btn" class="game-btn ${canRest ? 'game-btn-primary' : 'game-btn-disabled'}" style="
+              padding:10px 24px;
+              font-size:0.9em; font-family:var(--game-font);
+            ">休憩する（体力+40 / ${TIME_COST.CLASSROOM_REST}分）</button>
+            ${!canRest && !isOutOfStamina ? '<div style="font-size:0.72em; color:#C0392B; margin-top:6px;">時間が足りない</div>' : ''}
+          </div>
+        `;
+      }
+    }
+
+    // 屋上: 10分消費で10回復
+    if (loc === 'rooftop') {
+      const canRest = !isOutOfStamina && this.state.currentTime + TIME_COST.ROOFTOP_REST <= MAX_TIME;
+      return `
+        <div class="game-panel" style="margin-bottom:12px; text-align:center; padding:16px;">
+          <div style="font-size:0.9em; color:var(--game-text); margin-bottom:8px;">
+            風が気持ちいい…少し休もう
+          </div>
+          <button id="rooftop-rest-btn" class="game-btn ${canRest ? 'game-btn-primary' : 'game-btn-disabled'}" style="
+            padding:10px 24px;
+            font-size:0.9em; font-family:var(--game-font);
+          ">一息つく（体力+10 / ${TIME_COST.ROOFTOP_REST}分）</button>
+          ${!canRest && !isOutOfStamina ? '<div style="font-size:0.72em; color:#C0392B; margin-top:6px;">時間が足りない</div>' : ''}
+        </div>
+      `;
+    }
+
+    return '';
+  }
+
   private renderMainPanel(studentsHere: Student[], isOutOfStamina: boolean): string {
     const studentsHtml = studentsHere.length === 0
       ? `<div style="text-align:center; color:#aaa; padding:20px; font-size:0.9em;">ここには誰もいない</div>`
@@ -568,28 +632,15 @@ export class DailyScreen implements Screen {
 
     const orgInfoHtml = this.renderRoomOrgInfo();
 
-    // 保健室の休憩パネル
-    const isInNursesOffice = this.state.currentLocation === 'nurses_office';
-    const canNurseRest = !isOutOfStamina && this.state.currentTime + TIME_COST.NURSE_REST <= MAX_TIME;
-    const nurseRestHtml = isInNursesOffice ? `
-      <div class="game-panel" style="margin-bottom:12px; text-align:center; padding:16px;">
-        <div style="font-size:0.9em; color:var(--game-text); margin-bottom:8px;">
-          ベッドで横になって休憩できる
-        </div>
-        <button id="nurse-rest-btn" class="game-btn ${canNurseRest ? 'game-btn-primary' : 'game-btn-disabled'}" style="
-          padding:10px 24px;
-          font-size:0.9em; font-family:var(--game-font);
-        ">休憩する（体力+40 / ${TIME_COST.NURSE_REST}分）</button>
-        ${!canNurseRest && !isOutOfStamina ? '<div style="font-size:0.72em; color:#C0392B; margin-top:6px;">時間が足りない</div>' : ''}
-      </div>
-    ` : '';
+    // 休憩パネル
+    const restHtml = this.renderRestPanel(isOutOfStamina);
 
     // トレーニングパネル
     const trainingHtml = this.renderTrainingPanel(isOutOfStamina);
 
     return `
       ${orgInfoHtml}
-      ${nurseRestHtml}
+      ${restHtml}
       ${trainingHtml}
 
       <div class="game-panel" style="margin-bottom:12px;">
@@ -1023,10 +1074,18 @@ export class DailyScreen implements Screen {
     });
 
 
-    // 保健室休憩ボタン
+    // 休憩ボタン
     const nurseRestBtn = this.container.querySelector<HTMLButtonElement>('#nurse-rest-btn');
     nurseRestBtn?.addEventListener('pointerup', () => {
       this.callbacks.onNurseRest();
+    });
+    const classroomRestBtn = this.container.querySelector<HTMLButtonElement>('#classroom-rest-btn');
+    classroomRestBtn?.addEventListener('pointerup', () => {
+      this.callbacks.onClassroomRest();
+    });
+    const rooftopRestBtn = this.container.querySelector<HTMLButtonElement>('#rooftop-rest-btn');
+    rooftopRestBtn?.addEventListener('pointerup', () => {
+      this.callbacks.onRooftopRest();
     });
 
     // トレーニングボタン

@@ -7,6 +7,8 @@ export const TIME_COST = {
   TALK: 15,
   PERSUADE: 30,
   NURSE_REST: 60,
+  CLASSROOM_REST: 30,
+  ROOFTOP_REST: 10,
   TRAINING: 30,
 } as const;
 

@@ -151,6 +151,7 @@ function renderBuildingWrap(floorLabel: string, content: string): string {
 
 function renderFloor3Plan(ctx: MapContext, canEnter: boolean): string {
   const r = roomStyle;
+  const rooftopStyle = { bg: '#e0f0e8', border: '#70a880' };
   const content = `
     <div style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr auto; gap:0; border-bottom:1px solid #a0a8b0;">
       <div style="border-right:1px solid #a0a8b0; padding:3px;">${renderRoomBtn(ctx, 'class3a', canEnter, r)}</div>
@@ -161,7 +162,10 @@ function renderFloor3Plan(ctx: MapContext, canEnter: boolean): string {
         ${renderStairsBtn(ctx, '2f', '3f', 'down')}
       </div>
     </div>
-    ${renderCorridor()}
+    <div style="display:grid; grid-template-columns:1fr auto; gap:0;">
+      ${renderCorridor()}
+      <div style="padding:3px; width:80px;">${renderRoomBtn(ctx, 'rooftop', canEnter, rooftopStyle)}</div>
+    </div>
   `;
   return renderBuildingWrap('🏫 3階', content);
 }

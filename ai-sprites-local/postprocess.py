@@ -4,14 +4,110 @@
 ComfyUIで生成したRaw画像をゲームアセット向けに変換する。
 - 背景除去（rembg）
 - 自動クロップ
+- 顔切り抜き（バストショットから顔画像を生成）
 - 縮小・減色（ピクセルアート化）
 - スプライトシート作成
 """
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
+import cv2
+import numpy as np
 from PIL import Image
+
+
+# アニメ顔検出用カスケードファイルのパス
+_CASCADE_PATH = Path(__file__).parent / "cascades" / "lbpcascade_animeface.xml"
+
+# 手動オーバーライド用JSONのパス
+_FACE_OVERRIDES_PATH = Path(__file__).parent / "face_crop_overrides.json"
+
+
+def _load_face_overrides() -> dict[str, dict[str, int]]:
+    """手動切り抜き座標のオーバーライドを読み込む"""
+    if _FACE_OVERRIDES_PATH.exists():
+        with open(_FACE_OVERRIDES_PATH, encoding="utf-8") as f:
+            return json.load(f)
+    return {}
+
+
+def crop_face_from_bust(
+    input_path: str,
+    output_path: str,
+    face_size: int = 256,
+    name: str | None = None,
+) -> Image.Image:
+    """バストショット画像から顔部分を切り抜く
+
+    検出方法:
+    1. 手動オーバーライドJSON（name指定時）
+    2. lbpcascade_animeface によるアニメ顔検出
+    3. フォールバック: 上部中央50%を切り抜き
+
+    Args:
+        input_path: 入力画像パス（バストショット）
+        output_path: 出力画像パス（顔画像）
+        face_size: 出力サイズ（正方形）
+        name: キャラクター名（オーバーライド用）
+
+    Returns:
+        切り抜き後のPIL Image
+    """
+    img = Image.open(input_path).convert("RGBA")
+    w, h = img.size
+
+    crop_box = None
+
+    # 1. 手動オーバーライドを確認
+    if name:
+        overrides = _load_face_overrides()
+        if name in overrides:
+            o = overrides[name]
+            crop_box = (o["x"], o["y"], o["x"] + o["size"], o["y"] + o["size"])
+            print(f"  [FaceCrop] Using manual override for {name}")
+
+    # 2. アニメ顔検出
+    if crop_box is None and _CASCADE_PATH.exists():
+        gray = cv2.cvtColor(np.array(img.convert("RGB")), cv2.COLOR_RGB2GRAY)
+        cascade = cv2.CascadeClassifier(str(_CASCADE_PATH))
+        faces = cascade.detectMultiScale(
+            gray, scaleFactor=1.1, minNeighbors=5, minSize=(w // 8, h // 8)
+        )
+        if len(faces) > 0:
+            # 最大の顔を選択
+            fx, fy, fw, fh = max(faces, key=lambda f: f[2] * f[3])
+            # 30%拡張して髪・耳・首を含める
+            expand = int(max(fw, fh) * 0.3)
+            cx, cy = fx + fw // 2, fy + fh // 2
+            half = max(fw, fh) // 2 + expand
+            x1 = max(0, cx - half)
+            y1 = max(0, cy - half)
+            x2 = min(w, cx + half)
+            y2 = min(h, cy + half)
+            # 正方形に調整
+            size = max(x2 - x1, y2 - y1)
+            x1 = max(0, cx - size // 2)
+            y1 = max(0, cy - size // 2)
+            if x1 + size > w:
+                x1 = w - size
+            if y1 + size > h:
+                y1 = h - size
+            crop_box = (x1, y1, x1 + size, y1 + size)
+            print(f"  [FaceCrop] Detected anime face at ({fx},{fy},{fw},{fh})")
+
+    # 3. フォールバック: 上部中央50%
+    if crop_box is None:
+        size = w // 2
+        x1 = (w - size) // 2
+        y1 = 0
+        crop_box = (x1, y1, x1 + size, y1 + size)
+        print(f"  [FaceCrop] Fallback: top-center 50% crop")
+
+    cropped = img.crop(crop_box).resize((face_size, face_size), Image.LANCZOS)
+    cropped.save(output_path)
+    return cropped
 
 
 def remove_background(img: Image.Image) -> Image.Image:

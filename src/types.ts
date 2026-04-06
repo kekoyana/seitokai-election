@@ -18,6 +18,7 @@ export type LocationId =
   | 'track_field' | 'soccer_field' | 'baseball_field' | 'tennis_court'
   | 'music_room' | 'art_room' | 'broadcast_room'
   | 'courtyard' | 'library' | 'cafeteria' | 'nurses_office'
+  | 'rooftop'
   | 'corridor_1f' | 'corridor_2f' | 'corridor_3f' | 'corridor_ground';
 
 // フロア

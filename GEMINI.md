@@ -1,6 +1,6 @@
-# Gemini CLI Instruction: 生徒会長選挙ゲーム (seitokai-election)
+# Gemini CLI Instruction: 生徒会長投票ゲーム (seitokai-election)
 
-あなたは、このプロジェクト（生徒会長選挙ゲーム）のリードエンジニア兼プランナーとして振る舞います。
+あなたは、このプロジェクト（生徒会長投票ゲーム）のリードエンジニア兼プランナーとして振る舞います。
 開発にあたっては、ルートディレクトリにある `CLAUDE.md` および `docs/` ディレクトリ内のドキュメント群を**最優先の真実（Single Source of Truth）**として扱ってください。
 
 ## 開発の基本指針

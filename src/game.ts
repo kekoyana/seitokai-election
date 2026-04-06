@@ -659,7 +659,6 @@ export class Game {
       return {
         ...s,
         revealedHobbies: newRevealed,
-        talkCount: s.talkCount + 1,
         affinity: Math.max(-100, Math.min(100, s.affinity + affinityGain)),
       };
     });
@@ -776,7 +775,7 @@ export class Game {
       const affinityGain = this.calcAffinityGain(student);
       const updatedStudents = this.state.students.map(s => {
         if (s.id !== student.id) return s;
-        return { ...s, talkCount: s.talkCount + 1, affinity: Math.max(-100, Math.min(100, s.affinity + affinityGain)) };
+        return { ...s, affinity: Math.max(-100, Math.min(100, s.affinity + affinityGain)) };
       });
       this.updateState({
         students: updatedStudents,
@@ -793,7 +792,7 @@ export class Game {
     // 対象の生徒の情報を更新
     const updatedStudents = this.state.students.map(s => {
       if (s.id === student.id) {
-        return { ...s, talkCount: s.talkCount + 1, affinity: Math.max(-100, Math.min(100, s.affinity + affinityGain)) };
+        return { ...s, affinity: Math.max(-100, Math.min(100, s.affinity + affinityGain)) };
       }
       if (s.id === target.id) {
         const newRevealed = new Set(s.revealedHobbies);
@@ -858,7 +857,7 @@ export class Game {
   }
 
   private handlePersuade(student: Student): void {
-    if (student.talkCount === 0 || this.isTimeUp()) return;
+    if (this.isTimeUp()) return;
 
     const playerGender = this.state.playerCharacter?.gender;
     const playerAttrs = this.state.playerAttributes;

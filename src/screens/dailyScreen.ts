@@ -711,7 +711,7 @@ export class DailyScreen implements Screen {
   private renderStudentCard(s: Student): string {
     const talkCost = 5;
     const canTalk = this.state.stamina >= talkCost;
-    const canPersuade = s.talkCount > 0;
+    const canPersuade = true;
 
     const aff = getAffinityInfo(s.affinity);
     const affinityColor = aff.color;
@@ -1144,7 +1144,7 @@ export class DailyScreen implements Screen {
     // 説得ボタン
     onDataAttr(this.container, 'data-action-persuade', (studentId) => {
       const student = this.state.students.find(s => s.id === studentId);
-      if (student && student.talkCount > 0) {
+      if (student) {
         this.callbacks.onPersuade(student);
       }
     });

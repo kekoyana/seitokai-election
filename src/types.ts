@@ -96,7 +96,6 @@ export interface Student {
   dislikedAttributes: PreferenceAttr[];
   stats: { speech: number; athletic: number; intel: number; maxHp: number };
   affinity: number;
-  talkCount: number;
   role: string | null;            // 役職（学級委員長・部長など）
   bustPortrait: string | null;
   facePortrait: string | null;

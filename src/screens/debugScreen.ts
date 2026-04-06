@@ -389,8 +389,7 @@ export class DebugScreen implements Screen {
             <span style="color:#888; margin-left:4px;">相性</span> <span style="color:${compatColor}; font-weight:bold;">${compatSign}${compat.score}</span>
           </div>
           <div style="background:rgba(255,255,255,0.05); border-radius:6px; padding:3px 6px;">
-            <span style="color:#888;">会話</span> ${s.talkCount}回
-            <span style="color:#888; margin-left:4px;">場所</span> ${locLabel}
+            <span style="color:#888;">場所</span> ${locLabel}
           </div>
         </div>
 

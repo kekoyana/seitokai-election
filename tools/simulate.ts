@@ -69,7 +69,6 @@ function makeStudent(params: {
     dislikedAttributes: [],
     stats: { ...params.stats, maxHp: 100 },
     affinity: params.affinity,
-    talkCount: 0,
     portrait: null,
     playable: false,
   };

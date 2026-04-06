@@ -85,7 +85,6 @@ export const STUDENTS: Student[] = [
     dislikedAttributes: ['delinquent', 'airhead', 'ponytail'] as PreferenceAttr[],
     stats: { speech: 85, athletic: 30, intel: 90, maxHp: 80 },
     affinity: 0,
-    talkCount: 0,
     portrait: takayamaSeiichiPortrait,
     playable: true,
   },
@@ -110,7 +109,6 @@ export const STUDENTS: Student[] = [
     dislikedAttributes: ['introverted', 'serious', 'cool'] as PreferenceAttr[],
     stats: { speech: 80, athletic: 50, intel: 65, maxHp: 95 },
     affinity: 0,
-    talkCount: 0,
     portrait: yuukiAkariPortrait,
     playable: true,
   },
@@ -135,7 +133,6 @@ export const STUDENTS: Student[] = [
     dislikedAttributes: ['introverted', 'cool', 'braid'] as PreferenceAttr[],
     stats: { speech: 40, athletic: 95, intel: 25, maxHp: 130 },
     affinity: 0,
-    talkCount: 0,
     portrait: shidoTsuyoshiPortrait,
     playable: true,
   },
@@ -161,7 +158,6 @@ export const STUDENTS: Student[] = [
     dislikedAttributes: ['introverted', 'cool', 'braid'] as PreferenceAttr[],
     stats: { speech: 30, athletic: 80, intel: 25, maxHp: 120 },
     affinity: 0,
-    talkCount: 0,
     portrait: tanakaDaikiPortrait,
 
     playable: true,
@@ -187,7 +183,6 @@ export const STUDENTS: Student[] = [
     dislikedAttributes: ['delinquent', 'energetic_social', 'blonde', 'busty'] as PreferenceAttr[],
     stats: { speech: 60, athletic: 20, intel: 85, maxHp: 80 },
     affinity: 0,
-    talkCount: 0,
     portrait: yamamotoRenPortrait,
 
     playable: true,
@@ -213,7 +208,6 @@ export const STUDENTS: Student[] = [
     dislikedAttributes: ['introverted', 'serious', 'cool'] as PreferenceAttr[],
     stats: { speech: 50, athletic: 40, intel: 35, maxHp: 100 },
     affinity: 0,
-    talkCount: 0,
     portrait: satoYuiPortrait,
 
     playable: true,
@@ -239,7 +233,6 @@ export const STUDENTS: Student[] = [
     dislikedAttributes: ['sporty', 'delinquent', 'airhead', 'energetic'] as PreferenceAttr[],
     stats: { speech: 70, athletic: 15, intel: 80, maxHp: 85 },
     affinity: 0,
-    talkCount: 0,
     portrait: watanabeAoiPortrait,
 
     playable: true,
@@ -265,7 +258,6 @@ export const STUDENTS: Student[] = [
     dislikedAttributes: ['sporty', 'energetic', 'young', 'introverted'] as PreferenceAttr[],
     stats: { speech: 75, athletic: 25, intel: 65, maxHp: 90 },
     affinity: 0,
-    talkCount: 0,
     portrait: nakamuraSakuraPortrait,
 
     playable: true,
@@ -292,7 +284,6 @@ export const STUDENTS: Student[] = [
     dislikedAttributes: ['sporty', 'airhead', 'twintail'] as PreferenceAttr[],
     stats: { speech: 65, athletic: 35, intel: 70, maxHp: 90 },
     affinity: 0,
-    talkCount: 0,
     portrait: takahashiYutoPortrait,
 
     playable: true,
@@ -318,7 +309,6 @@ export const STUDENTS: Student[] = [
     dislikedAttributes: ['fashionable', 'airhead', 'wavy'] as PreferenceAttr[],
     stats: { speech: 25, athletic: 90, intel: 30, maxHp: 130 },
     affinity: 0,
-    talkCount: 0,
     portrait: matsumotoKentaPortrait,
 
     playable: true,
@@ -344,7 +334,6 @@ export const STUDENTS: Student[] = [
     dislikedAttributes: ['delinquent', 'energetic_social', 'fashionable'] as PreferenceAttr[],
     stats: { speech: 40, athletic: 15, intel: 75, maxHp: 70 },
     affinity: 0,
-    talkCount: 0,
     portrait: miyazakiAkanePortrait,
 
     playable: true,
@@ -370,7 +359,6 @@ export const STUDENTS: Student[] = [
     dislikedAttributes: ['serious', 'cool', 'bun'] as PreferenceAttr[],
     stats: { speech: 45, athletic: 45, intel: 40, maxHp: 100 },
     affinity: 0,
-    talkCount: 0,
     portrait: hashimotoTsubasaPortrait,
 
     playable: true,
@@ -396,7 +384,6 @@ export const STUDENTS: Student[] = [
     dislikedAttributes: ['introverted', 'glasses', 'serious'] as PreferenceAttr[],
     stats: { speech: 50, athletic: 70, intel: 30, maxHp: 110 },
     affinity: 0,
-    talkCount: 0,
     portrait: katoMitsukiPortrait,
 
     playable: true,
@@ -422,7 +409,6 @@ export const STUDENTS: Student[] = [
     dislikedAttributes: ['sporty', 'delinquent', 'twintail'] as PreferenceAttr[],
     stats: { speech: 70, athletic: 20, intel: 65, maxHp: 85 },
     affinity: 0,
-    talkCount: 0,
     portrait: suzukiShotaPortrait,
 
     playable: true,
@@ -448,7 +434,6 @@ export const STUDENTS: Student[] = [
     dislikedAttributes: ['delinquent', 'airhead', 'energetic_social', 'busty'] as PreferenceAttr[],
     stats: { speech: 55, athletic: 15, intel: 90, maxHp: 75 },
     affinity: 0,
-    talkCount: 0,
     portrait: saitoManabuPortrait,
 
     playable: true,
@@ -476,7 +461,6 @@ export const STUDENTS: Student[] = [
     dislikedAttributes: ['delinquent', 'sporty', 'energetic'] as PreferenceAttr[],
     stats: { speech: 45, athletic: 25, intel: 55, maxHp: 80 },
     affinity: 0,
-    talkCount: 0,
     portrait: ogawaHarukaPortrait,
 
     playable: false,
@@ -503,7 +487,6 @@ export const STUDENTS: Student[] = [
     dislikedAttributes: ['serious', 'introverted', 'sporty'] as PreferenceAttr[],
     stats: { speech: 60, athletic: 30, intel: 50, maxHp: 85 },
     affinity: 0,
-    talkCount: 0,
     portrait: inoueMomokaPortrait,
 
     playable: false,
@@ -530,7 +513,6 @@ export const STUDENTS: Student[] = [
     dislikedAttributes: ['introverted', 'glasses', 'braid'] as PreferenceAttr[],
     stats: { speech: 25, athletic: 75, intel: 20, maxHp: 115 },
     affinity: 0,
-    talkCount: 0,
     portrait: endoRyotaPortrait,
 
     playable: false,
@@ -557,7 +539,6 @@ export const STUDENTS: Student[] = [
     dislikedAttributes: ['introverted', 'serious', 'delinquent'] as PreferenceAttr[],
     stats: { speech: 50, athletic: 35, intel: 35, maxHp: 90 },
     affinity: 0,
-    talkCount: 0,
     portrait: shimizuNanaPortrait,
 
     playable: false,
@@ -584,7 +565,6 @@ export const STUDENTS: Student[] = [
     dislikedAttributes: ['delinquent', 'energetic_social', 'ponytail'] as PreferenceAttr[],
     stats: { speech: 55, athletic: 15, intel: 70, maxHp: 70 },
     affinity: 0,
-    talkCount: 0,
     portrait: aokiSoraPortrait,
 
     playable: false,
@@ -611,7 +591,6 @@ export const STUDENTS: Student[] = [
     dislikedAttributes: ['sporty', 'delinquent', 'energetic'] as PreferenceAttr[],
     stats: { speech: 35, athletic: 20, intel: 55, maxHp: 75 },
     affinity: 0,
-    talkCount: 0,
     portrait: moritaChihiroPortrait,
 
     playable: false,
@@ -638,7 +617,6 @@ export const STUDENTS: Student[] = [
     dislikedAttributes: ['airhead', 'fashionable', 'wavy'] as PreferenceAttr[],
     stats: { speech: 20, athletic: 70, intel: 30, maxHp: 110 },
     affinity: 0,
-    talkCount: 0,
     portrait: nishidaKaitoPortrait,
 
     playable: false,
@@ -665,7 +643,6 @@ export const STUDENTS: Student[] = [
     dislikedAttributes: ['energetic_social', 'sporty', 'busty'] as PreferenceAttr[],
     stats: { speech: 30, athletic: 10, intel: 60, maxHp: 65 },
     affinity: 0,
-    talkCount: 0,
     portrait: hayashiRikoPortrait,
 
     playable: false,
@@ -692,7 +669,6 @@ export const STUDENTS: Student[] = [
     dislikedAttributes: ['introverted', 'airhead', 'serious'] as PreferenceAttr[],
     stats: { speech: 55, athletic: 65, intel: 50, maxHp: 95 },
     affinity: 0,
-    talkCount: 0,
     portrait: fujitaMeiPortrait,
 
     playable: false,
@@ -719,7 +695,6 @@ export const STUDENTS: Student[] = [
     dislikedAttributes: ['delinquent', 'airhead', 'wavy'] as PreferenceAttr[],
     stats: { speech: 40, athletic: 30, intel: 70, maxHp: 80 },
     affinity: 0,
-    talkCount: 0,
     portrait: uedaTakumiPortrait,
 
     playable: false,
@@ -746,7 +721,6 @@ export const STUDENTS: Student[] = [
     dislikedAttributes: ['serious', 'introverted', 'glasses'] as PreferenceAttr[],
     stats: { speech: 65, athletic: 35, intel: 60, maxHp: 85 },
     affinity: 0,
-    talkCount: 0,
     portrait: kimuraYunaPortrait,
 
     playable: false,
@@ -773,7 +747,6 @@ export const STUDENTS: Student[] = [
     dislikedAttributes: ['fashionable', 'cool', 'twintail'] as PreferenceAttr[],
     stats: { speech: 20, athletic: 70, intel: 25, maxHp: 115 },
     affinity: 0,
-    talkCount: 0,
     portrait: murakamiSotaPortrait,
 
     playable: false,
@@ -800,7 +773,6 @@ export const STUDENTS: Student[] = [
     dislikedAttributes: ['airhead', 'energetic_social', 'delinquent'] as PreferenceAttr[],
     stats: { speech: 50, athletic: 20, intel: 65, maxHp: 80 },
     affinity: 0,
-    talkCount: 0,
     portrait: yoshidaHinataPortrait,
 
     playable: false,
@@ -827,7 +799,6 @@ export const STUDENTS: Student[] = [
     dislikedAttributes: ['cool', 'delinquent', 'serious'] as PreferenceAttr[],
     stats: { speech: 50, athletic: 25, intel: 45, maxHp: 90 },
     affinity: 0,
-    talkCount: 0,
     portrait: okamotoRinPortrait,
 
     playable: false,
@@ -854,7 +825,6 @@ export const STUDENTS: Student[] = [
     dislikedAttributes: ['introverted', 'glasses', 'bun'] as PreferenceAttr[],
     stats: { speech: 35, athletic: 80, intel: 25, maxHp: 120 },
     affinity: 0,
-    talkCount: 0,
     portrait: gotoHayatoPortrait,
 
     playable: false,
@@ -881,7 +851,6 @@ export const STUDENTS: Student[] = [
     dislikedAttributes: ['energetic_social', 'sporty', 'airhead'] as PreferenceAttr[],
     stats: { speech: 40, athletic: 20, intel: 55, maxHp: 75 },
     affinity: 0,
-    talkCount: 0,
     portrait: sakamotoMiuPortrait,
 
     playable: false,
@@ -908,7 +877,6 @@ export const STUDENTS: Student[] = [
     dislikedAttributes: ['delinquent', 'airhead', 'wavy'] as PreferenceAttr[],
     stats: { speech: 55, athletic: 25, intel: 75, maxHp: 80 },
     affinity: 0,
-    talkCount: 0,
     portrait: yamaguchiRyoPortrait,
 
     playable: false,
@@ -935,7 +903,6 @@ export const STUDENTS: Student[] = [
     dislikedAttributes: ['airhead', 'delinquent', 'energetic_social'] as PreferenceAttr[],
     stats: { speech: 55, athletic: 20, intel: 80, maxHp: 75 },
     affinity: 0,
-    talkCount: 0,
     portrait: ikedaKotonePortrait,
 
     playable: false,
@@ -962,7 +929,6 @@ export const STUDENTS: Student[] = [
     dislikedAttributes: ['sporty', 'bun'] as PreferenceAttr[],
     stats: { speech: 75, athletic: 30, intel: 65, maxHp: 85 },
     affinity: 0,
-    talkCount: 0,
     portrait: otsukaItsukiPortrait,
 
     playable: false,
@@ -989,7 +955,6 @@ export const STUDENTS: Student[] = [
     dislikedAttributes: ['introverted', 'cool', 'serious'] as PreferenceAttr[],
     stats: { speech: 45, athletic: 60, intel: 40, maxHp: 100 },
     affinity: 0,
-    talkCount: 0,
     portrait: tanabeMisakiPortrait,
 
     playable: false,
@@ -1016,7 +981,6 @@ export const STUDENTS: Student[] = [
     dislikedAttributes: ['delinquent', 'energetic_social', 'busty'] as PreferenceAttr[],
     stats: { speech: 50, athletic: 15, intel: 85, maxHp: 70 },
     affinity: 0,
-    talkCount: 0,
     portrait: kawanoShioriPortrait,
 
     playable: false,
@@ -1043,7 +1007,6 @@ export const STUDENTS: Student[] = [
     dislikedAttributes: ['fashionable', 'airhead', 'wavy'] as PreferenceAttr[],
     stats: { speech: 15, athletic: 85, intel: 15, maxHp: 125 },
     affinity: 0,
-    talkCount: 0,
     portrait: maedaTaigaPortrait,
 
     playable: false,
@@ -1070,7 +1033,6 @@ export const STUDENTS: Student[] = [
     dislikedAttributes: ['delinquent', 'airhead', 'fashionable'] as PreferenceAttr[],
     stats: { speech: 50, athletic: 45, intel: 55, maxHp: 90 },
     affinity: 0,
-    talkCount: 0,
     portrait: noguchiSakiPortrait,
 
     playable: false,
@@ -1097,7 +1059,6 @@ export const STUDENTS: Student[] = [
     dislikedAttributes: ['serious', 'glasses', 'braid'] as PreferenceAttr[],
     stats: { speech: 30, athletic: 65, intel: 15, maxHp: 120 },
     affinity: 0,
-    talkCount: 0,
     portrait: ishikawaYusukePortrait,
 
     playable: false,
@@ -1123,7 +1084,6 @@ export const STUDENTS: Student[] = [
     dislikedAttributes: ['introverted', 'glasses', 'airhead'] as PreferenceAttr[],
     stats: { speech: 35, athletic: 85, intel: 20, maxHp: 100 },
     affinity: 0,
-    talkCount: 0,
     portrait: iwataDaichiPortrait,
 
     playable: false,
@@ -1139,7 +1099,6 @@ export function getTutorialOpponent(): Student {
     revealedLikes: [],
     revealedDislikes: [],
     affinity: 10,  // 好感度少しあり（チュートリアルで初期バーが少し有利に）
-    talkCount: 1,
   };
 }
 

@@ -77,6 +77,7 @@ export const CLUB_LABELS: Record<string, string> = {
   art: '美術部',
   baseball: '野球部',
   brass: '吹奏楽部',
+  student_council: '生徒会',
 };
 
 /** Day番号(1〜30)を「9/1」形式の日付文字列に変換（9月1日スタート） */

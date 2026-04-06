@@ -4,6 +4,7 @@ import type {
 } from './types';
 import { getCatchphrase } from './catchphrase';
 import { ALL_FACTION_IDS } from './data/factions';
+import { getCounterLine, getPlayerLine } from './data/battleLines';
 
 // 態度倍率（思想話題のバー効果に適用）
 const ATTITUDE_MULTIPLIER: Record<PlayerAttitude, number> = {
@@ -410,9 +411,9 @@ export function resolveEnemyTurn(battle: BattleState): { newBattle: BattleState;
   const enemyEffect = battle.isDefending ? -rawEnemyEffect : rawEnemyEffect;
   const newBar = clamp(battle.barPosition + enemyEffect, -100, 100);
 
-  const catchphrase = getCatchphrase(student.personality, student.attributes);
+  const counterLine = getCounterLine(student.personality, battle.enemyMood);
   const logLabel = battle.isDefending ? '説得' : '反論';
-  const logText = `「${catchphrase}」（${logLabel} ${Math.abs(enemyEffect)}）`;
+  const logText = `「${counterLine}」（${logLabel} ${Math.abs(enemyEffect)}）`;
 
   const newBattle: BattleState = {
     ...battle,
@@ -452,30 +453,10 @@ function buildPlayerLogText(
   stance: Stance,
   effect: number
 ): string {
-  const attitudeLabel: Record<PlayerAttitude, string> = {
-    friendly: '柔らかく',
-    normal: '普通に',
-    strong: '情熱的に',
-  };
-  const topicLabels: Record<string, string> = {
-    conservative: '保守派の政策',
-    progressive: '革新派の政策',
-    sports: '体育派の政策',
-    love: '恋バナ',
-    game: 'ゲーム',
-    sns: 'SNS',
-    sports_hobby: 'スポーツ',
-    study: '勉強',
-    video: '動画',
-    music: '音楽',
-    reading: '読書',
-    fashion: 'ファッション',
-    fortune: '占い',
-  };
-  const stanceLabel = stance === 'positive' ? '肯定' : '否定';
+  const isFactionTopic = (ALL_FACTION_IDS as readonly string[]).includes(topic);
+  const line = getPlayerLine(attitude, isFactionTopic, stance);
   const sign = effect >= 0 ? '+' : '';
-  const topicLabel = topicLabels[topic] || topic;
-  return `${attitudeLabel[attitude]}「${topicLabel}」を${stanceLabel}（${sign}${effect}）`;
+  return `「${line}」（${sign}${effect}）`;
 }
 
 // スタミナ消費計算

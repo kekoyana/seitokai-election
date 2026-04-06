@@ -17,7 +17,8 @@ export class BattleScreen implements Screen {
   private callbacks: BattleCallbacks;
   private showLog: boolean = false;
   private showVolumeDialog: boolean = false;
-  private lastBubbleLogIndex: number = -1;
+  private lastEnemyBubbleIdx: number = -1;
+  private lastPlayerBubbleIdx: number = -1;
 
   constructor(state: GameState, callbacks: BattleCallbacks) {
     this.state = state;
@@ -78,9 +79,17 @@ export class BattleScreen implements Screen {
 
     const isFinished = battle.phase === 'finished';
     const lastLog = battle.logs[battle.logs.length - 1];
-    const lastEnemyLogIdx = battle.logs.length - 1;
-    const bubbleIsNew = lastLog?.speaker === 'enemy' && lastEnemyLogIdx !== this.lastBubbleLogIndex;
-    if (lastLog?.speaker === 'enemy') this.lastBubbleLogIndex = lastEnemyLogIdx;
+
+    // 最新の相手ログ・プレイヤーログを探す
+    const lastEnemyLog = [...battle.logs].reverse().find(l => l.speaker === 'enemy');
+    const lastPlayerLog = [...battle.logs].reverse().find(l => l.speaker === 'player');
+    const lastEnemyIdx = lastEnemyLog ? battle.logs.lastIndexOf(lastEnemyLog) : -1;
+    const lastPlayerIdx = lastPlayerLog ? battle.logs.lastIndexOf(lastPlayerLog) : -1;
+
+    const enemyBubbleIsNew = lastEnemyIdx >= 0 && lastEnemyIdx !== this.lastEnemyBubbleIdx;
+    const playerBubbleIsNew = lastPlayerIdx >= 0 && lastPlayerIdx !== this.lastPlayerBubbleIdx;
+    if (lastEnemyIdx >= 0) this.lastEnemyBubbleIdx = lastEnemyIdx;
+    if (lastPlayerIdx >= 0) this.lastPlayerBubbleIdx = lastPlayerIdx;
 
     // 音量ダイアログ
     let volumeDialogHtml = '';

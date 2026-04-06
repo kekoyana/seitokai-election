@@ -47,6 +47,10 @@ npx tsx tools/simulate.ts
 ## 📂 プロジェクト構成
 
 ```text
+CLAUDE.md                    # Claude向け作業ガイド
+AGENTS.md                    # Codex向け作業ガイド
+GEMINI.md                    # Gemini向け作業ガイド
+docs/README.md               # 仕様書インデックス
 src/
   ├── main.ts               # エントリポイント
   ├── game.ts               # 状態マシン（画面遷移管理）
@@ -62,11 +66,19 @@ tools/                      # 開発支援ツール
 ai-sprites-local/           # 画像生成スクリプト
 ```
 
+## 📚 ドキュメントの読み順
+
+- プロジェクト概要と起動方法: `README.md`
+- 仕様書の一覧と参照先: `docs/README.md`
+- Claude での作業ルール: `CLAUDE.md`
+- Codex での作業ルール: `AGENTS.md`
+- Gemini での作業ルール: `GEMINI.md`
+
 ## 📝 開発上の注意
 
-本プロジェクトでは、ルートディレクトリの `CLAUDE.md` および `docs/` 以下のドキュメントを「Single Source of Truth」として扱います。
+本プロジェクトでは、ルートディレクトリの AI 向けガイドと `docs/` 以下の仕様書を「Single Source of Truth」として扱います。
 
 - **用語の統一**: `docs/glossary.md` に従い、「人物」ではなく「生徒」、派閥名は「保守/革新/体育」と呼称してください。
 - **世界観**: ログやセリフの文面は `docs/worldview.md` のトーン＆マナーを遵守してください。
 - **UIデザイン**: `docs/design-guide.md` のCSS変数やコンポーネント設計に従ってください。
-- **ドキュメント更新**: 仕様変更や構成変更を行った際は、必ず関連する `docs/` および `CLAUDE.md` を更新してください。
+- **ドキュメント更新**: 仕様変更や構成変更を行った際は、必ず関連する `docs/` と AI 向けガイドを更新し、`docs/README.md` から辿れる状態を維持してください。

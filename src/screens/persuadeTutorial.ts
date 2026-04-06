@@ -108,6 +108,7 @@ export class PersuadeTutorial implements Screen {
         dislikedAttributes: [] as PreferenceAttr[],
         stats: { speech: 60, athletic: 40, intel: 50, maxHp: 100 },
         portrait: null,
+        portrait: null,
       },
       playerAttributes: [] as PreferenceAttr[],
       playerSupport: { conservative: 20, progressive: 50, sports: 30 },

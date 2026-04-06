@@ -651,14 +651,8 @@ export class DailyScreen implements Screen {
     const trainingHtml = this.renderTrainingPanel(isOutOfStamina);
 
     return `
-      ${orgInfoHtml}
       ${restHtml}
       ${trainingHtml}
-
-      <div class="game-panel" style="margin-bottom:12px;">
-        <h3 style="font-size:0.9em; color:var(--game-heading); margin-bottom:10px; font-weight:bold;">この場所にいる生徒</h3>
-        ${studentsHtml}
-      </div>
 
       <div class="daily-mobile-actions">
         <div class="game-panel" style="margin-bottom:12px;">
@@ -694,6 +688,13 @@ export class DailyScreen implements Screen {
           </div>
         </div>
       </div>
+
+      <div class="game-panel" style="margin-bottom:12px;">
+        <h3 style="font-size:0.9em; color:var(--game-heading); margin-bottom:10px; font-weight:bold;">この場所にいる生徒</h3>
+        ${studentsHtml}
+      </div>
+
+      ${orgInfoHtml}
 
       ${endDayHtml}
     `;

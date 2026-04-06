@@ -81,7 +81,7 @@ export const ORGANIZATIONS: Organization[] = [
     type: 'council',        // cautious → council
     leaderId: 's30102',
     subLeaderIds: ['s30103'],
-    memberIds: ['s30151'],
+    memberIds: ['s30151', 's30101'],
   },
   {
     id: 'class3b',
@@ -99,16 +99,16 @@ export const ORGANIZATIONS: Organization[] = [
     type: 'dictatorship',   // stubborn → dictatorship
     leaderId: 's30301',
     subLeaderIds: ['s30352'],
-    memberIds: ['s30302'],
+    memberIds: ['s30302', 's30351'],
   },
   {
     id: 'class3d',
     name: '3-D組',
-    description: '健太が寡黙に率いるクラス。背中で語るリーダーに皆がついていく。',
-    type: 'dictatorship',   // stubborn → dictatorship
-    leaderId: 's30402',
-    subLeaderIds: ['s30451'],
-    memberIds: ['s30403'],
+    description: '獅堂の熱血リーダーシップで動くクラス。体育会系の結束力が強い。',
+    type: 'dictatorship',   // passionate → dictatorship
+    leaderId: 's30401',
+    subLeaderIds: ['s30402'],
+    memberIds: ['s30451', 's30403'],
   },
   // ===== 部活 =====
   {
@@ -159,18 +159,29 @@ export const ORGANIZATIONS: Organization[] = [
   {
     id: 'club_art',
     name: '美術部',
-    description: '悠人の美学が部の方向性を決める。自由に見えて強い信念がある。',
+    description: 'あかりの行動力と情熱が部の方向性を決める。自由な表現を重んじる。',
     type: 'dictatorship',   // passionate → dictatorship
-    leaderId: 's30201',
+    leaderId: 's30351',
     subLeaderIds: ['s20352'],
-    memberIds: ['s10352'],
+    memberIds: ['s10352', 's30201'],
+  },
+  {
+    id: 'club_student_council',
+    name: '生徒会',
+    description: '鷹山が率いる学園の中枢。校内行事の企画・運営を担う。',
+    type: 'council',
+    leaderId: 's30101',
+    subLeaderIds: ['s20201'],
+    memberIds: ['s30151'],
+    leaderTitle: '生徒会長',
+    subLeaderTitle: '副会長',
   },
 ];
 
 /** 体育会系の部活ID */
 export const SPORTS_CLUB_IDS = new Set(['club_track', 'club_soccer', 'club_baseball', 'club_tennis']);
 /** 文化系の部活ID */
-export const CULTURE_CLUB_IDS = new Set(['club_brass', 'club_art']);
+export const CULTURE_CLUB_IDS = new Set(['club_brass', 'club_art', 'club_student_council']);
 
 export const ORGANIZATION_TYPE_LABELS: Record<string, string> = {
   dictatorship: '独裁型',

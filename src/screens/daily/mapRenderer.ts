@@ -149,9 +149,39 @@ function renderBuildingWrap(floorLabel: string, content: string): string {
   `;
 }
 
+function renderRooftopStairsBtn(ctx: MapContext, canEnter: boolean): string {
+  const count = countStudentsAtLocation(ctx, 'rooftop');
+  const hasStudents = count > 0;
+  return `
+    <button data-enter-room="rooftop" style="
+      padding:4px 8px;
+      background:${canEnter
+        ? 'repeating-linear-gradient(0deg, #507858 0px, #507858 3px, #609868 3px, #609868 6px)'
+        : '#bbb'};
+      color:#fff; border:2px solid #406848; border-radius:3px;
+      font-size:0.65em; font-weight:bold;
+      cursor:${canEnter ? 'pointer' : 'not-allowed'};
+      font-family:inherit; text-align:center;
+      text-shadow:0 1px 2px rgba(0,0,0,0.5);
+      box-shadow:inset 0 0 4px rgba(0,0,0,0.2), 0 1px 3px rgba(0,0,0,0.2);
+      position:relative;
+    ">
+      ▲屋上<br>⚡${MOVE_COST.ENTER_ROOM}
+      ${hasStudents ? `<div style="
+        position:absolute; top:-7px; right:-7px;
+        background:#E74C3C; color:#fff;
+        border-radius:50%; width:18px; height:18px;
+        font-size:0.6em; font-weight:bold;
+        display:flex; align-items:center; justify-content:center;
+        border:2px solid #fff; box-shadow:0 1px 3px rgba(0,0,0,0.3);
+      ">${count}</div>` : ''}
+    </button>
+  `;
+}
+
 function renderFloor3Plan(ctx: MapContext, canEnter: boolean): string {
   const r = roomStyle;
-  const rooftopStyle = { bg: '#e0f0e8', border: '#70a880' };
+  const s = specialRoomStyle;
   const content = `
     <div style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr auto; gap:0; border-bottom:1px solid #a0a8b0;">
       <div style="border-right:1px solid #a0a8b0; padding:3px;">${renderRoomBtn(ctx, 'class3a', canEnter, r)}</div>
@@ -162,9 +192,12 @@ function renderFloor3Plan(ctx: MapContext, canEnter: boolean): string {
         ${renderStairsBtn(ctx, '2f', '3f', 'down')}
       </div>
     </div>
-    <div style="display:grid; grid-template-columns:1fr auto; gap:0;">
-      ${renderCorridor()}
-      <div style="padding:3px; width:80px;">${renderRoomBtn(ctx, 'rooftop', canEnter, rooftopStyle)}</div>
+    ${renderCorridor()}
+    <div style="display:grid; grid-template-columns:1fr auto; gap:0; border-top:1px solid #a0a8b0;">
+      <div style="padding:3px;">${renderRoomBtn(ctx, 'student_council', canEnter, s)}</div>
+      <div style="padding:3px; display:flex; align-items:stretch; width:48px;">
+        ${renderRooftopStairsBtn(ctx, canEnter)}
+      </div>
     </div>
   `;
   return renderBuildingWrap('🏫 3階', content);

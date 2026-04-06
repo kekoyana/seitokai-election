@@ -198,7 +198,7 @@ export class Game {
     this.factionSelectScreen.mount(this.root);
   }
 
-  private showCharacterSelect(faction: FactionId): void {
+  private showCharacterSelect(faction: FactionId, startAt: 'first' | 'last' = 'first'): void {
     this.clearScreens();
     const allStudents = STUDENTS.map(s => ({
       ...s,
@@ -246,7 +246,12 @@ export class Game {
       onBack: () => {
         this.showFactionSelect();
       },
-    });
+      onChangeFaction: (delta: -1 | 1, startAtParam: 'first' | 'last') => {
+        const idx = ALL_FACTION_IDS.indexOf(faction);
+        const nextFaction = ALL_FACTION_IDS[(idx + delta + ALL_FACTION_IDS.length) % ALL_FACTION_IDS.length];
+        this.showCharacterSelect(nextFaction, startAtParam);
+      },
+    }, startAt);
     this.characterScreen.mount(this.root);
   }
 

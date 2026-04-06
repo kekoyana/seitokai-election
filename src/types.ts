@@ -18,7 +18,7 @@ export type LocationId =
   | 'track_field' | 'soccer_field' | 'baseball_field' | 'tennis_court'
   | 'music_room' | 'art_room' | 'broadcast_room'
   | 'courtyard' | 'library' | 'cafeteria' | 'nurses_office'
-  | 'rooftop'
+  | 'rooftop' | 'student_council'
   | 'corridor_1f' | 'corridor_2f' | 'corridor_3f' | 'corridor_ground';
 
 // フロア
@@ -96,7 +96,6 @@ export interface Student {
   dislikedAttributes: PreferenceAttr[];
   stats: { speech: number; athletic: number; intel: number; maxHp: number };
   affinity: number;
-  role: string | null;            // 役職（学級委員長・部長など）
   portrait: string | null;
   playable: boolean;            // プレイヤーとして選択可能か
 }
@@ -156,6 +155,8 @@ export interface Organization {
   leaderId: string;
   subLeaderIds: string[];
   memberIds: string[];
+  leaderTitle?: string;      // カスタム代表名（例: '生徒会長'）
+  subLeaderTitle?: string;   // カスタム副代表名（例: '副会長'）
 }
 
 // ゲーム全体状態

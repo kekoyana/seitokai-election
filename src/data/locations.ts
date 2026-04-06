@@ -25,6 +25,7 @@ export const LOCATIONS: Location[] = [
   { id: 'cafeteria', name: '食堂' },
   { id: 'nurses_office', name: '保健室' },
   { id: 'rooftop', name: '屋上' },
+  { id: 'student_council', name: '生徒会室' },
   { id: 'corridor_1f', name: '1階廊下' },
   { id: 'corridor_2f', name: '2階廊下' },
   { id: 'corridor_3f', name: '3階廊下' },
@@ -41,7 +42,7 @@ export const LOCATION_FLOOR_MAP: Record<LocationId, Floor> = {
   music_room: '2f', art_room: '2f', broadcast_room: '2f',
   corridor_3f: '3f',
   class3a: '3f', class3b: '3f', class3c: '3f', class3d: '3f',
-  rooftop: '3f',
+  rooftop: '3f', student_council: '3f',
   corridor_ground: 'ground',
   track_field: 'ground', soccer_field: 'ground',
   baseball_field: 'ground', tennis_court: 'ground',
@@ -50,7 +51,7 @@ export const LOCATION_FLOOR_MAP: Record<LocationId, Floor> = {
 export const FLOOR_ROOMS: Record<Floor, LocationId[]> = {
   '1f': ['class1a', 'class1b', 'class1c', 'class1d', 'courtyard', 'cafeteria', 'library', 'nurses_office'],
   '2f': ['class2a', 'class2b', 'class2c', 'class2d', 'music_room', 'art_room', 'broadcast_room'],
-  '3f': ['class3a', 'class3b', 'class3c', 'class3d', 'rooftop'],
+  '3f': ['class3a', 'class3b', 'class3c', 'class3d', 'student_council'],
   'ground': ['track_field', 'soccer_field', 'baseball_field', 'tennis_court'],
 };
 

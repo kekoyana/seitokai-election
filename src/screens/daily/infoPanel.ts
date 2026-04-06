@@ -209,7 +209,12 @@ function renderInfoOrgDetail(ctx: InfoPanelContext, org: typeof ORGANIZATIONS[nu
   const allMemberIds = [org.leaderId, ...org.subLeaderIds, ...org.memberIds];
   const members = allMemberIds.map(id => {
     const s = ctx.state.students.find(st => st.id === id);
-    return s ? { student: s, role: id === org.leaderId ? '代表' : org.subLeaderIds.includes(id) ? '副代表' : 'メンバー' } : null;
+    const role = id === org.leaderId
+      ? (org.leaderTitle ?? '代表')
+      : org.subLeaderIds.includes(id)
+        ? (org.subLeaderTitle ?? '副代表')
+        : 'メンバー';
+    return s ? { student: s, role } : null;
   }).filter((m): m is { student: Student; role: string } => m !== null);
 
   const memberRows = members.map(({ student: s, role }) => {

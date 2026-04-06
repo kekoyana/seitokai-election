@@ -3,12 +3,48 @@ import {
   FACTION_INFO, FACTION_LABELS, getCatchphrase, renderInitialIcon,
   CLUB_LABELS,
 } from '../data';
+import { ORGANIZATIONS } from '../data/organizations';
+import { showConfirmDialog } from '../ui/gameDialog';
 import dailyBg from '../../assets/backgrounds/daily.jpg';
 import type { Screen } from './Screen';
+
+/** 生徒の所属情報を役職付きで返す（クラスと部活） */
+function getAffiliationLabels(studentId: string, className: string, clubId: string | null): string[] {
+  const labels: string[] = [];
+
+  // クラス
+  let classRole = '';
+  for (const org of ORGANIZATIONS) {
+    if (org.name.startsWith(className)) {
+      if (org.leaderId === studentId) classRole = ' 代表';
+      else if (org.subLeaderIds.includes(studentId)) classRole = ' 副代表';
+      break;
+    }
+  }
+  labels.push(`${className}${classRole}`);
+
+  // 部活
+  if (clubId) {
+    const clubName = CLUB_LABELS[clubId] ?? clubId;
+    let clubRole = '';
+    for (const org of ORGANIZATIONS) {
+      if (org.id === `club_${clubId}` || org.id === clubId) {
+        if (org.leaderId === studentId) clubRole = ' 代表';
+        else if (org.subLeaderIds.includes(studentId)) clubRole = ' 副代表';
+        break;
+      }
+    }
+    labels.push(`${clubName}${clubRole}`);
+  }
+
+  return labels;
+}
 
 export interface CharacterSelectCallbacks {
   onSelect: (student: Student) => void;
   onBack: () => void;
+  /** 派閥切り替え。startAt: 遷移先で最初/最後のキャラを選択 */
+  onChangeFaction: (delta: -1 | 1, startAt: 'first' | 'last') => void;
 }
 
 export class CharacterSelectScreen implements Screen {
@@ -21,23 +57,14 @@ export class CharacterSelectScreen implements Screen {
   private swipeStartX = 0;
   private swipeStartY = 0;
 
-  constructor(students: Student[], faction: FactionId, callbacks: CharacterSelectCallbacks) {
+  constructor(students: Student[], faction: FactionId, callbacks: CharacterSelectCallbacks, startAt: 'first' | 'last' = 'first') {
     this.students = students;
     this.faction = faction;
     this.factionInfo = FACTION_INFO.find(c => c.id === faction)!;
     this.callbacks = callbacks;
-    this.selectedStudent = students[0];
+    this.selectedStudent = startAt === 'last' ? students[students.length - 1] : students[0];
     this.container = document.createElement('div');
     this.render();
-  }
-
-  private switchStudent(delta: number): void {
-    const idx = this.students.indexOf(this.selectedStudent);
-    const next = idx + delta;
-    if (next >= 0 && next < this.students.length) {
-      this.selectedStudent = this.students[next];
-      this.render();
-    }
   }
 
   private render(): void {
@@ -53,18 +80,24 @@ export class CharacterSelectScreen implements Screen {
 
     const info = this.factionInfo;
     const sel = this.selectedStudent;
-    const clubLabel = sel.clubId ? (CLUB_LABELS[sel.clubId] ?? sel.clubId) : null;
+    const selIdx = this.students.indexOf(sel);
+    const isFirst = selIdx <= 0;
+    const isLast = selIdx >= this.students.length - 1;
+    // Compute prev/next faction for edge arrows
+    const factionIds = FACTION_INFO.map(f => f.id);
+    const fIdx = factionIds.indexOf(this.faction);
+    const prevFaction = FACTION_INFO[(fIdx - 1 + factionIds.length) % factionIds.length];
+    const nextFaction = FACTION_INFO[(fIdx + 1) % factionIds.length];
 
     // --- Faction header bar ---
     const headerHtml = `
       <div style="
-        display:flex; align-items:center; padding:12px 16px 0; flex-shrink:0; gap:8px;
+        display:flex; align-items:center; padding:8px 16px 0; flex-shrink:0; gap:8px;
       ">
-        <button class="back-btn" style="
-          background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2);
-          border-radius:4px; padding:6px 12px; cursor:pointer;
-          font-family:var(--game-font); font-size:0.8em; color:rgba(255,255,255,0.6);
-          transition:all 0.15s;
+        <button class="back-btn game-btn" style="
+          background:linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.05) 100%);
+          border-left-color:rgba(255,255,255,0.3);
+          padding:6px 12px; font-size:0.8em; color:rgba(255,255,255,0.7);
         ">◀ 戻る</button>
         <div style="flex:1; text-align:center;">
           <h1 style="
@@ -76,102 +109,119 @@ export class CharacterSelectScreen implements Screen {
         <div style="width:60px;"></div>
       </div>
       <div style="
-        padding:6px 16px; font-size:0.78em; text-align:center;
+        padding:4px 16px; font-size:0.75em; text-align:center;
         background:${info.color}20; border-top:1px solid ${info.color}40;
         border-bottom:1px solid ${info.color}40; color:rgba(255,255,255,0.7);
-        margin-top:8px;
+        margin-top:4px;
       ">
         <strong style="color:${info.accentColor};">${info.platform}</strong>
         <span style="margin-left:8px; opacity:0.7;">${info.description}</span>
       </div>
     `;
 
+    // --- Arrow buttons ---
+    const arrowBtnStyle = `
+      background:none; border:none; cursor:pointer;
+      padding:4px 6px; flex-shrink:0; transition:color 0.15s;
+      display:flex; flex-direction:column; align-items:center; gap:2px;
+    `;
+
+    // Left arrow: at edge → show prev faction label
+    const prevColor = isFirst ? prevFaction.color : 'rgba(255,255,255,0.5)';
+    const prevLabel = isFirst
+      ? `<span style="font-size:0.55em; color:${prevFaction.accentColor}; white-space:nowrap;">${FACTION_LABELS[prevFaction.id]}派</span>`
+      : '';
+
+    // Right arrow: at edge → show next faction label
+    const nextColor = isLast ? nextFaction.color : 'rgba(255,255,255,0.5)';
+    const nextLabel = isLast
+      ? `<span style="font-size:0.55em; color:${nextFaction.accentColor}; white-space:nowrap;">${FACTION_LABELS[nextFaction.id]}派</span>`
+      : '';
+
     // --- Character showcase ---
     const showcaseHtml = `
-      <div class="showcase-area" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
-        padding:12px 16px; gap:8px; min-height:0; overflow-y:auto; touch-action:pan-y;">
+      <div class="showcase-area" style="flex:1; display:flex; align-items:center;
+        padding:8px 0; min-height:0; overflow:hidden; touch-action:pan-y;">
 
-        <!-- Portrait -->
-        <div style="position:relative; flex-shrink:0;">
-          ${sel.portrait
-            ? `<img src="${sel.portrait}" alt="${sel.name}" style="
-                width:180px; height:180px; border-radius:8px;
-                object-fit:cover; object-position:top;
-                border:3px solid ${info.color};
-                box-shadow:0 0 20px ${info.color}60, 0 4px 12px rgba(0,0,0,0.4);
-              "/>`
-            : renderInitialIcon(sel.name, sel.personality, 180, info.color)
-          }
-          <!-- Faction badge -->
-          <div style="
-            position:absolute; bottom:-8px; left:50%; transform:translateX(-50%);
-            background:${info.color}; color:#fff;
-            font-size:0.7em; font-weight:bold; padding:2px 12px;
-            border-radius:4px; white-space:nowrap;
-            box-shadow:0 2px 4px rgba(0,0,0,0.3);
-          ">${FACTION_LABELS[info.id]}派</div>
-        </div>
+        <!-- Left arrow -->
+        <button class="arrow-prev" style="${arrowBtnStyle}">
+          <span style="font-size:1.3em; color:${prevColor};">◀</span>
+          ${prevLabel}
+        </button>
 
-        <!-- Dot indicator -->
-        <div style="display:flex; gap:6px; align-items:center; margin-top:4px;">
-          ${this.students.map((s, i) => `
+        <!-- Center content -->
+        <div style="flex:1; display:flex; flex-direction:column; align-items:center;
+          gap:4px; min-height:0; overflow-y:auto; padding:4px 8px;">
+
+          <!-- Portrait -->
+          <div style="position:relative; flex-shrink:0;">
+            ${sel.portrait
+              ? `<img src="${sel.portrait}" alt="${sel.name}" style="
+                  width:150px; height:150px; border-radius:8px;
+                  object-fit:cover; object-position:top;
+                  border:3px solid ${info.color};
+                  box-shadow:0 0 20px ${info.color}60, 0 4px 12px rgba(0,0,0,0.4);
+                "/>`
+              : renderInitialIcon(sel.name, sel.personality, 150, info.color)
+            }
+            <!-- Faction badge -->
             <div style="
-              width:${s.id === sel.id ? '10px' : '6px'}; height:${s.id === sel.id ? '10px' : '6px'};
-              border-radius:4px;
-              background:${s.id === sel.id ? info.accentColor : 'rgba(255,255,255,0.25)'};
-              transition:all 0.2s;
-            "></div>
-          `).join('')}
-        </div>
-
-        <!-- Name & info -->
-        <div style="text-align:center; margin-top:8px;">
-          <div style="font-size:1.3em; font-weight:900; letter-spacing:0.05em;
-            text-shadow:0 2px 4px rgba(0,0,0,0.5);">
-            ${sel.name}
-            <span style="font-size:0.6em; font-weight:400; opacity:0.6; margin-left:4px;">（${sel.nickname}）</span>
+              position:absolute; bottom:-6px; left:50%; transform:translateX(-50%);
+              background:${info.color}; color:#fff;
+              font-size:0.65em; font-weight:bold; padding:1px 10px;
+              border-radius:4px; white-space:nowrap;
+              box-shadow:0 2px 4px rgba(0,0,0,0.3);
+            ">${FACTION_LABELS[info.id]}派</div>
           </div>
-          <div style="font-size:0.8em; opacity:0.7; margin-top:2px;">
-            ${sel.className}　${sel.gender === 'male' ? '♂' : '♀'}${clubLabel ? `　${clubLabel}` : ''}
+
+          <!-- Name & info -->
+          <div style="text-align:center; margin-top:4px;">
+            <div style="font-size:1.2em; font-weight:900; letter-spacing:0.05em;
+              text-shadow:0 2px 4px rgba(0,0,0,0.5);">
+              ${sel.name}
+              <span style="font-size:0.6em; font-weight:400; opacity:0.6; margin-left:4px;">（${sel.nickname}）</span>
+            </div>
+            <div style="font-size:0.75em; opacity:0.7;">
+              ${sel.gender === 'male' ? '♂' : '♀'}　${getAffiliationLabels(sel.id, sel.className, sel.clubId).join('　')}
+            </div>
+            <div style="font-size:0.75em; color:#f0d060; font-style:italic;">
+              「${getCatchphrase(sel.personality, sel.attributes)}」
+            </div>
           </div>
+
+          <!-- Description -->
+          <div style="
+            font-size:0.72em; line-height:1.5; color:rgba(255,255,255,0.75);
+            background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.1);
+            border-radius:4px; padding:6px 10px;
+            max-width:380px; text-align:center;
+          ">${sel.description}</div>
+
+          <!-- Stats (inline) -->
+          <div style="
+            display:flex; gap:12px; align-items:center; justify-content:center;
+          ">
+            ${this.renderStatInline('弁舌', sel.stats.speech, '#5baef5')}
+            ${this.renderStatInline('運動', sel.stats.athletic, '#E74C3C')}
+            ${this.renderStatInline('知性', sel.stats.intel, '#2ECC71')}
+          </div>
+
+          <!-- Select button -->
+          <button class="select-character-btn game-btn" style="
+            margin-top:4px; padding:8px 36px;
+            background:linear-gradient(135deg, ${info.color} 0%, ${info.accentColor} 100%);
+            border-left-color:${info.color};
+            font-size:0.95em;
+            box-shadow:0 0 15px ${info.color}40, 2px 2px 4px rgba(0,0,0,0.3);
+            flex-shrink:0;
+          ">この生徒を選ぶ</button>
         </div>
 
-        <!-- Catchphrase -->
-        <div style="
-          font-size:0.85em; color:#f0d060; font-style:italic;
-          text-align:center; margin:2px 0;
-          text-shadow:0 1px 2px rgba(0,0,0,0.4);
-        ">「${getCatchphrase(sel.personality, sel.attributes)}」</div>
-
-        <!-- Description -->
-        <div style="
-          font-size:0.78em; line-height:1.6; color:rgba(255,255,255,0.75);
-          background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.1);
-          border-radius:6px; padding:8px 12px;
-          max-width:400px; text-align:center;
-        ">${sel.description}</div>
-
-        <!-- Stats -->
-        <div style="
-          display:grid; grid-template-columns:repeat(3, 1fr); gap:8px;
-          width:100%; max-width:360px; margin-top:4px;
-        ">
-          ${this.renderStatBlock('弁舌', sel.stats.speech, '#5baef5')}
-          ${this.renderStatBlock('運動', sel.stats.athletic, '#E74C3C')}
-          ${this.renderStatBlock('知性', sel.stats.intel, '#2ECC71')}
-        </div>
-
-        <!-- Select button -->
-        <button class="select-character-btn" style="
-          margin-top:8px; padding:10px 40px;
-          background:linear-gradient(135deg, ${info.color} 0%, ${info.accentColor} 100%);
-          color:#fff; border:2px solid rgba(255,255,255,0.3);
-          border-radius:4px; font-family:var(--game-font);
-          font-size:1em; font-weight:bold; cursor:pointer;
-          box-shadow:0 0 15px ${info.color}40, 0 3px 8px rgba(0,0,0,0.3);
-          transition:all 0.2s; text-shadow:0 1px 2px rgba(0,0,0,0.4);
-          flex-shrink:0;
-        ">この生徒を選ぶ</button>
+        <!-- Right arrow -->
+        <button class="arrow-next" style="${arrowBtnStyle}">
+          <span style="font-size:1.3em; color:${nextColor};">▶</span>
+          ${nextLabel}
+        </button>
       </div>
     `;
 
@@ -183,7 +233,7 @@ export class CharacterSelectScreen implements Screen {
         padding:6px 4px; cursor:pointer;
         background:${isSelected ? 'rgba(255,255,255,0.15)' : 'transparent'};
         border:2px solid ${isSelected ? info.color : 'transparent'};
-        border-radius:8px; transition:all 0.2s;
+        border-radius:4px; transition:all 0.2s;
         font-family:var(--game-font);
       ">
         ${s.portrait
@@ -214,7 +264,7 @@ export class CharacterSelectScreen implements Screen {
     const thumbnailHtml = `
       <div style="
         display:flex; justify-content:center; gap:4px;
-        padding:8px 16px 12px; overflow-x:auto;
+        padding:6px 16px 8px; overflow-x:auto;
         background:rgba(0,0,0,0.3);
         border-top:1px solid rgba(255,255,255,0.08);
       ">${thumbs}</div>
@@ -230,26 +280,37 @@ export class CharacterSelectScreen implements Screen {
     this.bindEvents();
   }
 
-  private renderStatBlock(label: string, value: number, color: string): string {
+  private renderStatInline(label: string, value: number, color: string): string {
     return `
-      <div style="text-align:center;">
-        <div style="font-size:0.68em; color:rgba(255,255,255,0.5); margin-bottom:3px;">${label}</div>
+      <div style="display:flex; align-items:center; gap:4px;">
+        <span style="font-size:0.65em; color:rgba(255,255,255,0.5);">${label}</span>
         <div style="
-          height:6px; background:rgba(255,255,255,0.1);
+          width:48px; height:5px; background:rgba(255,255,255,0.1);
           border-radius:3px; overflow:hidden;
-          border:1px solid rgba(255,255,255,0.08);
         ">
           <div style="
             width:${value}%; height:100%;
             background:linear-gradient(90deg, ${color}, ${color}cc);
             border-radius:2px;
-            box-shadow:0 0 6px ${color}60;
           "></div>
         </div>
-        <div style="font-size:0.85em; font-weight:bold; color:${color}; margin-top:2px;
-          text-shadow:0 0 6px ${color}40;">${value}</div>
+        <span style="font-size:0.75em; font-weight:bold; color:${color};
+          text-shadow:0 0 6px ${color}40;">${value}</span>
       </div>
     `;
+  }
+
+  /** 前後のキャラに移動。端なら派閥を切り替え */
+  private navigate(delta: -1 | 1): void {
+    const idx = this.students.indexOf(this.selectedStudent);
+    const next = idx + delta;
+    if (next >= 0 && next < this.students.length) {
+      this.selectedStudent = this.students[next];
+      this.render();
+    } else {
+      // 端 → 次/前の派閥へ
+      this.callbacks.onChangeFaction(delta, delta === 1 ? 'first' : 'last');
+    }
   }
 
   private bindEvents(): void {
@@ -263,12 +324,17 @@ export class CharacterSelectScreen implements Screen {
       showcase.addEventListener('pointerup', (e) => {
         const dx = e.clientX - this.swipeStartX;
         const dy = e.clientY - this.swipeStartY;
-        // Horizontal swipe: must exceed 50px and be more horizontal than vertical
         if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) {
-          this.switchStudent(dx < 0 ? 1 : -1);
+          this.navigate(dx < 0 ? 1 : -1);
         }
       });
     }
+
+    // Arrow buttons
+    const prevBtn = this.container.querySelector<HTMLButtonElement>('.arrow-prev');
+    const nextBtn = this.container.querySelector<HTMLButtonElement>('.arrow-next');
+    prevBtn?.addEventListener('pointerup', () => this.navigate(-1));
+    nextBtn?.addEventListener('pointerup', () => this.navigate(1));
 
     // Back button
     const backBtn = this.container.querySelector<HTMLButtonElement>('.back-btn');
@@ -288,20 +354,20 @@ export class CharacterSelectScreen implements Screen {
       });
     });
 
-    // Select button
+    // Select button → confirm dialog
     const selectBtn = this.container.querySelector<HTMLButtonElement>('.select-character-btn');
     if (selectBtn) {
       const student = this.selectedStudent;
-      selectBtn.addEventListener('pointerenter', () => {
-        selectBtn.style.transform = 'translateY(-2px)';
-        selectBtn.style.filter = 'brightness(1.2)';
-      });
-      selectBtn.addEventListener('pointerleave', () => {
-        selectBtn.style.transform = '';
-        selectBtn.style.filter = '';
-      });
       selectBtn.addEventListener('pointerup', () => {
-        this.callbacks.onSelect(student);
+        showConfirmDialog(this.container, {
+          title: 'キャラクター確認',
+          message: `<strong>${student.name}</strong>でゲームを始めますか？`,
+          okLabel: '決定',
+          cancelLabel: '戻る',
+          okStyle: 'primary',
+        }).then((confirmed) => {
+          if (confirmed) this.callbacks.onSelect(student);
+        });
       });
     }
   }

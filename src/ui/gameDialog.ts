@@ -1,11 +1,7 @@
 /**
  * ゲーム内ダイアログ（確認・インフォメーション）
- *
- * デザインガイド準拠:
- * - .game-panel ベース（白背景 + 青太枠 + 角丸8px）
- * - .game-btn 系ボタン（立体グラデーション + 角丸6px）
- * - タイトルバー付き（パワプロ風）
  */
+import { t } from '../i18n';
 
 export interface ConfirmDialogOptions {
   title?: string;
@@ -93,7 +89,7 @@ export function showConfirmDialog(
       font-family:var(--game-font);
     `;
 
-    const title = options.title ?? '確認';
+    const title = options.title ?? t('dialog.confirm');
     const okStyle = options.okStyle ?? 'primary';
 
     overlay.innerHTML = renderDialogBox(
@@ -103,7 +99,7 @@ export function showConfirmDialog(
         <button data-dialog="cancel" class="${btnClass('disabled')}" style="
           padding:9px 24px; font-size:0.88em; font-family:var(--game-font);
           cursor:pointer; opacity:1;
-        ">${options.cancelLabel ?? 'やめる'}</button>
+        ">${options.cancelLabel ?? t('dialog.cancel')}</button>
         <button data-dialog="ok" class="${btnClass(okStyle)}" style="
           padding:9px 24px; font-size:0.88em; font-family:var(--game-font);
         ">${options.okLabel ?? 'OK'}</button>
@@ -140,7 +136,7 @@ export function showInfoDialog(
       font-family:var(--game-font);
     `;
 
-    const title = options.title ?? 'お知らせ';
+    const title = options.title ?? t('dialog.notice');
     const okStyle = options.okStyle ?? 'primary';
 
     overlay.innerHTML = renderDialogBox(

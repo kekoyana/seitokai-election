@@ -1,4 +1,5 @@
 import titleBg from '../../assets/backgrounds/title.jpg';
+import { t } from '../i18n';
 import type { Screen } from './Screen';
 
 interface PrologueCallbacks {
@@ -13,65 +14,61 @@ export class PrologueScreen implements Screen {
   private container: HTMLDivElement;
   private callbacks: PrologueCallbacks;
   private currentPage = 0;
-  private pages: ProloguePage[];
 
   constructor(callbacks: PrologueCallbacks) {
     this.callbacks = callbacks;
     this.container = document.createElement('div');
+    this.render();
+  }
 
-    this.pages = [
+  private getPages(): ProloguePage[] {
+    return [
       {
         html: `
           <div style="text-align:center; margin-bottom:16px; font-size:0.85em; color:var(--game-text-dim); letter-spacing:0.2em;">
-            9月――
+            ${t('prologue.page1date')}
           </div>
           <div style="font-size:1.3em; font-weight:900; text-align:center; margin-bottom:20px; color:var(--game-text); letter-spacing:0.1em;">
-            翠風学園
+            ${t('prologue.page1school')}
           </div>
           <p style="color:var(--game-text); line-height:2; font-size:0.95em;">
-            毎年恒例の学園祭。<br>
-            だが今年、近隣の学園が外部公開の学園祭を始めたことで、<br>
-            この学園でも「学園祭のあり方」が議論になった。
+            ${t('prologue.page1text1')}
           </p>
           <p style="color:var(--game-text); line-height:2; font-size:0.95em; margin-top:16px;">
-            そして――学園祭の企画を巡り、<br>
-            <strong style="color:var(--game-heading-accent);">投票</strong>が行われることになった。
+            ${t('prologue.page1text2')}
           </p>
         `,
       },
       {
         html: `
           <p style="color:var(--game-text); line-height:2; font-size:0.95em;">
-            伝統を守るか、外に開くか、それとも――。
+            ${t('prologue.page2text1')}
           </p>
           <p style="color:var(--game-text); line-height:2; font-size:0.95em; margin-top:12px;">
-            生徒たちの間に<strong style="color:var(--game-heading-accent);">3つの派閥</strong>が生まれ、<br>
-            学園は静かに揺れ始めた。
+            ${t('prologue.page2text2')}
           </p>
           <p style="color:var(--game-text-dim); line-height:2; font-size:0.85em; margin-top:20px;">
-            投票日まで、あと30日。
+            ${t('prologue.page2text3')}
           </p>
         `,
       },
       {
         html: `
           <p style="color:var(--game-text); line-height:2; font-size:0.95em;">
-            あなたは学園の<strong>1人の生徒</strong>。
+            ${t('prologue.page3text1')}
           </p>
           <p style="color:var(--game-text); line-height:2; font-size:0.95em; margin-top:12px;">
-            学園中の生徒たちと語り合い、時にぶつかり合い――<br>
-            <strong style="color:var(--game-heading-accent);">30日間で仲間を増やして、投票を勝ち取ろう。</strong>
+            ${t('prologue.page3text2')}
           </p>
         `,
       },
     ];
-
-    this.render();
   }
 
   private render(): void {
-    const isLastPage = this.currentPage >= this.pages.length - 1;
-    const page = this.pages[this.currentPage];
+    const pages = this.getPages();
+    const isLastPage = this.currentPage >= pages.length - 1;
+    const page = pages[this.currentPage];
 
     this.container.style.cssText = `
       position: fixed; inset: 0;
@@ -89,7 +86,7 @@ export class PrologueScreen implements Screen {
         border:1px solid rgba(255,255,255,0.3); border-radius:4px;
         padding:6px 14px; font-size:0.78em; cursor:pointer;
         font-family:var(--game-font); z-index:10;
-      ">スキップ ▶</button>
+      ">${t('prologue.skip')}</button>
 
       <div class="game-panel" style="
         max-width:460px; width:100%;
@@ -104,13 +101,13 @@ export class PrologueScreen implements Screen {
           ${isLastPage ? `
             <button id="prologue-next" class="game-btn game-btn-primary" style="
               padding:14px 40px; font-size:1.05em; letter-spacing:0.1em;
-            ">派閥を選ぶ</button>
+            ">${t('prologue.selectFaction')}</button>
           ` : `
             <div id="prologue-next" style="
               color:var(--game-text-dim); font-size:0.85em;
               cursor:pointer; padding:8px;
               animation: game-pulse 1.5s infinite;
-            ">▼ タップで次へ</div>
+            ">${t('prologue.tapNext')}</div>
           `}
         </div>
 
@@ -118,7 +115,7 @@ export class PrologueScreen implements Screen {
           display:flex; justify-content:center; gap:6px;
           margin-top:16px;
         ">
-          ${this.pages.map((_, i) => `
+          ${pages.map((_, i) => `
             <div style="
               width:8px; height:8px; border-radius:50%;
               background:${i === this.currentPage ? 'var(--game-accent)' : 'var(--game-text-dim)'};

@@ -4,6 +4,8 @@ import { ALL_FACTION_IDS } from '../data/factions';
 import { bgm } from '../bgm';
 import battleBg from '../../assets/backgrounds/battle.jpg';
 import type { Screen } from './Screen';
+import { t } from '../i18n';
+import { getStudentName } from '../data/students';
 
 export interface BattleCallbacks {
   onAttitudeSelect: (attitude: PlayerAttitude) => void;
@@ -105,7 +107,7 @@ export class BattleScreen implements Screen {
           animation: fadeIn 0.2s ease;
         ">
           <div class="game-panel-dark" style="width:240px; padding:20px; text-align:center;">
-            <div style="font-weight:bold; margin-bottom:15px; color:#fff;">BGM音量</div>
+            <div style="font-weight:bold; margin-bottom:15px; color:#fff;">${t('battle.bgmVolume')}</div>
             <div style="display:flex; align-items:center; gap:10px; margin-bottom:20px;">
               <span id="bgm-dialog-icon" style="font-size:1.2em;">${bgm.volume > 0 ? '🔊' : '🔇'}</span>
               <input id="bgm-volume-dialog" type="range" min="0" max="100" value="${volPct}" style="
@@ -114,7 +116,7 @@ export class BattleScreen implements Screen {
               "/>
               <span id="bgm-volume-label" style="font-size:0.9em; width:35px; text-align:right;">${volPct}%</span>
             </div>
-            <button id="close-volume-dialog" class="game-btn game-btn-primary" style="padding:8px 24px;">閉じる</button>
+            <button id="close-volume-dialog" class="game-btn game-btn-primary" style="padding:8px 24px;">${t('battle.close')}</button>
           </div>
         </div>
       `;
@@ -139,7 +141,7 @@ export class BattleScreen implements Screen {
             return pf ? `<span style="
               font-size:0.72em; background:${pf.color}; color:#fff;
               border-radius:3px; padding:1px 6px; font-weight:bold;
-            ">${FACTION_LABELS[pf.id]}派</span>` : '';
+            ">${FACTION_LABELS[pf.id]}${t('battle.factionSuffix')}</span>` : '';
           })()}
           <span>⚡<strong>${this.state.stamina}</strong></span>
           <span style="opacity:0.4;">|</span>
@@ -155,19 +157,19 @@ export class BattleScreen implements Screen {
         <!-- ポートレート -->
         <div style="flex-shrink:0;">
           ${student.portrait
-            ? `<img src="${student.portrait}" alt="${student.name}" style="
+            ? `<img src="${student.portrait}" alt="${getStudentName(student)}" style="
                 width:80px; height:80px;
                 border-radius:4px; object-fit:cover; object-position:top;
                 border:2px solid var(--game-panel-border);
                 box-shadow:0 4px 16px rgba(0,0,0,0.5);
               "/>`
-            : renderInitialIcon(student.name, student.personality, 80, 'rgba(255,255,255,0.3)')
+            : renderInitialIcon(getStudentName(student), student.personality, 80, 'rgba(255,255,255,0.3)')
           }
         </div>
         <!-- 右側: 情報 + 吹き出し -->
         <div style="flex:1; min-width:0; color:#fff;">
           <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
-            <span style="font-size:0.95em; font-weight:bold;">${student.name}</span>
+            <span style="font-size:0.95em; font-weight:bold;">${getStudentName(student)}</span>
             <span style="font-size:0.72em; opacity:0.6;">${student.className}</span>
             ${(() => {
               const topFaction = ALL_FACTION_IDS.reduce((a, b) => student.support[a] >= student.support[b] ? a : b);
@@ -175,7 +177,7 @@ export class BattleScreen implements Screen {
               return fi ? `<span style="
                 font-size:0.65em; background:${fi.color}; color:#fff;
                 border-radius:3px; padding:1px 6px; font-weight:bold;
-              ">${FACTION_LABELS[topFaction]}派</span>` : '';
+              ">${FACTION_LABELS[topFaction]}${t('battle.factionSuffix')}</span>` : '';
             })()}
           </div>
           <div style="display:flex; align-items:center; gap:6px; margin-top:3px; flex-wrap:wrap;">
@@ -269,11 +271,11 @@ export class BattleScreen implements Screen {
           display:flex; justify-content:space-between;
           font-size:0.72em; color:rgba(255,255,255,0.6); margin-bottom:4px;
         ">
-          <span>${battle.isDefending ? '成功' : '失敗'}</span>
+          <span>${battle.isDefending ? t('battle.barLabelSuccess') : t('battle.barLabelFailure')}</span>
           <span style="font-size:1.1em; font-weight:bold; color:${battle.barPosition >= 0 ? '#7EC8F0' : '#F07070'};">
             ${battle.barPosition > 0 ? '+' : ''}${battle.barPosition}
           </span>
-          <span>${battle.isDefending ? '失敗' : '成功'}</span>
+          <span>${battle.isDefending ? t('battle.barLabelFailure') : t('battle.barLabelSuccess')}</span>
         </div>
         <div class="game-bar" style="
           height:16px; position:relative;
@@ -336,43 +338,43 @@ export class BattleScreen implements Screen {
     const isTimeout = result === 'timeout';
 
     let emoji = '💧';
-    let title = battle.isDefending ? '防衛失敗...' : '説得失敗...';
+    let title = battle.isDefending ? t('battle.resultDefendLose') : t('battle.resultLose');
     let color = '#F07070';
     let message = battle.isDefending
-      ? `${battle.student.name}の主張に押されてしまった`
-      : `${battle.student.name}は納得しませんでした`;
+      ? t('battle.msgDefendLose', { name: getStudentName(battle.student) })
+      : t('battle.msgLose', { name: getStudentName(battle.student) });
     let btnColor = '#555';
 
     if (isWin) {
       emoji = '✨';
-      title = battle.isDefending ? '防衛成功！' : '説得成功！';
+      title = battle.isDefending ? t('battle.resultDefendWin') : t('battle.resultWin');
       color = '#7EC8F0';
       message = battle.isDefending
-        ? `${battle.student.name}の説得を跳ね返した！`
-        : `${battle.student.name}はあなたの派閥を支持します！`;
+        ? t('battle.msgDefendWin', { name: getStudentName(battle.student) })
+        : t('battle.msgWin', { name: getStudentName(battle.student) });
       btnColor = '#2E5FAC';
     } else if (isTimeout) {
       emoji = '⏰';
       // 防御時はバーの意味が反転（バー>0は劣勢、バー<0は優勢）
       const effectiveBar = battle.isDefending ? -battle.barPosition : battle.barPosition;
       if (effectiveBar > 0) {
-        title = '時間切れ（やや優勢）';
+        title = t('battle.resultTimeoutAdvantage');
         color = '#B0D8F0';
         message = battle.isDefending
-          ? `${battle.student.name}の説得をなんとかかわした`
-          : `${battle.student.name}の心は少し動いたようです`;
+          ? t('battle.msgTimeoutAdvantageDefend', { name: getStudentName(battle.student) })
+          : t('battle.msgTimeoutAdvantageAttack', { name: getStudentName(battle.student) });
         btnColor = '#4A6A9A';
       } else if (effectiveBar < 0) {
-        title = '時間切れ（やや劣勢）';
+        title = t('battle.resultTimeoutDisadvantage');
         color = '#F0B0A0';
         message = battle.isDefending
-          ? `${battle.student.name}の主張に少し押されてしまった`
-          : `相手の主張に少し押されてしまいました`;
+          ? t('battle.msgTimeoutDisadvantageDefend', { name: getStudentName(battle.student) })
+          : t('battle.msgTimeoutDisadvantageAttack');
         btnColor = '#8A5A50';
       } else {
-        title = '時間切れ（引き分け）';
+        title = t('battle.resultTimeoutDraw');
         color = '#C0C0C0';
-        message = `議論は平行線で終わりました`;
+        message = t('battle.msgTimeoutDraw');
         btnColor = '#666';
       }
     }
@@ -397,23 +399,23 @@ export class BattleScreen implements Screen {
           background:linear-gradient(180deg,${btnColor},${btnColor}aa);
           border-color:${btnColor};
           font-size:1em; font-family:var(--game-font);
-        ">日常へ戻る</button>
+        ">${t('battle.returnToDaily')}</button>
       </div>
     `;
   }
 
   private getAttitudeLabel(attitude: PlayerAttitude): { text: string; color: string } {
     const map: Record<PlayerAttitude, { text: string; color: string }> = {
-      friendly: { text: '柔らかく', color: '#27AE60' },
-      normal: { text: '普通に', color: '#4A90D9' },
-      strong: { text: '情熱的に', color: '#E07820' },
+      friendly: { text: t('battle.attitudeFriendly'), color: '#27AE60' },
+      normal: { text: t('battle.attitudeNormal'), color: '#4A90D9' },
+      strong: { text: t('battle.attitudeStrong'), color: '#E07820' },
     };
     return map[attitude];
   }
 
   private getTopicLabel(topic: Topic): string {
     const factionLabels: Record<string, string> = {
-      conservative: '保守派の政策', progressive: '革新派の政策', sports: '体育派の政策',
+      conservative: t('battle.topicConservative'), progressive: t('battle.topicProgressive'), sports: t('battle.topicSports'),
     };
     return factionLabels[topic] ?? HOBBY_LABELS[topic] ?? topic;
   }
@@ -442,12 +444,12 @@ export class BattleScreen implements Screen {
     if (battle.phase === 'select_attitude') {
       return `
         <div style="color:#f0d060; font-size:0.85em; margin-bottom:8px; text-align:center; font-weight:bold;">
-          【1】態度を選択
+          ${t('battle.phaseAttitude')}
         </div>
         <div style="display:flex; flex-direction:column; gap:8px;">
-          ${this.renderAttitudeBtn('friendly', '柔らかく', '⚡3 / 効果×0.7', '#27AE60')}
-          ${this.renderAttitudeBtn('normal', '普通に', '⚡5 / 効果×1.0', '#4A90D9')}
-          ${this.renderAttitudeBtn('strong', '情熱的に', '⚡8 / 効果×1.2', '#E07820')}
+          ${this.renderAttitudeBtn('friendly', t('battle.attitudeFriendly'), t('battle.attitudeFriendlySub'), '#27AE60')}
+          ${this.renderAttitudeBtn('normal', t('battle.attitudeNormal'), t('battle.attitudeNormalSub'), '#4A90D9')}
+          ${this.renderAttitudeBtn('strong', t('battle.attitudeStrong'), t('battle.attitudeStrongSub'), '#E07820')}
         </div>
       `;
     }
@@ -456,18 +458,18 @@ export class BattleScreen implements Screen {
       const faction = this.state.faction!;
       const factionTopicsHtml = (
         [
-          { id: 'conservative', label: '保守派の政策' },
-          { id: 'progressive', label: '革新派の政策' },
-          { id: 'sports', label: '体育派の政策' },
+          { id: 'conservative', label: t('battle.topicConservative') },
+          { id: 'progressive', label: t('battle.topicProgressive') },
+          { id: 'sports', label: t('battle.topicSports') },
         ] as { id: FactionId; label: string }[]
-      ).map(t =>
-        `<button data-topic="${t.id}" class="game-btn" style="
+      ).map(ft =>
+        `<button data-topic="${ft.id}" class="game-btn" style="
           padding:8px 12px; text-align:left; width:100%;
-          background:${t.id === faction ? `linear-gradient(180deg,${candidateColor},${candidateColor}aa)` : 'linear-gradient(180deg,rgba(40,50,80,0.8),rgba(20,30,50,0.8))'};
-          border-color:${t.id === faction ? candidateColor : 'var(--game-panel-border)'};
+          background:${ft.id === faction ? `linear-gradient(180deg,${candidateColor},${candidateColor}aa)` : 'linear-gradient(180deg,rgba(40,50,80,0.8),rgba(20,30,50,0.8))'};
+          border-color:${ft.id === faction ? candidateColor : 'var(--game-panel-border)'};
           font-size:0.82em; font-family:var(--game-font);
         ">
-          ${t.id === faction ? '★ ' : ''}${t.label}
+          ${ft.id === faction ? '★ ' : ''}${ft.label}
         </button>`
       ).join('');
 
@@ -498,14 +500,14 @@ export class BattleScreen implements Screen {
       return `
         ${attLabel ? this.renderBreadcrumb([{ text: attLabel.text, color: attLabel.color }]) : ''}
         <div style="color:#f0d060; font-size:0.85em; margin-bottom:8px; text-align:center; font-weight:bold;">
-          【2】話題を選択
+          ${t('battle.phaseTopic')}
         </div>
         <div style="margin-bottom:8px;">
-          <div style="font-size:0.75em; color:rgba(255,255,255,0.5); margin-bottom:4px;">派閥の話題 <span style="color:#7EC8F0;">（バーが大きく動く）</span></div>
+          <div style="font-size:0.75em; color:rgba(255,255,255,0.5); margin-bottom:4px;">${t('battle.factionTopicHeader')} <span style="color:#7EC8F0;">${t('battle.factionTopicHint')}</span></div>
           <div style="display:flex; flex-direction:column; gap:4px;">${factionTopicsHtml}</div>
         </div>
         <div style="margin-bottom:12px;">
-          <div style="font-size:0.75em; color:rgba(255,255,255,0.5); margin-bottom:4px;">雑談（趣味）<span style="color:#F0D070;">（相手の機嫌が変化）</span></div>
+          <div style="font-size:0.75em; color:rgba(255,255,255,0.5); margin-bottom:4px;">${t('battle.hobbyTopicHeader')}<span style="color:#F0D070;">${t('battle.hobbyTopicHint')}</span></div>
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:4px;">${hobbyTopicsHtml}</div>
         </div>
         <button id="cancel-btn" class="game-btn" style="
@@ -513,7 +515,7 @@ export class BattleScreen implements Screen {
           background:linear-gradient(180deg,rgba(60,70,100,0.6),rgba(30,40,60,0.6));
           border-color:var(--game-panel-border);
           color:var(--game-text-dim); font-size:0.85em; font-family:var(--game-font);
-        ">← 態度選択に戻る</button>
+        ">${t('battle.cancelToAttitude')}</button>
       `;
     }
 
@@ -526,32 +528,33 @@ export class BattleScreen implements Screen {
       return `
         ${breadcrumbParts.length > 0 ? this.renderBreadcrumb(breadcrumbParts) : ''}
         <div style="color:#f0d060; font-size:0.85em; margin-bottom:8px; text-align:center; font-weight:bold;">
-          【3】立場を選択
+          ${t('battle.phaseStance')}
         </div>
         <div style="display:flex; gap:10px; margin-bottom:12px;">
           <button data-stance="positive" class="game-btn game-btn-success" style="
             flex:1; padding:16px;
             font-size:1em; font-family:var(--game-font);
-          ">肯定</button>
+          ">${t('battle.stancePositive')}</button>
           <button data-stance="negative" class="game-btn game-btn-danger" style="
             flex:1; padding:16px;
             font-size:1em; font-family:var(--game-font);
-          ">否定</button>
+          ">${t('battle.stanceNegative')}</button>
         </div>
         <button id="cancel-btn" class="game-btn" style="
           width:100%; padding:10px;
           background:linear-gradient(180deg,rgba(60,70,100,0.6),rgba(30,40,60,0.6));
           border-color:var(--game-panel-border);
           color:var(--game-text-dim); font-size:0.85em; font-family:var(--game-font);
-        ">← 話題選択に戻る</button>
+        ">${t('battle.cancelToTopic')}</button>
       `;
     }
 
     if (battle.phase === 'resolving') {
       const attLabel = battle.selectedAttitude ? this.getAttitudeLabel(battle.selectedAttitude) : null;
       const topLabel = battle.selectedTopic ? this.getTopicLabel(battle.selectedTopic) : null;
-      const stanceLabel = lastLog?.text.includes('肯定') ? '肯定' : '否定';
-      const stanceColor = stanceLabel === '肯定' ? '#7EC850' : '#F07070';
+      const isPositive = battle.selectedStance === 'positive';
+      const stanceLabel = isPositive ? t('battle.stancePositive') : t('battle.stanceNegative');
+      const stanceColor = isPositive ? '#7EC850' : '#F07070';
 
       return `
         <div style="text-align:center; padding:16px;">
@@ -571,7 +574,7 @@ export class BattleScreen implements Screen {
             ${lastLog ? lastLog.text : '...'}
           </div>
           <div style="margin-top:12px; font-size:0.8em; color:rgba(255,255,255,0.4);">
-            相手の反応を待っています...
+            ${t('battle.waitingReaction')}
           </div>
         </div>
       `;

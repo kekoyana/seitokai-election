@@ -1,5 +1,6 @@
 import { FACTION_INFO } from './factions';
 import { PERSONALITY_ICON_COLORS } from './labels';
+import { t } from '../i18n';
 
 // 思想の100%横積み上げバーグラフ
 export function renderSupportBar(
@@ -27,9 +28,9 @@ export function renderSupportBar(
     ">${showLabel && pct >= 12 ? `${label}${pct}` : ''}</div>` : '';
 
   return `<div style="display:flex; width:100%; border-radius:4px; overflow:hidden; box-shadow:inset 0 1px 2px rgba(0,0,0,0.1);">
-    ${seg(cPct, cColor, '保', 'border-radius:4px 0 0 4px;')}
-    ${seg(pPct, pColor, '革', '')}
-    ${seg(sPct, sColor, '体', 'border-radius:0 4px 4px 0;')}
+    ${seg(cPct, cColor, t('render.factionShortConservative'), 'border-radius:4px 0 0 4px;')}
+    ${seg(pPct, pColor, t('render.factionShortProgressive'), '')}
+    ${seg(sPct, sColor, t('render.factionShortSports'), 'border-radius:0 4px 4px 0;')}
   </div>`;
 }
 

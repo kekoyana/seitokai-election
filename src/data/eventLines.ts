@@ -1,8 +1,11 @@
 /**
  * イベント会話セリフ（落とし物・おつかい）
- * 性格×性別で口調が変わる
+ * 日本語: 性格×性別で口調が変わる
+ * 英語: i18n の汎用セリフにフォールバック
  */
 import type { Personality, Gender } from '../types';
+import { getLang } from '../i18n';
+import { t } from '../i18n';
 
 function pick<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
@@ -328,38 +331,46 @@ const PLAYER_ACCEPT_ERRAND: Record<Gender, string[]> = {
 // ============================
 
 export function getLostItemThanks(personality: Personality, gender: Gender): string {
+  if (getLang() !== 'ja') return t('game.deliverLostOwnerLine');
   return pick(LOST_ITEM_THANKS[personality]?.[gender] ?? LOST_ITEM_THANKS.flexible.male);
 }
 
 export function getErrandThanks(personality: Personality, gender: Gender): string {
+  if (getLang() !== 'ja') return t('game.deliverErrandToLine1');
   return pick(ERRAND_THANKS[personality]?.[gender] ?? ERRAND_THANKS.flexible.male);
 }
 
 export function getErrandRelayThanks(personality: Personality, gender: Gender, fromNickname: string): string {
+  if (getLang() !== 'ja') return t('game.deliverErrandToLine2', { from: fromNickname });
   const line = pick(ERRAND_RELAY_THANKS[personality]?.[gender] ?? ERRAND_RELAY_THANKS.flexible.male);
   return line.replace('{from}', fromNickname);
 }
 
 export function getErrandRequest(personality: Personality, gender: Gender, targetNickname: string, itemName: string): string {
+  if (getLang() !== 'ja') return t('game.errandLine1Letter', { nickname: targetNickname, item: itemName });
   const line = pick(ERRAND_REQUEST[personality]?.[gender] ?? ERRAND_REQUEST.flexible.male);
   return line.replace('{target}', targetNickname).replace('{item}', itemName);
 }
 
 export function getErrandFollowUp(personality: Personality, gender: Gender, targetNickname: string): string {
+  if (getLang() !== 'ja') return t('game.errandLine2', { nickname: targetNickname });
   const line = pick(ERRAND_FOLLOW_UP[personality]?.[gender] ?? ERRAND_FOLLOW_UP.flexible.male);
   return line.replace('{target}', targetNickname);
 }
 
 export function getPlayerDeliverLost(gender: Gender, ownerNickname: string, itemName: string): string {
+  if (getLang() !== 'ja') return t('game.deliverLostPlayerLine', { nickname: ownerNickname, item: itemName });
   const line = pick(PLAYER_DELIVER_LOST[gender]);
   return line.replace('{owner}', ownerNickname).replace('{item}', itemName);
 }
 
 export function getPlayerDeliverErrand(gender: Gender, fromNickname: string, itemName: string): string {
+  if (getLang() !== 'ja') return t('game.deliverErrandPlayerLine', { from: fromNickname, item: itemName });
   const line = pick(PLAYER_DELIVER_ERRAND[gender]);
   return line.replace('{from}', fromNickname).replace('{item}', itemName);
 }
 
 export function getPlayerAcceptErrand(gender: Gender): string {
+  if (getLang() !== 'ja') return t('game.errandPlayerAccept');
   return pick(PLAYER_ACCEPT_ERRAND[gender]);
 }

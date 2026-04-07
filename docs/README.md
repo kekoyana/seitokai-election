@@ -24,6 +24,9 @@
 - `exploration-events.md`: 探索イベント
 - `student-params.md`: 生徒パラメータ、属性、好み
 
+### 実装ガイド
+- `i18n.md`: ローカライズ（多言語対応）実装ガイド
+
 ### 設定資料
 - `characters.md`: キャラクター設定、画像プロンプト
 - `compatibility-analysis.md`: 相性分析

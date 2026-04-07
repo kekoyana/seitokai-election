@@ -1,5 +1,6 @@
 import type { FactionId } from '../types';
-import { FACTION_INFO, FACTION_LABELS } from '../data';
+import { FACTION_INFO } from '../data';
+import { t } from '../i18n';
 import dailyBg from '../../assets/backgrounds/daily.jpg';
 import type { Screen } from './Screen';
 
@@ -55,9 +56,9 @@ export class FactionSelectScreen implements Screen {
           font-size:1.3em; margin:0 0 4px; font-weight:900;
           color:#e0e8f0; text-shadow:0 2px 4px rgba(0,0,0,0.5);
           letter-spacing:0.1em;
-        ">支持する派閥を選んでください</h1>
+        ">${t('factionSelect.title')}</h1>
         <p style="font-size:0.82em; color:rgba(255,255,255,0.4); margin:0;">
-          選んだ派閥の生徒の中からキャラクターを選びます
+          ${t('factionSelect.subtitle')}
         </p>
       </div>
       <div style="display:flex; flex-direction:column; gap:12px; width:100%; align-items:center;">

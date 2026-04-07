@@ -1,4 +1,6 @@
 import type { Personality, Attribute } from './types';
+import { getLang } from './i18n';
+import { EN_CATCHPHRASE_MAP } from './i18n/en-catchphrase';
 
 const CATCHPHRASE_MAP: Record<string, Record<string, string>> = {
   passionate: {
@@ -39,9 +41,10 @@ const CATCHPHRASE_MAP: Record<string, Record<string, string>> = {
 };
 
 export function getCatchphrase(personality: Personality, attributes: Attribute[]): string {
-  const map = CATCHPHRASE_MAP[personality] ?? {};
+  const source = getLang() === 'en' ? EN_CATCHPHRASE_MAP : CATCHPHRASE_MAP;
+  const map = source[personality] ?? {};
   for (const attr of attributes) {
     if (map[attr]) return map[attr];
   }
-  return map['_default'] ?? '…';
+  return map['_default'] ?? '...';
 }

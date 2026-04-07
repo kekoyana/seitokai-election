@@ -45,6 +45,8 @@ export function electActivists(
 // re-export for backward compatibility
 export { FACTION_LABELS } from '../data';
 import { FACTION_LABELS, ALL_FACTION_IDS } from '../data';
+import { t } from '../i18n';
+import { getStudentName } from '../data/students';
 
 export interface SingleActivistResult {
   updatedStudents: Student[];
@@ -112,7 +114,7 @@ export function processOneActivist(
     });
     return {
       updatedStudents,
-      log: `${activist.name}が${target.name}を説得した（${FACTION_LABELS[activistFaction]}+${shiftAmount}）`,
+      log: t('activist.successLog', { activist: getStudentName(activist), target: getStudentName(target), faction: FACTION_LABELS[activistFaction], amount: shiftAmount }),
       playerTargetedBy: null,
       playerTargetedFaction: null,
     };
@@ -120,7 +122,7 @@ export function processOneActivist(
 
   return {
     updatedStudents: students,
-    log: `${activist.name}が${target.name}の説得に失敗した`,
+    log: t('activist.failureLog', { activist: getStudentName(activist), target: getStudentName(target) }),
     playerTargetedBy: null,
     playerTargetedFaction: null,
   };

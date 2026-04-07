@@ -3,6 +3,7 @@ import {
   LOCATIONS, FLOOR_LABELS, MOVE_COST,
   getFloorFromLocation, getFloorMoveCost, getStudentLocation, MAX_TIME, dayToDate,
 } from '../../data';
+import { t } from '../../i18n';
 
 export interface MapContext {
   state: GameState;
@@ -92,7 +93,7 @@ function renderBuildingEntrance(ctx: MapContext, currentFloor: Floor): string {
       text-shadow:0 1px 2px rgba(0,0,0,0.4);
       box-shadow:0 2px 6px rgba(0,0,0,0.2);
     ">
-      <div>🏫 校舎</div>
+      <div>${t('daily.schoolBuilding')}</div>
       <div style="font-size:0.85em; opacity:0.9;">⚡${cost}</div>
     </button>
   `;
@@ -111,7 +112,7 @@ function renderGroundExit(ctx: MapContext, currentFloor: Floor): string {
       font-family:inherit; text-align:center;
       text-shadow:0 1px 2px rgba(0,0,0,0.4);
     ">
-      🌳外へ ⚡${cost}
+      ${t('daily.goOutside', { cost })}
     </button>
   `;
 }
@@ -126,7 +127,7 @@ function renderCorridor(): string {
     <div style="
       position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
       font-size:0.55em; color:#8890a0; letter-spacing:4px; white-space:nowrap;
-    ">廊　下</div>
+    ">${t('daily.corridorLabel')}</div>
   </div>`;
 }
 
@@ -145,7 +146,7 @@ function renderBuildingWrap(floorLabel: string, content: string): string {
       ${content}
     </div>
     <div style="font-size:0.58em; color:#aaa; text-align:center; margin-top:4px;">
-      部屋をタップして入室 ⚡${MOVE_COST.ENTER_ROOM}
+      ${t('daily.tapToEnter', { cost: MOVE_COST.ENTER_ROOM })}
     </div>
   `;
 }
@@ -167,7 +168,7 @@ function renderRooftopStairsBtn(ctx: MapContext, canEnter: boolean): string {
       box-shadow:inset 0 0 4px rgba(0,0,0,0.2), 0 1px 3px rgba(0,0,0,0.2);
       position:relative;
     ">
-      ▲屋上<br>⚡${MOVE_COST.ENTER_ROOM}
+      ${t('daily.rooftop')}<br>⚡${MOVE_COST.ENTER_ROOM}
       ${hasStudents ? `<div style="
         position:absolute; top:-7px; right:-7px;
         background:#E74C3C; color:#fff;
@@ -201,7 +202,7 @@ function renderFloor3Plan(ctx: MapContext, canEnter: boolean): string {
       </div>
     </div>
   `;
-  return renderBuildingWrap('🏫 3階', content);
+  return renderBuildingWrap(t('daily.floor3'), content);
 }
 
 function renderFloor2Plan(ctx: MapContext, canEnter: boolean): string {
@@ -227,7 +228,7 @@ function renderFloor2Plan(ctx: MapContext, canEnter: boolean): string {
       </div>
     </div>
   `;
-  return renderBuildingWrap('🏫 2階', content);
+  return renderBuildingWrap(t('daily.floor2'), content);
 }
 
 function renderFloor1Plan(ctx: MapContext, canEnter: boolean): string {
@@ -254,7 +255,7 @@ function renderFloor1Plan(ctx: MapContext, canEnter: boolean): string {
       </div>
     </div>
   `;
-  return renderBuildingWrap('🏫 1階', content);
+  return renderBuildingWrap(t('daily.floor1'), content);
 }
 
 function renderGroundPlan(ctx: MapContext, canEnter: boolean): string {
@@ -270,7 +271,7 @@ function renderGroundPlan(ctx: MapContext, canEnter: boolean): string {
 
   return `
     <div style="font-size:0.78em; font-weight:bold; color:#3a6830; margin-bottom:4px;">
-      🌳 グラウンド
+      ${t('daily.ground')}
     </div>
     <div style="
       background:linear-gradient(180deg, #d0e8b8 0%, #b8d8a0 50%, #a8c890 100%);
@@ -335,7 +336,7 @@ function renderGroundPlan(ctx: MapContext, canEnter: boolean): string {
       ${treeRow(8)}
     </div>
     <div style="font-size:0.58em; color:#aaa; text-align:center; margin-top:4px;">
-      施設をタップして入場 ⚡${MOVE_COST.ENTER_ROOM}
+      ${t('daily.tapToEnterGround', { cost: MOVE_COST.ENTER_ROOM })}
     </div>
   `;
 }
@@ -377,15 +378,15 @@ export function renderCorridorView(ctx: MapContext, renderEndDayPanel: (isOutOfS
             font-size:0.85em;
             text-align:left; font-family:var(--game-font);
           ">
-            <div style="font-weight:bold;">情報</div>
-            <div style="font-size:0.75em; opacity:0.85;">クラス・部活</div>
+            <div style="font-weight:bold;">${t('daily.info')}</div>
+            <div style="font-size:0.75em; opacity:0.85;">${t('daily.infoClassClub')}</div>
           </button>
           <button id="next-day-btn-always" class="game-btn game-btn-warning" style="
             padding:10px 12px;
             font-size:0.85em;
             text-align:left; font-family:var(--game-font);
           ">
-            <div style="font-weight:bold;">翌日へ</div>
+            <div style="font-weight:bold;">${t('daily.nextDay')}</div>
             <div style="font-size:0.75em; opacity:0.85;">${dayToDate(ctx.state.day)}</div>
           </button>
         </div>

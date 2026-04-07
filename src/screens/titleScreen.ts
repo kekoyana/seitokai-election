@@ -2,6 +2,7 @@ import titleBg from '../../assets/backgrounds/title.jpg';
 import { bgm } from '../bgm';
 import { se } from '../se';
 import { hasSaveData } from '../saveLoad';
+import { t, getLang, setLang } from '../i18n';
 import type { Screen } from './Screen';
 
 export interface TitleCallbacks {
@@ -33,7 +34,16 @@ export class TitleScreen implements Screen {
       overflow-y: auto; padding: 20px; box-sizing: border-box;
     `;
 
+    const otherLang = getLang() === 'ja' ? 'EN' : 'JA';
+
     this.container.innerHTML = `
+      <button id="lang-toggle" style="
+        position:absolute; top:12px; left:12px; z-index:10;
+        cursor:pointer; padding:4px 10px; font-size:0.85em;
+        background:rgba(0,0,0,0.5); color:#fff; border:1px solid rgba(255,255,255,0.4);
+        border-radius:4px; font-weight:bold; letter-spacing:0.05em;
+      ">${otherLang}</button>
+
       <span id="bgm-icon" style="
         position:absolute; top:12px; right:12px; z-index:10;
         cursor:pointer; padding:6px; font-size:1.2em; opacity:0.7;
@@ -49,24 +59,24 @@ export class TitleScreen implements Screen {
             Academy Tempest
           </div>
           <div style="font-size:0.95em; color:var(--game-heading-accent); letter-spacing:0.15em;">
-            〜学園の風〜
+            ${t('title.subtitle')}
           </div>
         </div>
 
         <div style="display: flex; flex-direction: column; align-items: center; gap: 4px; margin-top: 24px;">
           ${hasSaveData() ? `
           <button id="continue-btn" class="game-btn-etrian">
-            つづきから
+            ${t('title.continue')}
           </button>
           ` : ''}
           <button id="start-btn" class="game-btn-etrian">
-            ${hasSaveData() ? 'はじめから' : 'ゲームスタート'}
+            ${hasSaveData() ? t('title.newGame') : t('title.gameStart')}
           </button>
           <button id="howto-btn" class="game-btn-etrian-sub">
-            このゲームの遊び方
+            ${t('title.howToPlay')}
           </button>
           <button id="persuade-tutorial-btn" class="game-btn-etrian-sub">
-            説得バトルの遊び方
+            ${t('title.persuadeTutorial')}
           </button>
         </div>
       </div>
@@ -82,20 +92,18 @@ export class TitleScreen implements Screen {
           animation: fadeIn 0.2s ease;
         ">
           <div class="game-panel" style="width:340px; max-width:90vw; padding:24px; text-align:left;">
-            <div style="font-weight:bold; color:var(--game-heading); margin-bottom:12px; font-size:1.1em; text-align:center;">このゲームの遊び方</div>
+            <div style="font-weight:bold; color:var(--game-heading); margin-bottom:12px; font-size:1.1em; text-align:center;">${t('title.howToPlayTitle')}</div>
             <p style="color:var(--game-text-dim); font-size:0.85em; line-height:1.7; margin-bottom:12px;">
-              あなたは学園の1生徒。<br>
-              支持する派閥の勝利を目指し、<br>
-              30日間で仲間を増やしていこう。
+              ${t('title.howToPlayDesc')}
             </p>
             <div style="font-size:0.85em; line-height:1.8; color:var(--game-text);">
-              <div>・生徒を1人選んで活動を開始</div>
-              <div>・体力の続く限り移動・会話・説得を繰り返す</div>
-              <div>・説得バトルでターン制の綱引きに勝てば支持を獲得</div>
-              <div>・30日後、組織の多数票を獲得した派閥が勝利！</div>
+              <div>${t('title.howToPlayStep1')}</div>
+              <div>${t('title.howToPlayStep2')}</div>
+              <div>${t('title.howToPlayStep3')}</div>
+              <div>${t('title.howToPlayStep4')}</div>
             </div>
             <div style="text-align:center; margin-top:16px;">
-              <button id="close-howto" class="game-btn game-btn-primary" style="padding:10px 32px;">閉じる</button>
+              <button id="close-howto" class="game-btn game-btn-primary" style="padding:10px 32px;">${t('title.close')}</button>
             </div>
           </div>
         </div>
@@ -118,13 +126,13 @@ export class TitleScreen implements Screen {
           animation: fadeIn 0.2s ease;
         ">
           <div class="game-panel" style="width:280px; padding:24px; text-align:center;">
-            <div style="font-weight:bold; margin-bottom:12px; color:var(--game-text);">確認</div>
+            <div style="font-weight:bold; margin-bottom:12px; color:var(--game-text);">${t('title.confirm')}</div>
             <p style="color:var(--game-text); font-size:0.9em; margin-bottom:20px; line-height:1.6;">
-              セーブデータを削除して<br>最初から始めますか？
+              ${t('title.deleteConfirm')}
             </p>
             <div style="display:flex; gap:12px; justify-content:center;">
-              <button id="confirm-newgame-cancel" class="game-btn game-btn-primary" style="padding:10px 24px;">やめる</button>
-              <button id="confirm-newgame-ok" class="game-btn game-btn-danger" style="padding:10px 24px;">はじめから</button>
+              <button id="confirm-newgame-cancel" class="game-btn game-btn-primary" style="padding:10px 24px;">${t('title.cancel')}</button>
+              <button id="confirm-newgame-ok" class="game-btn game-btn-danger" style="padding:10px 24px;">${t('title.newGame')}</button>
             </div>
           </div>
         </div>
@@ -153,8 +161,8 @@ export class TitleScreen implements Screen {
           animation: fadeIn 0.2s ease;
         ">
           <div class="game-panel" style="width:260px; padding:20px; text-align:center;">
-            <div style="font-weight:bold; margin-bottom:15px; color:var(--game-text);">音量設定</div>
-            <div style="font-size:0.85em; color:var(--game-text-dim); margin-bottom:6px; text-align:left;">BGM</div>
+            <div style="font-weight:bold; margin-bottom:15px; color:var(--game-text);">${t('title.volumeSettings')}</div>
+            <div style="font-size:0.85em; color:var(--game-text-dim); margin-bottom:6px; text-align:left;">${t('title.bgm')}</div>
             <div style="display:flex; align-items:center; gap:10px; margin-bottom:14px;">
               <span id="bgm-dialog-icon" style="font-size:1.2em;">${bgm.volume > 0 ? '🔊' : '🔇'}</span>
               <input id="bgm-volume-dialog" type="range" min="0" max="100" value="${bgmPct}" style="
@@ -163,7 +171,7 @@ export class TitleScreen implements Screen {
               "/>
               <span id="bgm-volume-label" style="font-size:0.9em; width:35px; text-align:right;">${bgmPct}%</span>
             </div>
-            <div style="font-size:0.85em; color:var(--game-text-dim); margin-bottom:6px; text-align:left;">効果音</div>
+            <div style="font-size:0.85em; color:var(--game-text-dim); margin-bottom:6px; text-align:left;">${t('title.sfx')}</div>
             <div style="display:flex; align-items:center; gap:10px; margin-bottom:20px;">
               <span id="se-dialog-icon" style="font-size:1.2em;">${se.volume > 0 ? '🔔' : '🔕'}</span>
               <input id="se-volume-dialog" type="range" min="0" max="100" value="${sePct}" style="
@@ -172,12 +180,18 @@ export class TitleScreen implements Screen {
               "/>
               <span id="se-volume-label" style="font-size:0.9em; width:35px; text-align:right;">${sePct}%</span>
             </div>
-            <button id="close-volume-dialog" class="game-btn game-btn-primary" style="padding:8px 24px;">閉じる</button>
+            <button id="close-volume-dialog" class="game-btn game-btn-primary" style="padding:8px 24px;">${t('title.close')}</button>
           </div>
         </div>
       `;
       this.container.insertAdjacentHTML('beforeend', volumeDialogHtml);
     }
+
+    // 言語切り替えボタン
+    this.container.querySelector('#lang-toggle')?.addEventListener('click', () => {
+      setLang(getLang() === 'ja' ? 'en' : 'ja');
+      this.render();
+    });
 
     const continueBtn = this.container.querySelector<HTMLButtonElement>('#continue-btn');
     if (continueBtn) {

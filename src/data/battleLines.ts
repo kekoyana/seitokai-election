@@ -3,6 +3,8 @@
  * 性格×状況×性別でバリエーションを持たせる
  */
 import type { Personality, EnemyMood, PlayerAttitude, Stance, Gender } from '../types';
+import { getLang } from '../i18n';
+import { EN_COUNTER_LINES, EN_PLAYER_BATTLE_LINES } from '../i18n/en-dialogue';
 
 function pick<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
@@ -246,8 +248,9 @@ const COUNTER_LINES: Record<Personality, GenderedLines> = {
 /** 相手の反撃セリフを返す */
 export function getCounterLine(personality: Personality, mood: EnemyMood, gender: Gender): string {
   const group = moodGroup(mood);
-  const lines = COUNTER_LINES[personality]?.[group]?.[gender];
-  return lines ? pick(lines) : '…';
+  const data = getLang() === 'en' ? EN_COUNTER_LINES : COUNTER_LINES;
+  const lines = data[personality]?.[group]?.[gender];
+  return lines ? pick(lines) : '...';
 }
 
 // ============================================================
@@ -449,6 +452,7 @@ const PLAYER_LINES: Record<PlayerAttitude, GenderedPlayerLines> = {
 /** プレイヤーの行動セリフを返す */
 export function getPlayerLine(attitude: PlayerAttitude, isFactionTopic: boolean, stance: Stance, gender: Gender): string {
   const category: TopicCategory = isFactionTopic ? 'faction' : 'hobby';
-  const lines = PLAYER_LINES[attitude]?.[category]?.[stance]?.[gender];
-  return lines ? pick(lines) : '…';
+  const data = getLang() === 'en' ? EN_PLAYER_BATTLE_LINES : PLAYER_LINES;
+  const lines = data[attitude]?.[category]?.[stance]?.[gender];
+  return lines ? pick(lines) : '...';
 }

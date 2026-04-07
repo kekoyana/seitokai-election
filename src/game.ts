@@ -31,6 +31,11 @@ import { bgm, BGM_TRACKS } from './bgm';
 import { se } from './se';
 import { saveGame, loadGame, deleteSaveData } from './saveLoad';
 import * as analytics from './analytics';
+import {
+  getLostItemThanks, getErrandThanks, getErrandRelayThanks,
+  getErrandRequest, getErrandFollowUp,
+  getPlayerDeliverLost, getPlayerDeliverErrand, getPlayerAcceptErrand,
+} from './data/eventLines';
 
 function createInitialState(): GameState {
   return {
@@ -553,9 +558,10 @@ export class Game {
     const pc = this.state.playerCharacter;
     const AFFINITY_GAIN = 15;
 
+    const playerGender = pc?.gender ?? 'male';
     const steps: import('./logic/conversationGenerator').ConversationStep[] = [
-      { speaker: 'player', name: pc?.name ?? 'あなた', portrait: pc?.portrait ?? null, text: `「これ、${owner.nickname}の${li.itemName}じゃない？」` },
-      { speaker: 'student', name: owner.name, portrait: owner.portrait, text: `「あっ、探してたの！ わざわざありがとう！」` },
+      { speaker: 'player', name: pc?.name ?? 'あなた', portrait: pc?.portrait ?? null, text: `「${getPlayerDeliverLost(playerGender, owner.nickname, li.itemName)}」` },
+      { speaker: 'student', name: owner.name, portrait: owner.portrait, text: `「${getLostItemThanks(owner.personality, owner.gender)}」` },
     ];
     const result: import('./logic/conversationGenerator').ConversationResult = {
       text: `${owner.name}に${li.itemName}を届けた。`,
@@ -585,10 +591,11 @@ export class Game {
     const pc = this.state.playerCharacter;
     const AFFINITY_GAIN = 8;
 
+    const playerGender = pc?.gender ?? 'male';
     const steps: import('./logic/conversationGenerator').ConversationStep[] = [
-      { speaker: 'player', name: pc?.name ?? 'あなた', portrait: pc?.portrait ?? null, text: `「${from.nickname}から${er.itemName}を預かってきたよ」` },
-      { speaker: 'student', name: to.name, portrait: to.portrait, text: `「わざわざ届けてくれたの？ ありがとう！」` },
-      { speaker: 'student', name: to.name, portrait: to.portrait, text: `「${from.nickname}にもお礼言っておくね」` },
+      { speaker: 'player', name: pc?.name ?? 'あなた', portrait: pc?.portrait ?? null, text: `「${getPlayerDeliverErrand(playerGender, from.nickname, er.itemName)}」` },
+      { speaker: 'student', name: to.name, portrait: to.portrait, text: `「${getErrandThanks(to.personality, to.gender)}」` },
+      { speaker: 'student', name: to.name, portrait: to.portrait, text: `「${getErrandRelayThanks(to.personality, to.gender, from.nickname)}」` },
     ];
     const result: import('./logic/conversationGenerator').ConversationResult = {
       text: `${from.name}の${er.itemName}を${to.name}に届けた。`,
@@ -639,18 +646,12 @@ export class Game {
     const errandItems = ['手紙', 'ノート', '文房具セット', '伝言'];
     const itemName = errandItems[Math.floor(Math.random() * errandItems.length)];
 
-    // おつかい依頼の会話を表示してから確認ダイアログ
-    const errandLines: { text: string; item: string }[] = [
-      { text: `「ねぇ、${target.nickname}に${itemName}を届けてくれない？」`, item: '手紙' },
-      { text: `「${target.nickname}に${itemName}を返しておいてほしいんだけど…」`, item: 'ノート' },
-      { text: `「${target.nickname}の${itemName}、預かってるんだけど届けてくれる？」`, item: '文房具セット' },
-      { text: `「${target.nickname}に伝えてほしいことがあるんだけど…」`, item: '伝言' },
-    ];
-    const line = errandLines.find(l => l.item === itemName) ?? errandLines[0];
+    // おつかい依頼の会話を表示
+    const playerGender = pc?.gender ?? 'male';
     const steps: import('./logic/conversationGenerator').ConversationStep[] = [
-      { speaker: 'student', name: student.name, portrait: student.portrait, text: line.text },
-      { speaker: 'student', name: student.name, portrait: student.portrait, text: `「${target.nickname}、今どこにいるかわかんないんだよね。お願いできる？」` },
-      { speaker: 'player', name: pc?.name ?? 'あなた', portrait: pc?.portrait ?? null, text: '「わかった、届けておくよ。」' },
+      { speaker: 'student', name: student.name, portrait: student.portrait, text: `「${getErrandRequest(student.personality, student.gender, target.nickname, itemName)}」` },
+      { speaker: 'student', name: student.name, portrait: student.portrait, text: `「${getErrandFollowUp(student.personality, student.gender, target.nickname)}」` },
+      { speaker: 'player', name: pc?.name ?? 'あなた', portrait: pc?.portrait ?? null, text: `「${getPlayerAcceptErrand(playerGender)}」` },
     ];
     const result: import('./logic/conversationGenerator').ConversationResult = {
       text: `${student.name}から${target.name}への${itemName}を預かった`,

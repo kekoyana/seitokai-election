@@ -188,7 +188,7 @@ export class TitleScreen implements Screen {
     }
 
     // 言語切り替えボタン
-    this.container.querySelector('#lang-toggle')?.addEventListener('pointerup', () => {
+    this.container.querySelector('#lang-toggle')?.addEventListener('click', () => {
       setLang(getLang() === 'ja' ? 'en' : 'ja');
       this.render();
     });

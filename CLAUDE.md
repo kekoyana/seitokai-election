@@ -44,6 +44,14 @@ src/
     render.ts           # 支持バー・イニシャルアイコンHTML生成
     organizations.ts    # 組織データ（クラス・部活）
     conversationLines.ts # 会話テキストデータ
+    eventLines.ts       # イベントセリフ（落とし物・おつかい、性格×性別対応）
+  i18n/
+    index.ts            # i18nコア（getLang/setLang/t/label）
+    ja.ts / en.ts       # UI文字列辞書（日本語/英語）
+    ja-data.ts / en-data.ts # データラベル辞書
+    en-students.ts      # 英語生徒名・説明
+    en-dialogue.ts      # 英語会話・バトルセリフ
+    en-catchphrase.ts   # 英語キャッチフレーズ
   logic/
     activistLogic.ts     # 活動家（NPC説得）選出・行動ロジック
     organizationLogic.ts # 組織票計算ロジック
@@ -73,6 +81,7 @@ docs/
   design-guide.md       # UIデザインガイド（色・フォント・コンポーネント）
   portrait-config.md    # ComfyUI画像生成設定
   exploration-events.md # 探索イベント仕様（落とし物・情報収集・おつかい）
+  i18n.md               # ローカライズ実装ガイド
   compatibility-analysis.md # 相性の非対称性分析（片思いペア一覧）
 assets/
   portraits/            # キャラクターポートレート画像（Vite importで使用）

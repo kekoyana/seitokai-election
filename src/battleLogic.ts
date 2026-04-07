@@ -60,8 +60,12 @@ function applyPersonalityMoodShift(personality: Personality, delta: number, affi
       if (delta > 0) return delta + 1;
       return delta;
     case 'cunning':
-      // 狡猾: 50%の確率で機嫌変化を無効化
-      return Math.random() < 0.5 ? 0 : delta;
+      // 狡猾: 50%の確率で機嫌変化を半減（最低±1は保証）
+      if (Math.random() < 0.5) {
+        if (delta > 0) return Math.max(1, Math.floor(delta / 2));
+        if (delta < 0) return Math.min(-1, Math.ceil(delta / 2));
+      }
+      return delta;
     case 'cautious':
       // 慎重: プラスの機嫌変化が1段階少ない
       // 好感度20以上なら警戒が解けて補正なし、19以下でも50%の確率で補正なし

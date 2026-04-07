@@ -33,6 +33,11 @@ import { saveGame, loadGame, deleteSaveData } from './saveLoad';
 import * as analytics from './analytics';
 import { t } from './i18n';
 import { getStudentName, getStudentNickname } from './data/students';
+import {
+  getLostItemThanks, getErrandThanks, getErrandRelayThanks,
+  getErrandRequest, getErrandFollowUp,
+  getPlayerDeliverLost, getPlayerDeliverErrand, getPlayerAcceptErrand,
+} from './data/eventLines';
 
 function createInitialState(): GameState {
   return {
@@ -551,9 +556,10 @@ export class Game {
     const pc = this.state.playerCharacter;
     const AFFINITY_GAIN = 15;
 
+    const playerGender = pc?.gender ?? 'male';
     const steps: import('./logic/conversationGenerator').ConversationStep[] = [
-      { speaker: 'player', name: pc?.name ?? t('game.youDefault'), portrait: pc?.portrait ?? null, text: `「${t('game.deliverLostPlayerLine', { nickname: getStudentNickname(owner), item: li.itemName })}」` },
-      { speaker: 'student', name: getStudentName(owner), portrait: owner.portrait, text: `「${t('game.deliverLostOwnerLine')}」` },
+      { speaker: 'player', name: pc?.name ?? t('game.youDefault'), portrait: pc?.portrait ?? null, text: `「${getPlayerDeliverLost(playerGender, getStudentNickname(owner), li.itemName)}」` },
+      { speaker: 'student', name: getStudentName(owner), portrait: owner.portrait, text: `「${getLostItemThanks(owner.personality, owner.gender)}」` },
     ];
     const result: import('./logic/conversationGenerator').ConversationResult = {
       text: t('game.deliverLostResult', { name: getStudentName(owner), item: li.itemName }),
@@ -583,10 +589,11 @@ export class Game {
     const pc = this.state.playerCharacter;
     const AFFINITY_GAIN = 8;
 
+    const playerGender = pc?.gender ?? 'male';
     const steps: import('./logic/conversationGenerator').ConversationStep[] = [
-      { speaker: 'player', name: pc?.name ?? t('game.youDefault'), portrait: pc?.portrait ?? null, text: `「${t('game.deliverErrandPlayerLine', { from: getStudentNickname(from), item: er.itemName })}」` },
-      { speaker: 'student', name: getStudentName(to), portrait: to.portrait, text: `「${t('game.deliverErrandToLine1')}」` },
-      { speaker: 'student', name: getStudentName(to), portrait: to.portrait, text: `「${t('game.deliverErrandToLine2', { from: getStudentNickname(from) })}」` },
+      { speaker: 'player', name: pc?.name ?? t('game.youDefault'), portrait: pc?.portrait ?? null, text: `「${getPlayerDeliverErrand(playerGender, getStudentNickname(from), er.itemName)}」` },
+      { speaker: 'student', name: getStudentName(to), portrait: to.portrait, text: `「${getErrandThanks(to.personality, to.gender)}」` },
+      { speaker: 'student', name: getStudentName(to), portrait: to.portrait, text: `「${getErrandRelayThanks(to.personality, to.gender, getStudentNickname(from))}」` },
     ];
     const result: import('./logic/conversationGenerator').ConversationResult = {
       text: t('game.deliverErrandResult', { from: getStudentName(from), item: er.itemName, to: getStudentName(to) }),
@@ -639,18 +646,11 @@ export class Game {
     const itemName = t(`game.errandItem${errandItemKey}` as const);
 
     // おつかい依頼の会話を表示してから確認ダイアログ
-    const targetNickname = getStudentNickname(target);
-    const errandLineKeys: Record<string, string> = {
-      Letter: 'game.errandLine1Letter',
-      Notebook: 'game.errandLine1Notebook',
-      Stationery: 'game.errandLine1Stationery',
-      Message: 'game.errandLine1Message',
-    };
-    const lineText = `「${t(errandLineKeys[errandItemKey], { nickname: targetNickname, item: itemName })}」`;
+    const playerGender = pc?.gender ?? 'male';
     const steps: import('./logic/conversationGenerator').ConversationStep[] = [
-      { speaker: 'student', name: getStudentName(student), portrait: student.portrait, text: lineText },
-      { speaker: 'student', name: getStudentName(student), portrait: student.portrait, text: `「${t('game.errandLine2', { nickname: targetNickname })}」` },
-      { speaker: 'player', name: pc?.name ?? t('game.youDefault'), portrait: pc?.portrait ?? null, text: `「${t('game.errandPlayerAccept')}」` },
+      { speaker: 'student', name: getStudentName(student), portrait: student.portrait, text: `「${getErrandRequest(student.personality, student.gender, getStudentNickname(target), itemName)}」` },
+      { speaker: 'student', name: getStudentName(student), portrait: student.portrait, text: `「${getErrandFollowUp(student.personality, student.gender, getStudentNickname(target))}」` },
+      { speaker: 'player', name: pc?.name ?? t('game.youDefault'), portrait: pc?.portrait ?? null, text: `「${getPlayerAcceptErrand(playerGender)}」` },
     ];
     const result: import('./logic/conversationGenerator').ConversationResult = {
       text: t('game.errandResult', { from: getStudentName(student), to: getStudentName(target), item: itemName }),

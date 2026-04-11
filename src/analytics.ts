@@ -1,18 +1,31 @@
 /**
- * GA4 カスタムイベント送信
- * gtag() が未定義の環境（ローカル開発等）では何もしない
+ * GA4 Measurement Protocol によるイベント送信
+ * itch.io の iframe 内でも動作する
  */
 
-declare global {
-  interface Window {
-    gtag?: (...args: unknown[]) => void;
+const MEASUREMENT_ID = 'G-NZB9PNXGRJ';
+const API_SECRET = 'XB7iCCNhQ4CI6LCMmXRu5A';
+const ENDPOINT = `https://www.google-analytics.com/mp/collect?measurement_id=${MEASUREMENT_ID}&api_secret=${API_SECRET}`;
+
+function getClientId(): string {
+  const key = 'ga_client_id';
+  let id = localStorage.getItem(key);
+  if (!id) {
+    id = `${Date.now()}.${Math.floor(Math.random() * 1e9)}`;
+    localStorage.setItem(key, id);
   }
+  return id;
 }
 
 function send(eventName: string, params?: Record<string, string | number | boolean>): void {
-  if (typeof window.gtag === 'function') {
-    window.gtag('event', eventName, params);
-  }
+  const body = {
+    client_id: getClientId(),
+    events: [{ name: eventName, params: params ?? {} }],
+  };
+  fetch(ENDPOINT, {
+    method: 'POST',
+    body: JSON.stringify(body),
+  }).catch(() => { /* silently ignore */ });
 }
 
 /** タイトル画面で「はじめから」を押した */

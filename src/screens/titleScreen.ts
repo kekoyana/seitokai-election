@@ -1,4 +1,5 @@
 import titleBg from '../../assets/backgrounds/title.jpg';
+import logoImg from '../../assets/logo.png';
 import { bgm } from '../bgm';
 import { se } from '../se';
 import { hasSaveData } from '../saveLoad';
@@ -50,17 +51,8 @@ export class TitleScreen implements Screen {
       ">${bgm.volume > 0 ? '🔊' : '🔇'}</span>
 
       <div style="text-align:center; max-width:480px; width:100%;">
-        <div class="game-panel" style="
-          padding: 32px 24px;
-          margin-bottom: 24px;
-          text-align: center;
-        ">
-          <div class="game-title" style="font-size:2.2em; font-weight:900; letter-spacing:0.08em; margin-bottom:8px; font-style:italic;">
-            Academy Tempest
-          </div>
-          <div style="font-size:0.95em; color:var(--game-heading-accent); letter-spacing:0.15em;">
-            ${t('title.subtitle')}
-          </div>
+        <div style="margin-bottom: 24px; text-align: center;">
+          <img src="${logoImg}" alt="Academy Tempest" style="width:100%; max-width:480px; height:auto; display:block; margin:0 auto;" />
         </div>
 
         <div style="display: flex; flex-direction: column; align-items: center; gap: 4px; margin-top: 24px;">

@@ -229,7 +229,7 @@ export class Game {
     });
     this.characterScreen = new CharacterSelectScreen(factionStudents, faction, {
       onSelect: (selected: Student) => {
-        analytics.trackCharacterSelect(selected.name, faction);
+        analytics.trackCharacterSelect(selected.id, selected.name, faction, selected.gender, selected.personality, selected.className);
         // 選んだ生徒をプレイヤーに（studentsには全員残す＝組織の代表計算に必要）
         const startLocation = CLASS_LOCATION_MAP[selected.className] ?? 'class1b';
         this.state = {
@@ -990,7 +990,9 @@ export class Game {
 
   private handleNextDay(): void {
     se.nextDay();
-    analytics.trackDayAdvance(this.state.day + 1, this.state.faction ?? 'unknown');
+    const nextDay = this.state.day + 1;
+    analytics.trackDayAdvance(nextDay, this.state.faction ?? 'unknown', this.state.currentTime);
+    analytics.trackMilestone(nextDay, this.state.faction ?? 'unknown');
     if (this.state.day >= 30) {
       this.showEnding();
       return;
@@ -1035,7 +1037,7 @@ export class Game {
     this.clearScreens();
     bgm.play(BGM_TRACKS.settoku);
     if (!this.state.battle) return;
-    analytics.trackBattleStart(this.state.battle.student.name, this.state.battle.isDefending);
+    analytics.trackBattleStart(this.state.battle.student.name, this.state.battle.student.personality, this.state.battle.isDefending);
 
     this.battleScreenInst = new BattleScreen(this.state, {
       onAttitudeSelect: (attitude: PlayerAttitude) => {
@@ -1196,7 +1198,7 @@ export class Game {
 
     const result = battle.result;
     const student = battle.student;
-    analytics.trackBattleEnd(result ?? 'unknown', student.name, battle.isDefending);
+    analytics.trackBattleEnd(result ?? 'unknown', student.name, student.personality, battle.isDefending, battle.round, battle.barPosition);
     let shiftAmount = 0;
 
     // シフト結果を自然な日本語で表現するヘルパー

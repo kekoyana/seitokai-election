@@ -1,4 +1,5 @@
 import { Game } from './game';
+import { trackSessionStart } from './analytics';
 import './game.css';
 
 // Canvas要素は非表示にする（このゲームはDOM/CSS UIを使用）
@@ -10,6 +11,9 @@ const root = document.createElement('div');
 root.id = 'game-root';
 root.style.cssText = 'position:fixed; inset:0; overflow:hidden;';
 document.body.appendChild(root);
+
+// アナリティクス: セッション開始
+trackSessionStart();
 
 // ゲーム起動
 new Game(root);
